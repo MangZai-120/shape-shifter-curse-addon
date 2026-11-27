@@ -23,12 +23,14 @@ import net.minecraft.world.RaycastContext;
  */
 public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	private final Identifier id;
+	private final Identifier iconTexture;
 	private final SpellRarity rarity;
 	/** 数值配置（由 SpellRegistry reload 时注入；恒非 null——注入前为 fallback）。 */
 	private volatile SpellConfig config = SpellConfig.fallback();
 
 	protected Spell(Identifier id, SpellRarity rarity) {
 		this.id = id;
+		this.iconTexture = new Identifier("ssc_addon", "textures/gui/spell_icons/" + id.getPath() + ".png");
 		this.rarity = rarity;
 	}
 
@@ -353,7 +355,7 @@ public abstract class Spell implements SpellRegistry.SpellConfigInjector {
 	 * 返回 null 表示无专用图标（HUD 回落到绘制卷轴物品本身）。
 	 */
 	public Identifier getIconTexture() {
-		return new Identifier("ssc_addon", "textures/gui/spell_icons/" + id.getPath() + ".png");
+		return iconTexture;
 	}
 
 	// ---- 经验机制桥（2026-09-15：exp_mode 0=释放即得 / 1=命中才得 / 2=释放 20%+命中补到 100%） ----

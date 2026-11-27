@@ -25,6 +25,7 @@ import net.jackcooper.shapeShifterCurseAddon.ability.AllaySPRangedHitPassive;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaMarkManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst;
 import net.jackcooper.shapeShifterCurseAddon.ability.InfectionSporeManager;
+import net.jackcooper.shapeShifterCurseAddon.effect.BatPoisonEffect;
 import net.jackcooper.shapeShifterCurseAddon.ability.NineLivesManager;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpTeleportAttack;
 import net.jackcooper.shapeShifterCurseAddon.ability.SnowFoxSpMeleeAbility;
@@ -58,8 +59,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
+import java.util.UUID;
+
 @Mixin(LivingEntity.class)
-public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess, SheepFormRestoreHandler.MobSnapshotAccess {
+public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess, SheepFormRestoreHandler.MobSnapshotAccess, BatPoisonEffect.OwnerAccess {
+	@org.spongepowered.asm.mixin.Unique
+	private UUID ssca$batPoisonOwner;
+
+	@Override
+	public UUID ssca$getBatPoisonOwner() { return ssca$batPoisonOwner; }
+
+	@Override
+	public void ssca$setBatPoisonOwner(UUID owner) { ssca$batPoisonOwner = owner; }
+
 	@org.spongepowered.asm.mixin.Unique
 	private SheepFormRestoreHandler.MobSnapshot ssca$pendingSheepSnapshot;
 
@@ -88,6 +100,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 	@Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
 	private void ssca$saveNpcCombat(NbtCompound nbt, CallbackInfo ci) {
 		LivingEntity self = (LivingEntity) (Object) this;
+		if (ssca$batPoisonOwner != null && self.hasStatusEffect(SscAddon.BAT_POISON)) nbt.putUuid("SSCA.BatPoisonOwner", ssca$batPoisonOwner);
 		if (!(self instanceof PlayerEntity) && ssca$npcCombatState != null) {
 			NbtCompound state = ssca$npcCombatState.write(self.getWorld().getTime());
 			if (!state.getCompound("Fallen").isEmpty() || !state.getCompound("WildCat").isEmpty()) nbt.put("SSCA.NpcCombat", state);
@@ -97,6 +110,8 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 
 	@Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
 	private void ssca$loadNpcCombat(NbtCompound nbt, CallbackInfo ci) {
+		ssca$batPoisonOwner = nbt.containsUuid("SSCA.BatPoisonOwner") && ((LivingEntity)(Object)this).hasStatusEffect(SscAddon.BAT_POISON)
+				? nbt.getUuid("SSCA.BatPoisonOwner") : null;
 		if (nbt.contains("SSCA.NpcCombat", NbtElement.COMPOUND_TYPE)) ssca$getNpcCombatState().read(nbt.getCompound("SSCA.NpcCombat"));
 		else ssca$npcCombatState = null;
 	}
@@ -111,6 +126,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 
 	@Inject(method = "onStatusEffectRemoved", at = @At("TAIL"))
 	private void ssca$clearNpcCombatEffect(StatusEffectInstance effect, CallbackInfo ci) {
+		if (effect.getEffectType() == SscAddon.BAT_POISON) ssca$batPoisonOwner = null;
 		// 实际到期/清除才结算霜甲；效果刷新走 onStatusEffectUpgraded，不能在效果 onRemoved 中结算。
 		if (effect.getEffectType() == SscAddon.FROST_ARMOR) {
 			net.jackcooper.shapeShifterCurseAddon.spell.FrostArmorState.removeFrom((LivingEntity) (Object) this);

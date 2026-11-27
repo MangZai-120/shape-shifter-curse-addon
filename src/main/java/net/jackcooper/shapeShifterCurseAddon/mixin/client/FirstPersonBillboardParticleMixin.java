@@ -68,9 +68,7 @@ public abstract class FirstPersonBillboardParticleMixin extends Particle impleme
         // 距离门控前置：恢复带外锥/距离都无衰减，跳过三角函数计算（远距粒子每帧 2-3 次调用白省）
         if (distance > 1.0e-4 && distance < strength.radius() + ParticleAvoidance.RECOVERY) {
             double inv = 1.0 / distance;
-            double yaw = Math.toRadians(camera.getYaw()), pitch = Math.toRadians(camera.getPitch());
-            double dot = (-Math.sin(yaw) * Math.cos(pitch) * dx - Math.sin(pitch) * dy
-                    + Math.cos(yaw) * Math.cos(pitch) * dz) * inv;
+            double dot = ParticleAvoidance.projectOntoView(camera.getYaw(), camera.getPitch(), dx, dy, dz) * inv;
             // 传 this 作抽样键：轻度 40% / 中度 20% 粒子豁免锥压制（用户 2026-09-26 定稿）
             visibility = ParticleAvoidance.applyAngular(visibility, distance, strength, dot, projectile, this);
         } else if (distance <= 1.0e-4) {

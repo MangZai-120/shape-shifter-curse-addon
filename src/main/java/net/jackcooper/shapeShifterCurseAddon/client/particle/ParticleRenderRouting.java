@@ -15,10 +15,9 @@ public final class ParticleRenderRouting {
 
     public static <S, P> Map<S, Queue<P>> forFrame(Map<S, Queue<P>> original, S opaque, S lit, S translucent,
                                                 Predicate<P> shouldFade) {
-        Set<P> moved = Collections.newSetFromMap(new IdentityHashMap<>());
-        collect(original.get(opaque), shouldFade, moved);
-        collect(original.get(lit), shouldFade, moved);
-        if (moved.isEmpty()) return original;
+        Set<P> moved = collect(original.get(opaque), shouldFade, null);
+        moved = collect(original.get(lit), shouldFade, moved);
+        if (moved == null) return original;
 
         Map<S, Queue<P>> frame = new HashMap<>(original);
         Queue<P> blended = new ArrayDeque<>();
@@ -30,8 +29,15 @@ public final class ParticleRenderRouting {
         return frame;
     }
 
-    private static <P> void collect(Queue<P> particles, Predicate<P> predicate, Set<P> moved) {
-        if (particles != null) for (P particle : particles) if (predicate.test(particle)) moved.add(particle);
+    private static <P> Set<P> collect(Queue<P> particles, Predicate<P> predicate, Set<P> moved) {
+        if (particles != null) {
+            for (P particle : particles) {
+                if (!predicate.test(particle)) continue;
+                if (moved == null) moved = Collections.newSetFromMap(new IdentityHashMap<>());
+                moved.add(particle);
+            }
+        }
+        return moved;
     }
 
     private static <P> boolean containsMatch(Iterable<P> particles, Predicate<P> predicate) {

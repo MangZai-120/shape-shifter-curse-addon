@@ -367,14 +367,17 @@ public final class SpellbookData {
 	 * <p>无任何卷轴返回 -1；from 自身非空且 dir 绕一圈无其它非空槽时返回 from（单技能自循环）。</p>
 	 */
 	public static int nextFilledSlot(ItemStack book, int from, int dir) {
-		int count = getSlotCount(book);
+		return nextFilledSlot(getSlotCount(book), from, dir, slot -> hasScroll(book, slot));
+	}
+
+	public static int nextFilledSlot(int count, int from, int dir, java.util.function.IntPredicate occupied) {
 		if (count <= 0) {
 			return -1;
 		}
 		int cur = ((from % count) + count) % count;
 		for (int i = 0; i < count; i++) {
 			cur = ((cur + dir) % count + count) % count;
-			if (hasScroll(book, cur)) {
+			if (occupied.test(cur)) {
 				return cur;
 			}
 		}

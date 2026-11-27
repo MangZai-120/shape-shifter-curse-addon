@@ -103,7 +103,7 @@ public final class SpellcastClient {
 			return;
 		}
 		// 只在已装备卷轴的槽之间循环（跳过空槽）；全空不动作
-		int next = SpellbookData.nextFilledSlot(book, selectedSlot, dir);
+		int next = ClientSpellbookSlots.forBook(book).nextFilledSlot(selectedSlot, dir);
 		if (next < 0 || next == selectedSlot) {
 			return;
 		}
@@ -198,6 +198,7 @@ public final class SpellcastClient {
 		ItemStack book = getEquippedBook();
 		if (book == null || book.isEmpty()) {
 			downgradePresses.reset();
+			if (bookWasEquipped) net.jackcooper.shapeShifterCurseAddon.client.hud.SpellbookHudRenderer.clearSnapshot();
 			bookWasEquipped = false; // 卸书：下次重新装备时按 NBT 初始化选中槽
 			if (selectingTarget) {
 				clearTargetSelection();
@@ -211,20 +212,21 @@ public final class SpellcastClient {
 			updatePressedKeys(castPressed);
 			return;
 		}
+		var contents = ClientSpellbookSlots.forBook(book);
 		if (!bookWasEquipped) {
 			// 重进游戏/新装备书：从书 NBT 恢复上次选中的槽（修复「选了第三个法术，重进变回第一个」——
 			// 服务端 Selected 一直有存，客户端静态字段却从 0 起步从未读过它）。
 			bookWasEquipped = true;
 			int saved = SpellbookData.getSelectedSlot(book);
-			selectedSlot = SpellbookData.hasScroll(book, saved) ? saved : Math.max(0, SpellbookData.firstFilledSlot(book));
+			selectedSlot = contents.hasScroll(saved) ? saved : Math.max(0, contents.firstFilledSlot());
 		}
 		int count = SpellbookData.getSlotCount(book);
 		if (selectedSlot >= count) {
 			selectedSlot = 0;
 		}
 		// 选中槽为空（被取走卷轴 / 换书 / 初始化）→ 归位到第一个非空槽，保证 HUD 与施法键始终指向有魔法的槽
-		if (!SpellbookData.hasScroll(book, selectedSlot)) {
-			int first = SpellbookData.firstFilledSlot(book);
+		if (!contents.hasScroll(selectedSlot)) {
+			int first = contents.firstFilledSlot();
 			if (first >= 0) {
 				selectedSlot = first;
 			}

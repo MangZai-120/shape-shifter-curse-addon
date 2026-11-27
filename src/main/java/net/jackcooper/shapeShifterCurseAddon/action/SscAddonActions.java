@@ -6,6 +6,7 @@ import io.github.apace100.apoli.registry.ApoliRegistries;
 import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.block.Blocks;
+import net.minecraft.enchantment.ProtectionEnchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityPose;
 import net.minecraft.entity.LivingEntity;
@@ -275,6 +276,7 @@ public class SscAddonActions {
 				new SerializableData()
 						.add("amount", SerializableDataTypes.FLOAT)
 						.add("damage_type", SerializableDataTypes.IDENTIFIER)
+						.add("ignite_seconds", SerializableDataTypes.INT, 0)
 						.add("grants_empower", SerializableDataTypes.BOOLEAN, false)
 						.add("empower_burn_ticks", SerializableDataTypes.INT, 0)
 						// 可选：对非玩家生物的伤害倍率（不传 = 1.0，保持原行为）
@@ -292,6 +294,15 @@ public class SscAddonActions {
 					Identifier damageTypeId = data.getId("damage_type");
 
 					if (target instanceof LivingEntity livingTarget) {
+						int seconds = data.getInt("ignite_seconds");
+						if (seconds > 0 && actor instanceof ServerPlayerEntity player) {
+							livingTarget.setOnFireFor(seconds);
+							int duration = ProtectionEnchantment.transformFireDuration(livingTarget, seconds * 20);
+							// A shorter application leaves the existing fire and its owner in place.
+							if (duration > 0 && livingTarget.getFireTicks() == duration) {
+								((SscIgnitedEntityAccessor) livingTarget).sscAddon$setFireOwner(player.getUuid());
+							}
+						}
 						RegistryKey<DamageType> damageTypeKey = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, damageTypeId);
 						Vec3d oldVelocity = target.getVelocity();
 						if (net.jackcooper.shapeShifterCurseAddon.ability.KillEmpowerManager.damage(livingTarget,

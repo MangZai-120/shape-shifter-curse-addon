@@ -93,12 +93,33 @@ public final class ParticleAvoidanceTest {
             if (kind == Kind.NOVA_CHARGE || kind == Kind.SEED_FIELD)
                 check(cues[0] > 0, "Recipe retains its protected cues");
         }
+        cameraProjection();
         renderRouting();
         renderOpacity();
         crosshairCone();
         configUi();
         injectionTargets();
         System.out.println("Particle avoidance: " + checks + " checks passed (policy, cues, 1.20.1 bytecode targets). No in-game render capture.");
+    }
+
+    private static void cameraProjection() {
+        Random random = new Random(20261127);
+        float[] angles = {-360, -125, -90, -45, -15, -0f, 0f, 15, 45, 90, 180, 720};
+        for (float yaw : angles) {
+            for (float pitch : angles) {
+                for (int i = 0; i < 32; i++) {
+                    double dx = random.nextDouble() * 32 - 16;
+                    double dy = random.nextDouble() * 32 - 16;
+                    double dz = random.nextDouble() * 32 - 16;
+                    double y = Math.toRadians(yaw), p = Math.toRadians(pitch);
+                    double expected = -Math.sin(y) * Math.cos(p) * dx - Math.sin(p) * dy
+                            + Math.cos(y) * Math.cos(p) * dz;
+                    double actual = ParticleAvoidance.projectOntoView(yaw, pitch, dx, dy, dz);
+                    check(Double.doubleToRawLongBits(expected) == Double.doubleToRawLongBits(actual),
+                            "Camera projection must retain the original double precision on turns and repeated frames");
+                }
+            }
+        }
     }
 
     private static void renderRouting() {

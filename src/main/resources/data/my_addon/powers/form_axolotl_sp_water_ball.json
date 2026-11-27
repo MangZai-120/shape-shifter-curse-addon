@@ -51,8 +51,8 @@
                         }
                     ]
                 },
-                "entity_action": {
-                    "type": "apoli:damage",
+                "bientity_action": {
+                    "type": "my_addon:damage_target_from_actor",
                     "amount": 4,
                     "damage_type": "minecraft:player_attack"
                 }

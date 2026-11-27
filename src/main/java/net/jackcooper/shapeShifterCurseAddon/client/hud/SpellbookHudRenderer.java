@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.jackcooper.shapeShifterCurseAddon.client.ClientSpellbookSlots;
 import net.jackcooper.shapeShifterCurseAddon.client.SpellcastClient;
 import net.jackcooper.shapeShifterCurseAddon.config.SSCAddonConfig;
 import net.jackcooper.shapeShifterCurseAddon.spell.*;
@@ -16,6 +17,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Language;
 import net.onixary.shapeShifterCurseFabric.util.UIPositionUtils;
 
 /** Three equal vanilla iron slots. The independent stability bar owns all cost/risk information. */
@@ -33,7 +35,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
         var book=mc.player==null?ItemStack.EMPTY:SpellcastClient.getEquippedBook();
         if(mc.world!=null && book!=null && !book.isEmpty() && SpellbookData.getSlotCount(book)>0){
             int selected=Math.max(0,Math.min(SpellcastClient.getSelectedSlot(),SpellbookData.getSlotCount(book)-1));
-            var snap=snapshotOf(mc,book,selected);int nameW=mc.textRenderer.getWidth(snap.label());
+            var snap=snapshotOf(mc,book,selected);int nameW=labelLayout(mc,snap.label()).width();
             if(nameW>0){int x=Math.max(3,Math.min(a[0]+CENTER_X-nameW/2,mc.getWindow().getScaledWidth()-nameW-3));left=Math.min(left,x-3);right=Math.max(right,x+nameW+3);}
         }
         return new HudScaleGeometry.Box(left,a[1]+0,right-left,HEIGHT);
@@ -77,6 +79,8 @@ public class SpellbookHudRenderer implements HudRenderCallback {
     private static long snapTick = Long.MIN_VALUE;
     private static int snapSlot = -1;
     private static TickSnapshot snapshot;
+    private record LabelLayout(Text text, Language language, TextRenderer font, boolean unicode, String plain, int width) {}
+    private static LabelLayout lastLabel;
 
     public static void clearSnapshot() {
         snapWorld = null;
@@ -84,6 +88,8 @@ public class SpellbookHudRenderer implements HudRenderCallback {
         snapTick = Long.MIN_VALUE;
         snapSlot = -1;
         snapshot = null;
+        lastLabel = null;
+        ClientSpellbookSlots.clear();
     }
 
     /** Cache scroll decoding, rune/formation queries and formatted labels once per game tick. */
@@ -91,23 +97,43 @@ public class SpellbookHudRenderer implements HudRenderCallback {
         long tick = mc.world.getTime();
         if (snapWorld == mc.world && snapBook == book && snapSlot == selected && snapTick == tick
                 && snapshot != null) return snapshot;
-        int previous = SpellbookData.nextFilledSlot(book, selected, -1);
-        int next = SpellbookData.nextFilledSlot(book, selected, 1);
+        var contents = ClientSpellbookSlots.forBook(book);
+        int previous = contents.nextFilledSlot(selected, -1);
+        int next = contents.nextFilledSlot(selected, 1);
         if (previous < 0 || next < 0) previous = next = selected;
-        SlotView current = slotView(mc, book, SpellbookData.getScroll(book, selected));
-        var label = current.spell() == null ? Text.empty() : SpellCastFeedback.spellName(current.spell(), current.scroll()).copy();
-        if (current.spell() != null) {
-            int castLevel = ScrollData.getCastLevel(current.scroll());
-            int scrollLevel = ScrollData.getLevel(current.scroll());
-            if (castLevel < scrollLevel) label.append(Text.literal(" Lv" + castLevel + "/" + scrollLevel).formatted(Formatting.AQUA));
-        }
-        snapshot = new TickSnapshot(slotView(mc, book, SpellbookData.getScroll(book, previous)), current,
-                slotView(mc, book, SpellbookData.getScroll(book, next)), label);
+        SlotView current = slotView(mc, book, contents.scroll(selected));
+        Text label = snapshot != null && snapshot.selected().scroll() == current.scroll()
+                && snapshot.selected().spell() == current.spell() ? snapshot.label() : selectedLabel(current);
+        SlotView left = previous == selected ? current : slotView(mc, book, contents.scroll(previous));
+        SlotView right = next == selected ? current : next == previous ? left : slotView(mc, book, contents.scroll(next));
+        snapshot = new TickSnapshot(left, current, right, label);
         snapWorld = mc.world;
         snapBook = book;
         snapSlot = selected;
         snapTick = tick;
         return snapshot;
+    }
+
+    private static Text selectedLabel(SlotView current) {
+        if (current.spell() == null) return Text.empty();
+        var label = SpellCastFeedback.spellName(current.spell(), current.scroll()).copy();
+        int castLevel = ScrollData.getCastLevel(current.scroll());
+        int scrollLevel = ScrollData.getLevel(current.scroll());
+        if (castLevel < scrollLevel) label.append(Text.literal(" Lv" + castLevel + "/" + scrollLevel).formatted(Formatting.AQUA));
+        return label;
+    }
+
+    private static LabelLayout labelLayout(MinecraftClient mc, Text text) {
+        Language language = Language.getInstance();
+        boolean unicode = mc.forcesUnicodeFont();
+        if (mc.getOverlay() == null && lastLabel != null && lastLabel.text() == text
+                && lastLabel.language() == language && lastLabel.font() == mc.textRenderer && lastLabel.unicode() == unicode) {
+            return lastLabel;
+        }
+        var layout = new LabelLayout(text, language, mc.textRenderer, unicode, text.getString(), mc.textRenderer.getWidth(text));
+        // A resource-reload overlay can render the HUD before the new fonts are ready.
+        lastLabel = mc.getOverlay() == null ? layout : null;
+        return layout;
     }
 
     private static SlotView slotView(MinecraftClient mc, ItemStack book, ItemStack scroll) {
@@ -193,7 +219,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
                 context.getMatrices().pop();
             }
             // The name follows the taller row, retaining its original font and PNG backplate.
-            if (!data.label().getString().isEmpty()) drawLabel(context, data.label(), x + CENTER_X, y + NAME_Y);
+            if (data.selected().spell() != null) drawLabel(context, data.label(), x + CENTER_X, y + NAME_Y);
         } finally {
             try {
                 context.draw();
@@ -228,7 +254,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
                     context.getMatrices().translate(x + (SLOT_SIZE - textWidth * textScale) / 2f,
                             y + (SLOT_SIZE - mc.textRenderer.fontHeight * textScale) / 2f, 0);
                     context.getMatrices().scale(textScale, textScale, 1);
-                    drawOutlined(context, Text.literal(data.cooldownText()), 0, 0, 0xFFF3F7F1);
+                    drawOutlined(context, Text.literal(data.cooldownText()), data.cooldownText(), 0, 0, 0xFFF3F7F1);
                 } finally {
                     context.getMatrices().pop();
                 }
@@ -254,7 +280,9 @@ public class SpellbookHudRenderer implements HudRenderCallback {
 
     private static void drawLabel(DrawContext context, Text label, int centerX, int y) {
         var mc = MinecraftClient.getInstance();
-        int width = mc.textRenderer.getWidth(label);
+        var layout = labelLayout(mc, label);
+        if (layout.plain().isEmpty()) return;
+        int width = layout.width();
         int x = Math.max(3, Math.min(centerX - width / 2, mc.getWindow().getScaledWidth() - width - 3));
         int plateX = x - 3, plateY = y - 2, plateWidth = width + 6, plateHeight = mc.textRenderer.fontHeight + 4;
         // Nine-slice the PNG. Only solid pixels stretch, keeping the stepped corners sharp.
@@ -264,13 +292,12 @@ public class SpellbookHudRenderer implements HudRenderCallback {
             int w = col == 1 ? plateWidth - 2 : 1, h = row == 1 ? plateHeight - 2 : 1;
             context.drawTexture(NAME_PLATE, plateX + dx, plateY + dy, w, h, col, row, 1, 1, 3, 3);
         }
-        drawOutlined(context, label, x, y, 0xFFF0F6F2);
+        drawOutlined(context, label, layout.plain(), x, y, 0xFFF0F6F2);
     }
 
-    private static void drawOutlined(DrawContext context, Text text, int x, int y, int color) {
+    private static void drawOutlined(DrawContext context, Text text, String plain, int x, int y, int color) {
         var font = MinecraftClient.getInstance().textRenderer;
         // The outline is plain so formatted text retains a dark contour, including the blue level tag.
-        String plain = text.getString();
         // Keep earlier HUD layers separate, then submit the outline and face as one text batch.
         context.draw();
         var matrix = context.getMatrices().peek().getPositionMatrix();

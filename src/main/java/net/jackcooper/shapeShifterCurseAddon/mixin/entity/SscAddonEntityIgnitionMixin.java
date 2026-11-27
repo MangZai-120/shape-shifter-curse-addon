@@ -24,6 +24,22 @@ public abstract class SscAddonEntityIgnitionMixin implements SscIgnitedEntityAcc
 	@Unique
 	private UUID sscAddon$igniterUuid;
 
+	// Vanilla fire ticks and the fox-fire status effect can have different casters.
+	@Unique
+	private UUID sscAddon$fireOwner;
+
+	@Override
+	public void sscAddon$setFireOwner(UUID owner) {
+		sscAddon$fireOwner = owner;
+	}
+
+	@Inject(method = "setFireTicks", at = @At("HEAD"))
+	private void sscAddon$clearReplacedFire(int ticks, CallbackInfo ci) {
+		if (sscAddon$fireOwner != null && (ticks <= 0 || ticks > ((Entity)(Object)this).getFireTicks())) {
+			sscAddon$fireOwner = null;
+		}
+	}
+
 	@Override
 	public void sscAddon$setIgniterUuid(UUID uuid) {
 		this.sscAddon$igniterUuid = uuid;
@@ -39,19 +55,28 @@ public abstract class SscAddonEntityIgnitionMixin implements SscIgnitedEntityAcc
 		if (this.sscAddon$igniterUuid != null) {
 			nbt.putUuid("SscAddonIgniter", this.sscAddon$igniterUuid);
 		}
+		if (sscAddon$fireOwner != null) {
+			nbt.putUuid("SscAddonFireOwner", sscAddon$fireOwner);
+		} else if (sscAddon$igniterUuid != null && ((Entity)(Object)this).getFireTicks() > 0) {
+			// Older saves used a shared igniter. Record explicitly when this fire has no owner.
+			nbt.putBoolean("SscAddonFireOwner", false);
+		}
 	}
 
 	@Inject(method = "readNbt", at = @At("HEAD"))
 	private void injectReadNbt(NbtCompound nbt, CallbackInfo ci) {
-		if (nbt.contains("SscAddonIgniter")) {
-			this.sscAddon$igniterUuid = nbt.getUuid("SscAddonIgniter");
+		sscAddon$igniterUuid = nbt.containsUuid("SscAddonIgniter") ? nbt.getUuid("SscAddonIgniter") : null;
+		sscAddon$fireOwner = null;
+		if (nbt.getShort("Fire") > 0) {
+			if (nbt.containsUuid("SscAddonFireOwner")) sscAddon$fireOwner = nbt.getUuid("SscAddonFireOwner");
+			else if (!nbt.contains("SscAddonFireOwner")) sscAddon$fireOwner = sscAddon$igniterUuid;
 		}
 	}
 
 	@ModifyArg(method = "baseTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), index = 0)
 	private DamageSource modifyFireDamageSource(DamageSource source) {
 		if (source.isOf(DamageTypes.ON_FIRE)) {
-			UUID igniter = this.sscAddon$getIgniterUuid();
+			UUID igniter = sscAddon$fireOwner;
 			if (igniter != null) {
 				Entity entity = (Entity) (Object) this;
 				if (!entity.getWorld().isClient) {

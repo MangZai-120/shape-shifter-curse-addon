@@ -7,6 +7,7 @@ import dev.onyxstudios.cca.api.v3.component.ComponentContainer;
 import io.github.apace100.apoli.component.PowerHolderComponent;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
+import net.jackcooper.shapeShifterCurseAddon.client.ClientSpellbookSlots;
 import net.jackcooper.shapeShifterCurseAddon.client.hud.SpellCastHud;
 import net.jackcooper.shapeShifterCurseAddon.item.MagicScrollItem;
 import net.jackcooper.shapeShifterCurseAddon.spell.config.SpellConfig;
@@ -67,6 +68,7 @@ public final class SpellAuditIntegrationProbe {
         malformedLevels();
         rangesAndProfile();
         scrollRejection();
+        clientBookSlots();
         frostArmor();
         spellProtection();
         statePackets();
@@ -74,6 +76,43 @@ public final class SpellAuditIntegrationProbe {
         frostQuoteSynchronization();
         previewWiring();
         System.out.println("Spell audit integration: " + checks + " checks passed (real parser/item/effect/absorption/protection mixins and packet roundtrip). No live UI/network acceptance.");
+    }
+
+    private static void clientBookSlots() {
+        var book = new ItemStack(Items.BOOK);
+        var scroll = new ItemStack(Items.PAPER);
+        scroll.getOrCreateNbt().putInt("CastLevel", 3);
+        SpellbookData.setScroll(book, 0, scroll);
+        SpellbookData.setScroll(book, 2, new ItemStack(Items.DIAMOND));
+        var first = ClientSpellbookSlots.forBook(book);
+        check(first.firstFilledSlot() == 0 && first.nextFilledSlot(0, 1) == 2
+                && first.nextFilledSlot(0, -1) == 2 && first.nextFilledSlot(2, 1) == 0, "client slots wrap over empty slots");
+        book.getOrCreateNbt().putInt("Mana", 1);
+        check(first == ClientSpellbookSlots.forBook(book), "unrelated book changes reuse the decoded slots");
+        var entries = book.getNbt().getList(SpellbookData.NBT_ITEMS, 10);
+        entries.getCompound(0).getCompound("tag").putInt("CastLevel", 1);
+        var updated = ClientSpellbookSlots.forBook(book);
+        check(updated != first && updated.scroll(0).getNbt().getInt("CastLevel") == 1
+                && first.scroll(0).getNbt().getInt("CastLevel") == 3, "in-place edits refresh the detached view");
+        var duplicate = entries.getCompound(1).copy();
+        duplicate.putByte("Slot", (byte)0);
+        entries.add(duplicate);
+        entries.getCompound(0).putString("id", "test:unregistered_scroll");
+        check(!ClientSpellbookSlots.forBook(book).hasScroll(0) && SpellbookData.getScroll(book, 0).isEmpty(),
+                "unknown first item keeps a duplicate slot empty");
+        entries.getCompound(0).putString("id", "minecraft:paper");
+        for (byte count : new byte[]{0, -1}) {
+            entries.getCompound(0).putByte("Count", count);
+            check(!ClientSpellbookSlots.forBook(book).hasScroll(0), "nonpositive count remains empty");
+        }
+        entries.remove(0);
+        check(ClientSpellbookSlots.forBook(book).scroll(0).isOf(Items.DIAMOND), "removing the first entry exposes its duplicate");
+        book.getOrCreateNbt().remove(SpellbookData.NBT_ITEMS);
+        check(ClientSpellbookSlots.forBook(book).nextFilledSlot(0, -1) == -1, "removing the list clears occupied slots");
+        SpellbookData.setLevel(book, 3);
+        SpellbookData.setScroll(book, 6, scroll);
+        check(ClientSpellbookSlots.forBook(book).nextFilledSlot(6, 1) == 6, "level changes resize the view and a lone scroll cycles to itself");
+        ClientSpellbookSlots.clear();
     }
 
     private static void spellProtection() throws Exception {

@@ -18,6 +18,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
+import net.jackcooper.shapeShifterCurseAddon.util.SscIgnitedEntityAccessor;
 import net.jackcooper.shapeShifterCurseAddon.util.TrinketUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
 
@@ -67,6 +68,7 @@ public final class KillEmpowerCast {
 				e.addStatusEffect(new StatusEffectInstance(SscAddon.FOX_FIRE_BURN, redForm ? 80 : 60, 0), player);
 				KillEmpowerManager.trackBurn(player, e, redForm ? 80 : 60, false);
 				e.setFireTicks(redForm ? 80 : 60);
+				((SscIgnitedEntityAccessor) e).sscAddon$setFireOwner(player.getUuid());
 			}
 		});
 	}

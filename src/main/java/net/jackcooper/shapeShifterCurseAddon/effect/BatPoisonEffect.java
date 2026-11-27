@@ -6,8 +6,11 @@
 package net.jackcooper.shapeShifterCurseAddon.effect;
 
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
+
+import java.util.UUID;
 
 /**
  * 寄生果蝠次要技能专属「中毒」buff。
@@ -15,14 +18,22 @@ import net.minecraft.entity.effect.StatusEffectCategory;
  * 图标/名字复用原版中毒。
  */
 public class BatPoisonEffect extends StatusEffect {
+    public interface OwnerAccess {
+        UUID ssca$getBatPoisonOwner();
+        void ssca$setBatPoisonOwner(UUID owner);
+    }
+
     public BatPoisonEffect() {
         super(StatusEffectCategory.HARMFUL, 0x4E9331);
     }
 
     @Override
     public void applyUpdateEffect(LivingEntity entity, int amplifier) {
-        if (entity.getHealth() > 1.0f) {
-            entity.damage(entity.getDamageSources().magic(), 1.0f);
+        if (!entity.getWorld().isClient && entity.getHealth() > 1.0f) {
+            UUID owner = ((OwnerAccess) entity).ssca$getBatPoisonOwner();
+            var caster = owner == null ? null : entity.getWorld().getPlayerByUuid(owner);
+            var sources = entity.getDamageSources();
+            entity.damage(caster == null ? sources.magic() : sources.create(DamageTypes.MAGIC, null, caster), 1.0f);
         }
     }
 

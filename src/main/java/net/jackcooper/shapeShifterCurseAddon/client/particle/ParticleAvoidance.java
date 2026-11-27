@@ -21,6 +21,24 @@ public final class ParticleAvoidance {
 
     private ParticleAvoidance() {}
 
+    private record ViewDirection(float yaw, float pitch, double x, double sinPitch, double z) {}
+    private static volatile ViewDirection lastDirection;
+
+    /** All particles viewed from the same angles use the same three direction coefficients. */
+    public static double projectOntoView(float yaw, float pitch, double dx, double dy, double dz) {
+        ViewDirection direction = lastDirection;
+        if (direction == null || Float.floatToRawIntBits(direction.yaw) != Float.floatToRawIntBits(yaw)
+                || Float.floatToRawIntBits(direction.pitch) != Float.floatToRawIntBits(pitch)) {
+            double yawRadians = Math.toRadians(yaw);
+            double pitchRadians = Math.toRadians(pitch);
+            double cosPitch = Math.cos(pitchRadians);
+            direction = new ViewDirection(yaw, pitch, -Math.sin(yawRadians) * cosPitch,
+                    Math.sin(pitchRadians), Math.cos(yawRadians) * cosPitch);
+            lastDirection = direction;
+        }
+        return direction.x * dx - direction.sinPitch * dy + direction.z * dz;
+    }
+
     /** 边缘（半径外沿）保留的透明度：范围内从 0 升到该值，边界外短恢复带平滑回到 1。 */
     private static final float EDGE_VISIBILITY = 0.5f;
     /** 恢复带宽度（格）：从半径处到 radius+RECOVERY 内从 50% 平滑回到 100%。 */

@@ -12,6 +12,7 @@ import io.github.apace100.calio.data.SerializableData;
 import io.github.apace100.calio.data.SerializableDataTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.DustParticleEffect;
@@ -465,7 +466,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 						&& net.jackcooper.shapeShifterCurseAddon.ability.BatDesmodusBloodThirst.getStage(sp) == 3) {
 					Box aura = entity.getBoundingBox().expand(2.0, 2.0, 2.0);
 					double auraSq = 2.0 * 2.0;
-					DamageSource auraSrc = entity.getDamageSources().magic();
+					DamageSource auraSrc = entity.getDamageSources().create(DamageTypes.MAGIC, null, sp);
 					List<LivingEntity> auraTargets = ((ServerWorld) entity.getWorld()).getEntitiesByClass(
 							LivingEntity.class, aura, t -> t != entity && t.isAlive() && !t.isRemoved() && !t.isSpectator());
 					for (LivingEntity t : auraTargets) {

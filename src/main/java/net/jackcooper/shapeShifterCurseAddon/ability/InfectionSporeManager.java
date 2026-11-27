@@ -11,6 +11,8 @@ import net.jackcooper.shapeShifterCurseAddon.network.visual.ParametricVisuals.Ki
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageTypes;
+import net.jackcooper.shapeShifterCurseAddon.effect.BatPoisonEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
@@ -94,19 +96,18 @@ public final class InfectionSporeManager {
         if (target == caster) return;
         // 施加专属「中毒」buff（图标 + 周期扣血，效果同中毒；扣血由 buff 负责，本管理器不再直接伤害）
         // 带 caster source 供食梦魔「入梦」debuff 拦截归因
-        target.addStatusEffect(new StatusEffectInstance(
-                net.jackcooper.shapeShifterCurseAddon.SscAddon.BAT_POISON, Math.max(20, durationTicks), 0, false, true, true), caster);
         UUID targetUuid = target.getUuid();
         long now = serverWorld.getTime();
         long newEnd = now + Math.max(20, durationTicks);
         InfectionData existing = ENTRIES.get(targetUuid);
+        UUID owner = applyPoison(caster, target, durationTicks, existing == null ? caster.getUuid() : existing.casterUuid);
         if (existing != null) {
             // 命中已感染目标 → 仅刷新 endTick；保留原 caster
             existing.endTick = newEnd;
             return;
         }
         InfectionData data = new InfectionData(
-                caster.getUuid(),
+                owner,
                 serverWorld.getRegistryKey(),
                 newEnd
         );
@@ -116,6 +117,15 @@ public final class InfectionSporeManager {
     /** 用于 mixin 查询 */
     public static boolean isInfected(UUID uuid) {
         return ENTRIES.containsKey(uuid);
+    }
+
+    private static UUID applyPoison(ServerPlayerEntity caster, LivingEntity target, int ticks, UUID owner) {
+        var poison = net.jackcooper.shapeShifterCurseAddon.SscAddon.BAT_POISON;
+        var credit = (BatPoisonEffect.OwnerAccess) target;
+        if (target.hasStatusEffect(poison) && credit.ssca$getBatPoisonOwner() != null) owner = credit.ssca$getBatPoisonOwner();
+        target.addStatusEffect(new StatusEffectInstance(poison, Math.max(20, ticks), 0, false, true, true), caster);
+        if (target.hasStatusEffect(poison)) credit.ssca$setBatPoisonOwner(owner);
+        return owner;
     }
 
     /** 对友方目标施加治疗孢子。命中已在治疗中的目标时直接重置时长（保留 nextHealTick 节拍）。 */
@@ -201,14 +211,13 @@ public final class InfectionSporeManager {
         for (LivingEntity candidate : candidates) {
             if (WhitelistUtils.isProtected(caster, candidate)) continue;
             // 时间继承自当前宿主
+            UUID owner = applyPoison(caster, candidate, remaining, data.casterUuid);
             InfectionData child = new InfectionData(
-                    data.casterUuid,
+                    owner,
                     world.getRegistryKey(),
                     now + remaining
             );
             ENTRIES.put(candidate.getUuid(), child);
-            candidate.addStatusEffect(new StatusEffectInstance(
-                    net.jackcooper.shapeShifterCurseAddon.SscAddon.BAT_POISON, Math.max(20, remaining), 0, false, true, true), caster);
         }
     }
 
@@ -397,7 +406,7 @@ public final class InfectionSporeManager {
                                 1, 0.3, 0.2, 0.3, 0.0);
                     } else {
                         // 敌人：掉 1 血 + 减速 I（短时，仅范围内维持）；带施放者 source 供入梦拦截归因
-                        target.damage(target.getDamageSources().magic(), (float) BAL.d("tick_damage", TICK_DAMAGE));
+                        target.damage(world.getDamageSources().create(DamageTypes.MAGIC, null, caster), (float) BAL.d("tick_damage", TICK_DAMAGE));
                         target.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, true, true), caster);
                     }
                 }
