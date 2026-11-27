@@ -143,7 +143,9 @@
         "player.SscPlayerMixin",
         "effect.StunnedJumpMixin",
         "item.TransformRelatedItemsMixin",
-        "WanderingTraderTradeMixin"
+        "WanderingTraderTradeMixin",
+        "LibrarianTradeMixin",
+        "LibrarianTradeOfferListMixin"
     ],
     "client": [
         "compat.RerClientLootMixin",

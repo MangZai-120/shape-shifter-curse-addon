@@ -37,6 +37,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOfferList;
+import net.minecraft.village.VillagerProfession;
 import net.onixary.shapeShifterCurseFabric.mana.ManaUtils;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -642,7 +643,8 @@ public final class MancianimaPassive {
 		boolean droppedSomething = false;
 		if (offers != null && !offers.isEmpty()) {
 			List<TradeOffer> shuffled = new ArrayList<>(offers);
-			if (merchant instanceof WanderingTraderEntity) {
+			if (merchant instanceof WanderingTraderEntity || (merchant instanceof VillagerEntity villager
+					&& villager.getVillagerData().getProfession() == VillagerProfession.LIBRARIAN)) {
 				shuffled.removeIf(offer -> offer.isDisabled() && offer.getSellItem().isOf(
 						net.jackcooper.shapeShifterCurseAddon.SscAddon.MAGIC_SCROLL));
 			}
