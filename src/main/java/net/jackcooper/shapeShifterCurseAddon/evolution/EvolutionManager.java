@@ -33,11 +33,15 @@ public final class EvolutionManager {
 
     /**
      * 进化形态继续进化的门控：当前形态若是某条进化路线的起点形态，
-     * 必须已解锁该路线的【全部分支节点】，才允许月髓环 / 进化石继续进化到分支形态。
+     * 内置路线须已确认最终形态。旧数据包仍按各自的自动分支条件判断。
      *
      * <p>当前形态不是任何路线的起点形态时恒为 true（不施加门控）。</p>
      */
     public static boolean canUpgradeFoxEvolve(ServerPlayerEntity player) {
+        return canEvolveTo(player, null);
+    }
+
+    public static boolean canEvolveTo(ServerPlayerEntity player, Identifier targetForm) {
         IForm nowForm = RegPlayerFormComponent.PLAYER_FORM.get(player).nowForm;
         Identifier nowFormId = (nowForm == null) ? null : nowForm.getFormID();
         EvolutionRoute route = EvolutionRegistry.INSTANCE.getRouteByStartForm(nowFormId);
@@ -51,6 +55,11 @@ public final class EvolutionManager {
         EvolutionComponent comp = get(player);
         if (!route.routeId.equals(comp.getRoute()) || comp.isJobChanging()) {
             return false;
+        }
+        if (route.branchChoiceLevel > 0) {
+            EvolutionRoute.Branch chosen = route.branches.get(comp.getBranch());
+            return chosen != null && comp.hasGrantedLevel(route.branchChoiceLevel)
+                    && (targetForm == null || chosen.spForm.equals(targetForm));
         }
         java.util.List<String> branchNodes = route.getBranchNodeIds();
         if (branchNodes.isEmpty()) {
@@ -148,7 +157,7 @@ public final class EvolutionManager {
     public static void selectBranch(ServerPlayerEntity player, String branchId) {
         EvolutionComponent comp = get(player);
         EvolutionRoute route = currentRoute(player);
-        if (route == null || comp.isJobChanging()) return;
+        if (route == null || route.branchChoiceLevel > 0 || comp.isJobChanging()) return;
         EvolutionRoute.Branch branch = route.branches.get(branchId);
         if (branch == null || branch.requiresNodes.stream().anyMatch(id -> !comp.isUnlocked(id))) return;
         if (route.nodes.stream().anyMatch(node -> branchId.equals(node.branch) && !comp.isUnlocked(node.id))) return;
@@ -174,7 +183,7 @@ public final class EvolutionManager {
         }
         EvolutionRoute route = currentRoute(player);
         EvolutionNode node = (route == null) ? null : route.getNode(nodeId);
-        if (node == null || node.cost < 0 || node.autoUnlock || comp.isUnlocked(nodeId)) {
+        if (node == null || node.cost < 0 || node.autoUnlock || route.isUnlocked(comp, node) || !route.canChoose(comp, node)) {
             return false;
         }
         if (!prereqsMet(comp, node)) {
@@ -184,6 +193,7 @@ public final class EvolutionManager {
             return false;
         }
         comp.unlock(nodeId);
+        if (route.isBranchChoice(node)) comp.setBranch(node.branch);
         if (synchronize) sync(player);
         return true;
     }
@@ -332,6 +342,8 @@ public final class EvolutionManager {
         boolean changed = false;
         for (int milestone : milestones) {
             if (evoLevel >= milestone && !comp.hasGrantedLevel(milestone)) {
+                // Old saves could have both free endpoints and a non-binding branch preference.
+                if (route != null && milestone == route.branchChoiceLevel) comp.clearLegacyBranches(route);
                 comp.markGrantedLevel(milestone);
                 comp.addPoints(1);
                 changed = true;
@@ -402,7 +414,7 @@ public final class EvolutionManager {
         }
         ItemStack payment = player.getAbilities().creativeMode ? ItemStack.EMPTY : takeOnePsionicOrb(player);
         if (!player.getAbilities().creativeMode && payment.isEmpty()) return;
-        int[] milestones = curRoute.getLevelMilestones();
+        int[] milestones = curRoute.getOrdinaryMilestones();
         int crossed = 0;
         for (int milestone : milestones) if (comp.getEvoLevel() >= milestone) crossed++;
         int remaining = Math.max(0, crossed - JOB_CHANGE_COST);
@@ -547,7 +559,7 @@ public final class EvolutionManager {
         }
         EvolutionRoute route = EvolutionRegistry.INSTANCE.getRoute(comp.getRoute());
         if (route == null) return;
-        int[] milestones = route.getLevelMilestones();
+        int[] milestones = route.getOrdinaryMilestones();
         // 按玩家当前拥有的进化点数总量（= 已发里程碑数，含已使用过的）反推进化等级；
         // 例：已获得 5 个点（无论花没花）→ 定到第 5 个里程碑（30 级）。points / 已解锁节点保持不变。
         int totalPoints = comp.getGrantedLevelCount();

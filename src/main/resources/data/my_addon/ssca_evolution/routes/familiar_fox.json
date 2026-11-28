@@ -6,7 +6,7 @@
   "start_form": "my_addon:familiar_fox_upgrade",
   "base_node": "familiar_fox_base",
   "level_milestones": [5, 10, 15, 20, 30, 40, 45],
-  "auto_branch_level": 50,
+  "branch_choice_level": 50,
 
   "nodes": [
     { "id": "familiar_fox_base", "icon": "minecraft:fox_spawn_egg",  "cost": 0, "prereqs": [],                          "col": 0, "row": 1, "auto_unlock": true },
@@ -17,8 +17,8 @@
     { "id": "alchemy",           "icon": "minecraft:brewing_stand", "cost": 1, "prereqs": ["spark", "rocket"],          "col": 3, "row": 0 },
     { "id": "spirit_vision",     "icon": "minecraft:spider_eye",    "cost": 1, "prereqs": ["buff_immunity"],            "col": 3, "row": 2 },
     { "id": "fire_ring",         "icon": "minecraft:blaze_powder",  "cost": 1, "prereqs": ["alchemy", "spirit_vision"], "col": 4, "row": 1 },
-    { "id": "branch_spirit_lord", "icon": "minecraft:soul_lantern", "cost": 0, "prereqs": ["fire_ring"], "col": 5, "row": 0, "auto_unlock": true, "branch": "spirit_lord" },
-    { "id": "branch_mancianima",  "icon": "minecraft:nether_star",  "cost": 0, "prereqs": ["fire_ring"], "col": 5, "row": 2, "auto_unlock": true, "branch": "mancianima" }
+    { "id": "branch_spirit_lord", "icon": "minecraft:soul_lantern", "cost": 1, "prereqs": ["fire_ring"], "col": 5, "row": 0, "auto_unlock": false, "branch": "spirit_lord" },
+    { "id": "branch_mancianima",  "icon": "minecraft:nether_star",  "cost": 1, "prereqs": ["fire_ring"], "col": 5, "row": 2, "auto_unlock": false, "branch": "mancianima" }
   ],
 
   "branches": {

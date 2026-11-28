@@ -18,11 +18,14 @@ final class EvolutionTalentsIntegrationProbe {
             for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
                 var player = player(route);
                 player.evolution.setRoute(route.routeId);
+                String selected = route.getNode(route.getBranchNodeIds().get(0)).branch;
                 for (EvolutionNode node : route.nodes) {
                     check(!EvolutionTalents.isActive(player, node.id), "unacquired node is inactive: " + node.id);
                     player.evolution.unlock(node.id);
-                    check(EvolutionTalents.isActive(player, node.id), "acquired node is active: " + node.id);
+                    check(EvolutionTalents.isActive(player, node.id) == !route.isBranchChoice(node), "legacy unlock records alone cannot select a form: " + node.id);
                 }
+                player.evolution.markGrantedLevel(route.branchChoiceLevel);
+                player.evolution.setBranch(selected);
                 var saved = save(player);
                 EvolutionTestRoutes.loadServer(Map.of());
                 for (EvolutionNode node : route.nodes) {
@@ -31,7 +34,8 @@ final class EvolutionTalentsIntegrationProbe {
                 }
                 check(saved.equals(save(player)), "eligibility queries never rewrite saved progress");
                 EvolutionTestRoutes.loadServer(raw);
-                check(route.nodes.stream().allMatch(node -> EvolutionTalents.isActive(player, node.id)), "route restoration resumes acquired nodes");
+                check(route.nodes.stream().allMatch(node -> EvolutionTalents.isActive(player, node.id)
+                        == (!route.isBranchChoice(node) || node.branch.equals(selected))), "route restoration resumes only acquired talents and the selected form");
             }
 
             var fox = EvolutionRegistry.INSTANCE.getRoute("familiar_fox");
@@ -60,7 +64,10 @@ final class EvolutionTalentsIntegrationProbe {
             EvolutionTestRoutes.loadServer(changed);
             check(EvolutionTalents.isActive(player, "spirit_vision"), "new entry/cost/prerequisite gates do not revoke acquisition");
             player.evolution.unlock("branch_mancianima");
-            check(EvolutionTalents.isActive(player, "branch_mancianima"), "acquired automatic node does not recheck the current level");
+            check(!EvolutionTalents.isActive(player, "branch_mancianima"), "an old automatic endpoint is not a purchased choice");
+            player.evolution.markGrantedLevel(fox.branchChoiceLevel);
+            player.evolution.setBranch("mancianima");
+            check(EvolutionTalents.isActive(player, "branch_mancianima"), "a purchased endpoint retains its eligibility");
             try { EvolutionTestRoutes.loadServer(Map.of("broken", "{")); throw new AssertionError("invalid reload accepted"); }
             catch (IllegalArgumentException expected) { }
             check(EvolutionTalents.isActive(player, "spirit_vision"), "failed reload keeps the last valid eligibility snapshot");

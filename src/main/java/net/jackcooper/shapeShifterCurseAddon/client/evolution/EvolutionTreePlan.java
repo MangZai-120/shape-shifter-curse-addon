@@ -9,9 +9,25 @@ public final class EvolutionTreePlan {
     }
     public record Boundary(List<String> nodes, long cumulativeCost) { }
     private final Map<String, Node> nodes = new LinkedHashMap<>();
+    private final Map<String, List<String>> choiceRows = new HashMap<>();
 
     public EvolutionTreePlan(List<Node> source) {
+        this(source, List.of());
+    }
+
+    public EvolutionTreePlan(List<Node> source, Collection<String> finalChoices) {
         for (Node node : source) nodes.put(node.id(), node);
+        record ChoiceRow(int depth, int cost, Set<String> prerequisites) { }
+        Map<ChoiceRow, List<String>> rows = new LinkedHashMap<>();
+        for (String id : finalChoices) {
+            Node node = nodes.get(id);
+            var key = new ChoiceRow(node.depth(), node.cost(), Set.copyOf(node.prerequisites()));
+            rows.computeIfAbsent(key, ignored -> new ArrayList<>()).add(id);
+        }
+        for (var row : rows.values()) {
+            var ids = List.copyOf(row);
+            for (String id : ids) choiceRows.put(id, ids);
+        }
     }
 
     public boolean prerequisitesMet(Node node, Set<String> unlocked) {
@@ -22,8 +38,18 @@ public final class EvolutionTreePlan {
     public List<Boundary> boundaries(Set<String> unlocked) {
         List<Boundary> result = new ArrayList<>();
         Set<Set<String>> emitted = new HashSet<>();
+        boolean formChosen = !Collections.disjoint(choiceRows.keySet(), unlocked);
         for (Node candidate : nodes.values()) {
             if (candidate.automatic() || unlocked.contains(candidate.id()) || !prerequisitesMet(candidate, unlocked)) continue;
+            List<String> choices = choiceRows.get(candidate.id());
+            if (choices != null) {
+                if (!formChosen && candidate.id().equals(choices.get(0))) {
+                    // Draw under the shared prerequisites. The displayed cost includes one final choice.
+                    List<String> anchors = candidate.prerequisites().isEmpty() ? choices : candidate.prerequisites();
+                    result.add(new Boundary(anchors, cumulativeCost(List.of(candidate.id()))));
+                }
+                continue;
+            }
             boolean grouped = false;
             for (Node child : nodes.values()) {
                 if (!child.prerequisites().contains(candidate.id())) continue;
@@ -43,11 +69,15 @@ public final class EvolutionTreePlan {
     private void addBoundary(List<String> ids, List<Boundary> result, Set<Set<String>> emitted) {
         Set<String> key = new LinkedHashSet<>(ids);
         if (!emitted.add(key)) return;
+        long total = cumulativeCost(ids);
+        if (total > 0) result.add(new Boundary(List.copyOf(ids), total));
+    }
+
+    private long cumulativeCost(List<String> ids) {
         Set<String> ancestors = new HashSet<>();
         for (String id : ids) collect(id, ancestors);
-        long total = ancestors.stream().map(nodes::get).filter(Objects::nonNull)
+        return ancestors.stream().map(nodes::get).filter(Objects::nonNull)
                 .filter(node -> !node.automatic()).mapToLong(Node::cost).sum();
-        if (total > 0) result.add(new Boundary(List.copyOf(ids), total));
     }
 
     private void collect(String id, Set<String> visited) {

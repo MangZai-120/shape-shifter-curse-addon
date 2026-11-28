@@ -6,7 +6,7 @@
   "start_form": "my_addon:axolotl_upgrade",
   "base_node": "axolotl_base",
   "level_milestones": [5, 10, 15, 20, 30, 40],
-  "auto_branch_level": 50,
+  "branch_choice_level": 50,
 
   "nodes": [
     { "id": "axolotl_base",   "icon": "minecraft:axolotl_spawn_egg",  "cost": 0, "prereqs": [],                                 "col": 0, "row": 1, "auto_unlock": true },
@@ -16,8 +16,8 @@
     { "id": "water_spear",    "icon": "minecraft:trident",            "cost": 1, "prereqs": ["water_spurt"],                    "col": 3, "row": 0 },
     { "id": "vortex_guide",   "icon": "minecraft:heart_of_the_sea",   "cost": 1, "prereqs": ["water_spurt"],                    "col": 3, "row": 2 },
     { "id": "become_water",   "icon": "minecraft:conduit",            "cost": 1, "prereqs": ["water_spear", "vortex_guide"],   "col": 4, "row": 1 },
-    { "id": "branch_moon_ring", "icon": "minecraft:heart_of_the_sea", "cost": 0, "prereqs": ["become_water"], "col": 5, "row": 0, "auto_unlock": true, "branch": "moon_ring" },
-    { "id": "branch_stone",     "icon": "minecraft:sea_lantern",      "cost": 0, "prereqs": ["become_water"], "col": 5, "row": 2, "auto_unlock": true, "branch": "evolution_stone" }
+    { "id": "branch_moon_ring", "icon": "minecraft:heart_of_the_sea", "cost": 1, "prereqs": ["become_water"], "col": 5, "row": 0, "auto_unlock": false, "branch": "moon_ring" },
+    { "id": "branch_stone",     "icon": "minecraft:sea_lantern",      "cost": 1, "prereqs": ["become_water"], "col": 5, "row": 2, "auto_unlock": false, "branch": "evolution_stone" }
   ],
 
   "branches": {

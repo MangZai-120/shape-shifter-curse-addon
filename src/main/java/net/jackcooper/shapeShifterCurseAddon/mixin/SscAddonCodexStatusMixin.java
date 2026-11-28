@@ -67,12 +67,12 @@ public class SscAddonCodexStatusMixin {
         }
 
         // 统计已解锁的可加点节点数
-        int unlockableCount = 0;
+        int unlockableCount = route.branchChoiceLevel > 0 ? 1 : 0;
         int unlockedCount = 0;
         for (EvolutionNode node : nodes) {
             if (baseNodeId.equals(node.id) || (FormIdentifiers.UPGRADE_SNOW_FOX.equals(currentForm.getFormID()) && node.autoUnlock)) continue;
-            unlockableCount++;
-            if (comp.isUnlocked(node.id)) {
+            if (!route.isBranchChoice(node)) unlockableCount++;
+            if (route.isUnlocked(comp, node)) {
                 unlockedCount++;
             }
         }
@@ -89,7 +89,7 @@ public class SscAddonCodexStatusMixin {
             if (baseNodeId.equals(node.id)) {
                 continue;
             }
-            if (!comp.isUnlocked(node.id)) {
+            if (!route.isUnlocked(comp, node)) {
                 continue;
             }
             dynamic.append(Text.literal("\n\n\u2022 "));

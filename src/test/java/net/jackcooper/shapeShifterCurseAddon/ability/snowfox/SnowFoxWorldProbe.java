@@ -59,7 +59,9 @@ public final class SnowFoxWorldProbe {
                 check(EvolutionManager.tryUnlock(p,"super_dive") && !EvolutionManager.canUpgradeFoxEvolve(p),"Second at 45, endpoints locked");
                 progress.setExp(EvolutionComponent.levelToTotalExp(50)*2);
                 EvolutionManager.tickPlayer(p);
-                check(EvolutionManager.canUpgradeFoxEvolve(p),"Both branches at 50");
+                check(progress.getPoints()==1 && !EvolutionManager.canUpgradeFoxEvolve(p),"Final point awaits choice at 50");
+                check(EvolutionManager.tryUnlock(p,"branch_stone") && !EvolutionManager.tryUnlock(p,"branch_moon_ring")
+                        && EvolutionManager.canEvolveTo(p,FormIdentifiers.SNOW_FOX_SP),"Only the chosen final form is available");
 
                 var w=p.getServerWorld();
                 BlockPos base=BlockPos.ofFloored(p.getPos()).up(32);

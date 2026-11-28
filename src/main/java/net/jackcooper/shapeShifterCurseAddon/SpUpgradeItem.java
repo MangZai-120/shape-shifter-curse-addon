@@ -63,9 +63,9 @@ public class SpUpgradeItem extends Item {
 		// 三阶雪狐先进入进化树，点满后在诅咒之月夜进化为寒棘狐。
 		registerUpgrade("shape-shifter-curse", "snow_fox_3", "my_addon", "snow_fox_upgrade");
 		registerUpgrade("my_addon", "snow_fox_upgrade", "my_addon", "snow_fox_frostspine");
-		// 进化使魔（SSCA 路线）→ 灵界之主：需 50 级解锁两分支后才允许（门控在 finishUsing）
+		// 进化使魔选择灵界之主后可用月髓环。
 		registerUpgrade("my_addon", "upgrade_familiar_fox", "my_addon", "familiar_fox_sp");
-		// 进化美西螈（SSCA 路线）→ SP 美西螈：需 50 级解锁两分支后才允许（门控在 finishUsing）
+		// 进化美西螈选择深渊霸主后可用月髓环。
 		registerUpgrade("my_addon", "upgrade_axolotl", "my_addon", "axolotl_sp");
 	}
 
@@ -106,9 +106,9 @@ public class SpUpgradeItem extends Item {
 				return stack;
 			}
 			Identifier targetFormId = getEvolutionTarget(getPlayerFormID(player));
-			// 进化形态门控（使魔 / 美西螈等所有 SSCA 进化路线起点形态）：必须先解锁全部分支才能用月髃环继续进化
+			// 先检查目标分支，再按月相结算道具效果。
 			if (targetFormId != null && player instanceof ServerPlayerEntity spEvo
-					&& !EvolutionManager.canUpgradeFoxEvolve(spEvo)) {
+					&& !EvolutionManager.canEvolveTo(spEvo, targetFormId)) {
 				player.sendMessage(Text.translatable("message.ssc_addon.evolution.fail.branches_locked").formatted(Formatting.RED, Formatting.ITALIC), false);
 				world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 1.0F, 1.0F);
 				return stack;

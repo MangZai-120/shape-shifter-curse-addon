@@ -200,6 +200,11 @@ public class EvolutionComponent implements AutoSyncedComponent {
         unlockedNodes.clear();
     }
 
+    void clearLegacyBranches(EvolutionRoute route) {
+        unlockedNodes.removeAll(route.getBranchNodeIds());
+        setBranch("");
+    }
+
     /** 清空已发放里程碑记录（转职 / 迁移后按新进化等级重发用）。 */
     public void clearGrantedLevels() {
         grantedLevels.clear();

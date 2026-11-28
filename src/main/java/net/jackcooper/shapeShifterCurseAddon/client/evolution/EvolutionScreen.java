@@ -22,7 +22,7 @@ import java.util.*;
 
 /** Floating parchment: independent vertical scrolling, native MC text, server-authoritative purchases. */
 public class EvolutionScreen extends Screen {
-    private static final int INK = EvolutionInk.INK, ROW_GAP = 44;
+    private static final int INK = EvolutionInk.INK, ROW_GAP = 44, BOUNDARY_GAP = 11;
     private static final float LABEL_SCALE = .8f;
     private static final int LABEL_LINE_HEIGHT = 8, LABEL_INSET = 6, SCROLLBAR_WIDTH = 7;
     private final Screen parent;
@@ -129,10 +129,11 @@ public class EvolutionScreen extends Screen {
         minDepth = ordered.stream().mapToInt(n -> n.col).min().orElse(0);
         minLane = ordered.stream().mapToInt(n -> n.row).min().orElse(0);
         maxLane = ordered.stream().mapToInt(n -> n.row).max().orElse(0);
-        plan = new EvolutionTreePlan(ordered.stream().map(n -> new EvolutionTreePlan.Node(n.id, n.col, n.row, n.cost, n.autoUnlock, n.prereqs)).toList());
+        plan = new EvolutionTreePlan(ordered.stream().map(n -> new EvolutionTreePlan.Node(n.id, n.col, n.row, n.cost, n.autoUnlock, n.prereqs)).toList(),
+                current != null && current.branchChoiceLevel > 0 ? current.getBranchNodeIds() : List.of());
         if (current == null || current.getNode(selectedId) == null) {
             EvolutionComponent comp = component();
-            selectedId = ordered.stream().filter(n -> !n.autoUnlock && comp != null && !comp.isUnlocked(n.id) && preMet(comp, n))
+            selectedId = ordered.stream().filter(n -> !n.autoUnlock && comp != null && !current.isUnlocked(comp, n) && current.canChoose(comp, n) && preMet(comp, n))
                     .map(n -> n.id).findFirst().orElse(ordered.isEmpty() ? null : ordered.get(0).id);
         }
         treeScroll = detailScroll = 0;
@@ -140,14 +141,26 @@ public class EvolutionScreen extends Screen {
     private void layoutRows() {
         rowTops.clear();
         int top = 8;
-        for (int depth : ordered.stream().mapToInt(n -> n.col).distinct().sorted().toArray()) {
-            rowTops.put(depth, top);
+        int bottomPadding = BOUNDARY_GAP + 10;
+        int[] depths = ordered.stream().mapToInt(n -> n.col).distinct().sorted().toArray();
+        for (int depth : depths) {
             int rowHeight = 0;
-            for (EvolutionNode node : ordered) if (node.col == depth)
+            boolean finalChoiceRow = !rowTops.isEmpty() && depth == depths[depths.length - 1];
+            for (EvolutionNode node : ordered) if (node.col == depth) {
                 rowHeight = Math.max(rowHeight, cardHeight(node));
+                finalChoiceRow &= displayedRoute.isBranchChoice(node) && !node.prereqs.isEmpty();
+            }
+            if (finalChoiceRow) {
+                // On short screens keep the preceding divider in view when scrolled to the final cards.
+                bottomPadding = 5;
+                int availableGap = tree.h - rowHeight - bottomPadding + BOUNDARY_GAP - 6;
+                int gap = Math.max(2 * BOUNDARY_GAP + 4, Math.min(ROW_GAP, availableGap));
+                top -= ROW_GAP - gap;
+            }
+            rowTops.put(depth, top);
             top += rowHeight + ROW_GAP;
         }
-        treeContentHeight = ordered.isEmpty() ? 0 : top - ROW_GAP + 12;
+        treeContentHeight = ordered.isEmpty() ? 0 : top - ROW_GAP + bottomPadding;
     }
     private EvolutionNode selected() { return displayedRoute == null ? null : displayedRoute.getNode(selectedId); }
     private int cx(EvolutionNode n) { return tree.x + 6 + (tree.w - 18) * (n.row - minLane + 1) / (maxLane - minLane + 2); }
@@ -214,7 +227,8 @@ public class EvolutionScreen extends Screen {
     }
     private boolean canBuy(EvolutionComponent comp, EvolutionNode n) {
         return n != null && waitingId == null && comp != null && (selectingRoute(comp, n)
-                || comp.isOnSscaRoute() && !comp.isJobChanging() && !n.autoUnlock && !comp.isUnlocked(n.id) && preMet(comp, n) && comp.getPoints() >= n.cost);
+                || comp.isOnSscaRoute() && !comp.isJobChanging() && !n.autoUnlock && !displayedRoute.isUnlocked(comp, n)
+                && displayedRoute.canChoose(comp, n) && preMet(comp, n) && comp.getPoints() >= n.cost);
     }
     @Override public void tick() {
         if (amount != null) amount.tick();
@@ -226,7 +240,8 @@ public class EvolutionScreen extends Screen {
         }
         EvolutionComponent comp = component();
         if (waitingId == null || comp == null) return;
-        if (comp.isUnlocked(waitingId)) {
+        EvolutionNode waiting = displayedRoute == null ? null : displayedRoute.getNode(waitingId);
+        if (waiting != null && displayedRoute.isUnlocked(comp, waiting)) {
             waitingId = null;
             if (client.player != null) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
         } else if (Util.getMeasuringTimeMs() - waitingSince > 3000) waitingId = null;
@@ -334,7 +349,12 @@ public class EvolutionScreen extends Screen {
         amount.render(ctx, mx, my, delta);
         ctx.fill(custom.x, custom.bottom() - 2, custom.right(), custom.bottom() - 1, INK);
         button(ctx, maximum, tr("evolution.my_addon.invest.max"), limit > 0, maximum.contains(mx, my));
-        drawWrapped(ctx, next < 0 ? tr("evolution.my_addon.paper.points_complete") : tr("evolution.my_addon.paper.next_point", Math.max(0, goal - exp)), bx, custom.bottom() + 2, tree.right() - bx, 2);
+        String progressText = tr("evolution.my_addon.paper.points_complete");
+        if (next >= 0) progressText = tr("evolution.my_addon.paper.next_point", Math.max(0, goal - exp));
+        else if (displayedRoute != null && displayedRoute.branchChoiceLevel > 0 && comp != null) {
+            progressText = tr(comp.getBranch().isEmpty() ? "evolution.my_addon.paper.choose_final" : "evolution.my_addon.paper.final_chosen");
+        }
+        drawWrapped(ctx, progressText, bx, custom.bottom() + 2, tree.right() - bx, 2);
         EvolutionInk.line(ctx, tree.x, tree.y - 4, tree.right(), tree.y - 4);
     }
     private void drawTree(DrawContext ctx, EvolutionComponent comp) {
@@ -347,6 +367,10 @@ public class EvolutionScreen extends Screen {
                 if (pre == null) continue;
                 int sx = cx(pre), sy = nodeCard(pre).bottom() + 4;
                 int ex = cx(node), ey = nodeCard(node).y - 4, middle = (sy + ey) / 2;
+                if (displayedRoute.isBranchChoice(node)) {
+                    // Keep the horizontal fork clear of the numbered divider even when the last row is compact.
+                    middle = Math.max(middle, Math.min(ey - 3, sy + BOUNDARY_GAP + 4));
+                }
                 EvolutionInk.line(ctx, sx, sy, sx, middle);
                 EvolutionInk.line(ctx, sx, middle, ex, middle);
                 EvolutionInk.line(ctx, ex, middle, ex, ey);
@@ -357,14 +381,14 @@ public class EvolutionScreen extends Screen {
                 if (card.y > tree.bottom() || card.bottom() < tree.y) continue;
                 EvolutionInk.frame(ctx, card.x, card.y, card.w, card.h);
                 EvolutionInk.icon(ctx, EvolutionArtwork.nodeSprite(displayedRoute.routeId, node.id), x, y, size);
-                if (comp.isUnlocked(node.id)) EvolutionInk.check(ctx, x, y, size);
+                if (displayedRoute.isUnlocked(comp, node)) EvolutionInk.check(ctx, x, y, size);
                 drawNodeLabel(ctx, node);
                 if (node.id.equals(selectedId)) {
                     EvolutionInk.selection(ctx, card.x - 4, card.y - 4, card.w + 8, card.h + 8);
                 }
             }
             Set<String> unlocked = new HashSet<>();
-            for (EvolutionNode node : ordered) if (comp.isUnlocked(node.id)) unlocked.add(node.id);
+            for (EvolutionNode node : ordered) if (displayedRoute.isUnlocked(comp, node)) unlocked.add(node.id);
             for (EvolutionTreePlan.Boundary boundary : plan.boundaries(unlocked)) drawBoundary(ctx, boundary);
         }
         ctx.disableScissor();
@@ -377,7 +401,7 @@ public class EvolutionScreen extends Screen {
             if (node == null) continue;
             left = Math.min(left, nodeCard(node).x - 6);
             right = Math.max(right, nodeCard(node).right() + 6);
-            y = Math.max(y, nodeCard(node).bottom() + 11);
+            y = Math.max(y, nodeCard(node).bottom() + BOUNDARY_GAP);
         }
         if (left == Integer.MAX_VALUE || y < tree.y + 5 || y + 5 >= tree.bottom()) return;
         String value = Long.toString(boundary.cumulativeCost());
@@ -392,7 +416,7 @@ public class EvolutionScreen extends Screen {
         if (node == null || comp == null) return;
         int iconSize = Math.min(38, Math.max(24, details.w / 3));
         EvolutionInk.icon(ctx, EvolutionArtwork.nodeSprite(displayedRoute.routeId, node.id), details.x, details.y + 2, iconSize);
-        if (comp.isUnlocked(node.id)) EvolutionInk.check(ctx, details.x, details.y + 2, iconSize);
+        if (displayedRoute.isUnlocked(comp, node)) EvolutionInk.check(ctx, details.x, details.y + 2, iconSize);
         int titleScale = details.w >= 140 ? 2 : 1;
         ctx.getMatrices().push();
         ctx.getMatrices().translate(details.x + iconSize + 5, details.y + 5, 0);
@@ -400,7 +424,13 @@ public class EvolutionScreen extends Screen {
         drawWrapped(ctx, shortName(node), 0, 0, Math.max(10, (details.w - iconSize - 5) / titleScale), titleScale == 2 ? 2 : 4);
         ctx.getMatrices().pop();
         EvolutionInk.line(ctx, details.x, detailBody.y - 5, details.right(), detailBody.y - 5);
-        List<OrderedText> lines = new ArrayList<>(textRenderer.wrapLines(Text.literal(tr(node.descKey)), Math.max(1, details.w - 7)));
+        List<OrderedText> lines = new ArrayList<>();
+        if (displayedRoute.isBranchChoice(node) && comp.getEvoLevel() < displayedRoute.branchChoiceLevel) {
+            Text warning = Text.translatable("evolution.my_addon.paper.level_shortfall", comp.getEvoLevel(), displayedRoute.branchChoiceLevel)
+                    .formatted(Formatting.DARK_RED);
+            lines.addAll(textRenderer.wrapLines(warning, Math.max(1, details.w - 7)));
+        }
+        addLines(lines, tr(node.descKey));
         lines.add(Text.empty().asOrderedText());
         addLines(lines, tr("evolution.my_addon.paper.requirements"));
         if (node.prereqs.isEmpty()) addLines(lines, tr("evolution.my_addon.paper.no_prerequisites"));
@@ -409,6 +439,7 @@ public class EvolutionScreen extends Screen {
             if (pre != null) addLines(lines, (comp.isUnlocked(id) ? "+ " : "- ") + shortName(pre));
         }
         if (node.autoUnlock && !node.branch.isEmpty()) addLines(lines, tr("evolution.my_addon.paper.auto_level", displayedRoute.autoBranchLevel));
+        if (displayedRoute.isBranchChoice(node)) addLines(lines, tr("evolution.my_addon.paper.branch_choice", displayedRoute.branchChoiceLevel));
         if (!preMet(comp, node)) addLines(lines, tr("evolution.my_addon.paper.all_prerequisites"));
         if (comp.isJobChanging()) addLines(lines, tr("evolution.my_addon.paper.job_changing"));
         detailContentHeight = lines.size() * 11;
@@ -429,10 +460,12 @@ public class EvolutionScreen extends Screen {
             ctx.drawText(textRenderer, line, confirm.x + (confirm.w - textRenderer.getWidth(line)) / 2, confirm.y - 35 + i * 10, INK, false);
         }
         centerText(ctx, comp.getPoints() + " / " + node.cost, confirm.x + confirm.w / 2, confirm.y - 13);
-        String label = comp.isUnlocked(node.id) ? tr("evolution.my_addon.paper.unlocked")
+        String label = displayedRoute.isUnlocked(comp, node) ? tr("evolution.my_addon.paper.unlocked")
                 : waitingId != null ? tr("evolution.my_addon.paper.waiting")
                 : selectingRoute(comp, node) ? tr("evolution.my_addon.paper.start_route")
                 : node.autoUnlock ? tr("evolution.my_addon.paper.automatic")
+                : displayedRoute.isBranchChoice(node) && !displayedRoute.canChoose(comp, node)
+                ? (comp.getBranch().isEmpty() ? tr("evolution.my_addon.paper.need_level", displayedRoute.branchChoiceLevel) : tr("evolution.my_addon.paper.other_branch"))
                 : !preMet(comp, node) ? tr("evolution.my_addon.paper.need_prerequisites")
                 : comp.getPoints() < node.cost ? tr("evolution.my_addon.paper.need_points") : tr("evolution.my_addon.screen.confirm");
         button(ctx, confirm, label, canBuy(comp, node), confirm.contains(mx, my));

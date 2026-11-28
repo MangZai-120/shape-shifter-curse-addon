@@ -44,6 +44,15 @@ public final class EvolutionTreePlanTest {
                 n("paid", 1, 1, 2, "base"), new EvolutionTreePlan.Node("sp", 2, 1, 0, true, List.of("paid"))));
         boundary(automatic, Set.of("base"), Set.of("paid"), 2);
         check(automatic.boundaries(Set.of("base", "paid")).isEmpty(), "level-gated automatic forms do not create point purchases");
+        var choices = new EvolutionTreePlan(List.of(n("trunk", 0, 0, 7), n("stone", 1, 0, 1, "trunk"),
+                n("ring", 1, 2, 1, "trunk")), List.of("stone", "ring"));
+        boundary(choices, Set.of(), Set.of("trunk"), 7);
+        boundary(choices, Set.of("trunk"), Set.of("trunk"), 8);
+        var twoParents = new EvolutionTreePlan(List.of(n("a", 0, 0, 4), n("b", 0, 2, 4),
+                n("stone", 1, 0, 1, "a", "b"), n("ring", 1, 2, 1, "b", "a")), List.of("stone", "ring"));
+        boundary(twoParents, Set.of("a", "b"), Set.of("a", "b"), 9);
+        for (String picked : List.of("stone", "ring"))
+            check(choices.boundaries(Set.of("trunk", picked)).isEmpty(), "choosing either form clears its shared line");
         var expensive = new EvolutionTreePlan(List.of(n("first", 0, 0, 1_500_000_000), n("second", 1, 0, 1_500_000_000, "first")));
         boundary(expensive, Set.of("first"), Set.of("second"), 3_000_000_000L);
         System.out.println("EVOLUTION_TREE_PLAN_PASS checks=" + checks);

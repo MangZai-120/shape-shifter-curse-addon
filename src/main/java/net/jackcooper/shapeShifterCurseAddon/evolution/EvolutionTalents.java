@@ -27,6 +27,6 @@ public final class EvolutionTalents {
         // changed prerequisites/levels. Admin unlocks still require the valid current route above.
         // Before a job-change midpoint, the old form/route remain active; after it they mismatch
         // until settlement. Initial entry becomes active on reaching the form, before started ticks.
-        return progress.isUnlocked(talentId);
+        return route.isUnlocked(progress, route.getNode(talentId));
     }
 }

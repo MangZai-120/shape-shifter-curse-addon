@@ -13,7 +13,7 @@
     40,
     45
   ],
-  "auto_branch_level": 50,
+  "branch_choice_level": 50,
   "nodes": [
     {
       "id": "snow_fox_base",
@@ -141,8 +141,8 @@
         "super_dive",
         "rolling_charge"
       ],
-      "cost": 0,
-      "auto_unlock": true,
+      "cost": 1,
+      "auto_unlock": false,
       "branch": "moon_ring"
     },
     {
@@ -154,8 +154,8 @@
         "super_dive",
         "rolling_charge"
       ],
-      "cost": 0,
-      "auto_unlock": true,
+      "cost": 1,
+      "auto_unlock": false,
       "branch": "evolution_stone"
     }
   ],

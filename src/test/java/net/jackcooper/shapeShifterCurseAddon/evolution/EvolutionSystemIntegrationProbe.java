@@ -118,9 +118,16 @@ public final class EvolutionSystemIntegrationProbe {
             check(!EvolutionManager.investExperience(player, route.routeId, 10690, 1), "full progress accepts no further XP");
             check(player.evolution.getEvoLevel() == 50, route.routeId + " reaches level 50");
             check(player.evolution.getPoints() == route.getLevelMilestones().length, route.routeId + " awards exact budget");
-            List<String> paid = route.nodes.stream().filter(n -> !n.autoUnlock).map(n -> n.id).collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+            List<String> paid = route.nodes.stream().filter(n -> !n.autoUnlock && !route.isBranchChoice(n)).map(n -> n.id).collect(java.util.stream.Collectors.toCollection(ArrayList::new));
             Collections.reverse(paid);
             check(EvolutionManager.tryUnlockBatch(player, paid) == paid.size(), route.routeId + " unlocks reverse-ordered complete tree");
+            var choices = route.nodes.stream().filter(route::isBranchChoice).toList();
+            check(player.evolution.getPoints() == 1 && !EvolutionManager.canUpgradeFoxEvolve(player), "the last point awaits an explicit choice");
+            check(EvolutionManager.tryUnlockBatch(player, route.getBranchNodeIds()) == 0, "ambiguous purchase cannot select a final form");
+            check(EvolutionManager.tryUnlock(player, choices.get(0).id), "can buy the selected form");
+            EvolutionManager.selectBranch(player, choices.get(1).branch);
+            check(!EvolutionManager.canEvolveTo(player, route.branches.get(choices.get(1).branch).spForm)
+                    && EvolutionManager.canEvolveTo(player, route.branches.get(choices.get(0).branch).spForm), "only the selected item target is accepted");
             EvolutionManager.tickPlayer(player);
             check(player.evolution.getPoints() == 0 && EvolutionManager.canUpgradeFoxEvolve(player), route.routeId + " complete tree enables SP evolution");
             check(EvolutionManager.tryUnlockBatch(player, paid) == 0, route.routeId + " duplicate requests do not spend points");
@@ -134,7 +141,7 @@ public final class EvolutionSystemIntegrationProbe {
         }
         EvolutionRoute axolotl = EvolutionRegistry.INSTANCE.getRoute("axolotl");
         check(axolotl.nextMilestone(39) == 40, "axolotl last point is at level 40");
-        check(axolotl.nextMilestone(40) == -1 && axolotl.nextMilestone(44) == -1, "axolotl does not advertise a level-45 point");
+        check(axolotl.nextMilestone(40) == 50 && axolotl.nextMilestone(45) == 50, "axolotl advertises the final choice after level 40");
         check(EvolutionRegistry.INSTANCE.getRoute("familiar_fox").nextMilestone(40) == 45, "familiar fox retains level-45 point");
     }
 
@@ -144,7 +151,8 @@ public final class EvolutionSystemIntegrationProbe {
             EvolutionManager.tickPlayer(player);
             player.evolution.setExp(EvolutionComponent.MAX_INVESTED_XP);
             EvolutionManager.tickPlayer(player);
-            var requested = route.nodes.stream().filter(node -> !node.autoUnlock).map(node -> node.id).toList();
+            var requested = route.nodes.stream().filter(node -> !node.autoUnlock && (!route.isBranchChoice(node)
+                    || node.id.equals(route.getBranchNodeIds().get(0)))).map(node -> node.id).toList();
             var order = EvolutionSelection.resolve(route, player.evolution, requested);
             check(order.size() > 1, "Fixture includes a real dependent batch");
             int before = player.syncLookups;
@@ -172,6 +180,8 @@ public final class EvolutionSystemIntegrationProbe {
                 TestPlayer player = player(route);
                 player.evolution.setRoute(route.routeId);
                 player.evolution.setPoints(10);
+                player.evolution.setExp(EvolutionComponent.MAX_INVESTED_XP);
+                player.evolution.markGrantedLevel(route.branchChoiceLevel);
                 player.evolution.unlock(node.prereqs.get(0));
                 check(!(boolean) client.invoke(screen, player.evolution, node), node.id + " client requires both prerequisites");
                 check(!EvolutionManager.tryUnlock(player, node.id), node.id + " server rejects incomplete prerequisites");
@@ -237,10 +247,36 @@ public final class EvolutionSystemIntegrationProbe {
         EvolutionManager.tickPlayer(skipped);
         check(skipped.evolution.getEvoLevel() == 30, "repairs old migrated=true flag that previously skipped restoration");
         TestPlayer genuine = legacy(EvolutionComponent.levelToTotalExp(46) * 2 + 7);
-        for (int milestone : EvolutionRegistry.INSTANCE.getRoute("familiar_fox").getLevelMilestones()) genuine.evolution.markGrantedLevel(milestone);
+        for (int milestone : EvolutionRegistry.INSTANCE.getRoute("familiar_fox").getOrdinaryMilestones()) genuine.evolution.markGrantedLevel(milestone);
         int exp = genuine.evolution.getExp();
         EvolutionManager.checkAndMigrate(genuine);
         check(genuine.evolution.getExp() == exp, "valid new-style experience is neither lowered nor promoted to level 50");
+
+        for (EvolutionRoute route : EvolutionRegistry.INSTANCE.all().values()) {
+            for (EvolutionNode chosen : route.nodes.stream().filter(route::isBranchChoice).toList()) {
+                TestPlayer old = player(route);
+                EvolutionManager.tickPlayer(old);
+                old.evolution.setExp(EvolutionComponent.MAX_INVESTED_XP);
+                for (int milestone : route.getOrdinaryMilestones()) old.evolution.markGrantedLevel(milestone);
+                for (EvolutionNode node : route.nodes) old.evolution.unlock(node.id);
+                old.evolution.setBranch(chosen.branch); // The old selection packet did not purchase a form.
+                reload(old);
+                check(!EvolutionManager.canEvolveTo(old, route.branches.get(chosen.branch).spForm), "legacy endpoints cannot bypass migration");
+                EvolutionManager.tickPlayer(old);
+                check(old.evolution.getPoints() == 1 && old.evolution.getBranch().isEmpty()
+                        && route.getBranchNodeIds().stream().noneMatch(old.evolution::isUnlocked), "legacy auto-branches become one unspent choice");
+                check(EvolutionManager.tryUnlock(old, chosen.id), "legacy player can freely pick either form");
+                reload(old);
+                EvolutionManager.tickPlayer(old);
+                check(old.evolution.getPoints() == 0 && chosen.branch.equals(old.evolution.getBranch()), "relogin preserves choice without an extra point");
+                old.evolution.addPoints(2);
+                for (EvolutionNode other : route.nodes.stream().filter(route::isBranchChoice).filter(n -> n != chosen).toList()) {
+                    EvolutionManager.selectBranch(old, other.branch);
+                    check(!EvolutionManager.tryUnlock(old, other.id) && !EvolutionManager.canEvolveTo(old, route.branches.get(other.branch).spForm)
+                            && old.evolution.getPoints() == 2, "extra points and legacy requests cannot switch the chosen form");
+                }
+            }
+        }
     }
 
     private static void routeValidation() throws Exception {
@@ -268,6 +304,8 @@ public final class EvolutionSystemIntegrationProbe {
         player.evolution.setExp(EvolutionComponent.levelToTotalExp(50) * 2);
         EvolutionManager.tickPlayer(player);
         EvolutionManager.tryUnlockBatch(player, route.nodes.stream().filter(n -> !n.autoUnlock).map(n -> n.id).toList());
+        var choices = route.getBranchNodeIds();
+        check(EvolutionManager.tryUnlock(player, choices.get(choices.size() - 1)), "training spends the final point on one form");
         ItemStack orbs = new ItemStack(SscAddon.PSIONIC_ORB, 2);
         orbs.getOrCreateNbt().putString("test_payment", "original");
         player.inv.setStack(0, orbs);
@@ -354,7 +392,7 @@ public final class EvolutionSystemIntegrationProbe {
                 "duplicate join paths send identical JSON only once per connection");
         Map<Identifier, Resource> resources = new LinkedHashMap<>();
         for (var entry : rawRoutes.entrySet()) {
-            String content = entry.getKey().equals("axolotl") ? entry.getValue().replace("\"cost\": 1", "\"cost\": 2") : entry.getValue();
+            String content = entry.getKey().equals("axolotl") ? entry.getValue().replaceFirst("\"cost\": 1", "\"cost\": 2") : entry.getValue();
             resources.put(new Identifier("my_addon", "ssca_evolution/routes/" + entry.getKey() + ".json"),
                     new Resource(null, () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))));
         }
@@ -541,7 +579,7 @@ public final class EvolutionSystemIntegrationProbe {
         var serverRoute = EvolutionRegistry.INSTANCE.getRoute("axolotl");
         check(serverRoute != EvolutionRegistry.CLIENT.getRoute("axolotl"), "integrated client and server own separate route objects");
         var stale = new LinkedHashMap<>(rawRoutes);
-        stale.put("axolotl", stale.get("axolotl").replace("\"cost\": 1", "\"cost\": 2"));
+        stale.put("axolotl", stale.get("axolotl").replaceFirst("\"cost\": 1", "\"cost\": 2"));
         EvolutionRegistry.CLIENT.applyClientSync(stale);
         check(EvolutionRegistry.INSTANCE.getNode("axolotl", "aquatic_adapt").cost == 1,
                 "a delayed client snapshot cannot overwrite server purchase costs");
@@ -579,7 +617,15 @@ public final class EvolutionSystemIntegrationProbe {
             check(rejected, "invalid route " + field + " is rejected before publication");
         }
         var automatic = new LinkedHashMap<>(rawRoutes);
-        automatic.put("axolotl", rawRoutes.get("axolotl").replace("\"cost\": 1", "\"cost\": 0, \"auto_unlock\": true"));
+        var freeTree = com.google.gson.JsonParser.parseString(rawRoutes.get("axolotl")).getAsJsonObject();
+        for (var value : freeTree.getAsJsonArray("nodes")) {
+            var node = value.getAsJsonObject();
+            if (!node.has("branch")) {
+                node.addProperty("cost", 0);
+                node.addProperty("auto_unlock", true);
+            }
+        }
+        automatic.put("axolotl", freeTree.toString());
         loadServerRoutes(automatic);
         TestPlayer free = player(EvolutionRegistry.INSTANCE.getRoute("axolotl"));
         EvolutionManager.tickPlayer(free);
@@ -674,6 +720,7 @@ public final class EvolutionSystemIntegrationProbe {
                 "explicit reset of a paused transaction returns the exact reserved orb");
         TestPlayer stone = trained(source);
         EvolutionManager.tickPlayer(stone);
+        check(stone.evolution.getBranch().equals("mancianima"), "trained familiar selected the evolution stone path");
         check(EvolutionManager.canUpgradeFoxEvolve(stone), "stone regression reaches its transform call");
         Identifier sp = new Identifier("my_addon", "familiar_fox_mancianima");
         var originalSp = RegPlayerForms.getPlayerForm(sp);

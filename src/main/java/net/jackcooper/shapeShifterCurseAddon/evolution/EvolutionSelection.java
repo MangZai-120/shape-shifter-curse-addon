@@ -21,6 +21,12 @@ public final class EvolutionSelection {
     public static List<String> resolve(EvolutionRoute route, EvolutionComponent comp, Collection<String> requested) {
         if (route == null || comp == null) return List.of();
         Set<String> remaining = new LinkedHashSet<>(requested);
+        // A request naming both final forms does not express a player's choice.
+        if (route.branchChoiceLevel > 0) {
+            List<String> choices = remaining.stream().map(route::getNode).filter(java.util.Objects::nonNull)
+                    .filter(route::isBranchChoice).map(node -> node.id).toList();
+            if (choices.size() > 1) remaining.removeAll(choices);
+        }
         Set<String> accepted = new LinkedHashSet<>();
         int points = comp.getPoints();
         boolean changed;
@@ -29,7 +35,7 @@ public final class EvolutionSelection {
             for (var iterator = remaining.iterator(); iterator.hasNext();) {
                 String id = iterator.next();
                 EvolutionNode node = route.getNode(id);
-                if (node == null || node.autoUnlock || comp.isUnlocked(id)) {
+                if (node == null || node.autoUnlock || route.isUnlocked(comp, node) || !route.canChoose(comp, node)) {
                     iterator.remove();
                 } else if (node.cost >= 0 && node.cost <= points && prerequisitesMet(comp, node, accepted)) {
                     points -= node.cost;

@@ -30,6 +30,8 @@ public class EvolutionRoute {
     private final int[] levelMilestones;
     /** 自动解锁分支节点的经验等级（<=0 = 关闭）。 */
     public final int autoBranchLevel;
+    /** Positive for routes that award one final point for a mutually exclusive form choice. */
+    public final int branchChoiceLevel;
     /** 全部节点（保持 JSON 声明顺序）。 */
     public final List<EvolutionNode> nodes;
     /** 分支表（branch id -> 分支定义）。 */
@@ -54,7 +56,7 @@ public class EvolutionRoute {
     }
 
     private EvolutionRoute(String routeId, boolean enabled, String displayNameKey, Identifier startForm,
-                           int[] levelMilestones, int autoBranchLevel, List<EvolutionNode> nodes,
+                           int[] levelMilestones, int autoBranchLevel, int branchChoiceLevel, List<EvolutionNode> nodes,
                            Map<String, Branch> branches, String baseNodeId) {
         this.routeId = routeId;
         this.enabled = enabled;
@@ -62,6 +64,7 @@ public class EvolutionRoute {
         this.startForm = startForm;
         this.levelMilestones = levelMilestones.clone();
         this.autoBranchLevel = autoBranchLevel;
+        this.branchChoiceLevel = branchChoiceLevel;
         this.nodes = List.copyOf(nodes);
         this.branches = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(branches));
         this.baseNodeId = baseNodeId;
@@ -85,7 +88,29 @@ public class EvolutionRoute {
     }
 
     public int[] getLevelMilestones() {
+        int[] ordinary = getOrdinaryMilestones();
+        if (branchChoiceLevel <= 0) return ordinary;
+        int[] all = java.util.Arrays.copyOf(ordinary, ordinary.length + 1);
+        all[ordinary.length] = branchChoiceLevel;
+        return all;
+    }
+
+    int[] getOrdinaryMilestones() {
         return levelMilestones.length == 0 ? DEFAULT_MILESTONES.clone() : levelMilestones.clone();
+    }
+
+    public boolean isBranchChoice(EvolutionNode node) {
+        return branchChoiceLevel > 0 && !node.branch.isEmpty();
+    }
+
+    public boolean isUnlocked(EvolutionComponent comp, EvolutionNode node) {
+        if (isBranchChoice(node)) return comp.hasGrantedLevel(branchChoiceLevel) && node.branch.equals(comp.getBranch());
+        return comp.isUnlocked(node.id);
+    }
+
+    public boolean canChoose(EvolutionComponent comp, EvolutionNode node) {
+        return !isBranchChoice(node) || comp.getBranch().isEmpty() && comp.hasGrantedLevel(branchChoiceLevel)
+                && comp.getEvoLevel() >= branchChoiceLevel;
     }
 
     public int nextMilestone(int level) {
@@ -116,6 +141,7 @@ public class EvolutionRoute {
         Identifier startForm = o.has("start_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
                 .canonical(Identifier.tryParse(o.get("start_form").getAsString())) : null;
         int autoBranchLevel = o.has("auto_branch_level") ? EvolutionNode.readInt(o.get("auto_branch_level")) : -1;
+        int branchChoiceLevel = o.has("branch_choice_level") ? EvolutionNode.readInt(o.get("branch_choice_level")) : -1;
         int[] milestones = parseIntArray(o, "level_milestones");
 
         List<EvolutionNode> nodes = new ArrayList<>();
@@ -158,7 +184,7 @@ public class EvolutionRoute {
             }
         }
 
-        EvolutionRoute route = new EvolutionRoute(routeId, enabled, displayNameKey, startForm, milestones, autoBranchLevel,
+        EvolutionRoute route = new EvolutionRoute(routeId, enabled, displayNameKey, startForm, milestones, autoBranchLevel, branchChoiceLevel,
                 nodes, branches, baseNodeId);
         if ((enabled || o.has("start_form")) && startForm == null) {
             throw new IllegalArgumentException("Invalid start_form in " + routeId);
@@ -189,6 +215,18 @@ public class EvolutionRoute {
             throw new IllegalArgumentException("base_node must be free, automatic and without prerequisites or branch");
         if (autoBranchLevel > EvolutionComponent.EVO_LEVEL_CAP)
             throw new IllegalArgumentException("auto_branch_level exceeds evolution level cap");
+        if (branchChoiceLevel != -1) {
+            int[] ordinary = getOrdinaryMilestones();
+            if (branchChoiceLevel <= ordinary[ordinary.length - 1] || branchChoiceLevel > EvolutionComponent.EVO_LEVEL_CAP)
+                throw new IllegalArgumentException("branch_choice_level must follow ordinary milestones and be within the level cap");
+            var choices = new java.util.HashSet<String>();
+            for (EvolutionNode node : nodes) {
+                if (isBranchChoice(node) && (node.autoUnlock || node.cost != 1 || !choices.add(node.branch)))
+                    throw new IllegalArgumentException("Each final branch must have one manual one-point node: " + node.id);
+            }
+            if (!choices.equals(branches.keySet()) || choices.size() < 2)
+                throw new IllegalArgumentException("Missing final branch choices in " + routeId);
+        }
         for (EvolutionNode node : nodes) {
             for (String prerequisite : node.prereqs) {
                 if (!ids.contains(prerequisite)) throw new IllegalArgumentException("Unknown prerequisite: " + prerequisite);
