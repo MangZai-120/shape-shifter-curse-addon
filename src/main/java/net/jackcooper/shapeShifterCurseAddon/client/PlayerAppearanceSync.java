@@ -8,10 +8,14 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.loader.api.FabricLoader;
 import net.jackcooper.shapeShifterCurseAddon.network.SscAddonNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
+import net.onixary.shapeShifterCurseFabric.integration.origins.integration.OriginDataLoadedCallback;
 
 /** Repairs remote rendering; preserves existing powers when an Origin registry is replaced. */
 public final class PlayerAppearanceSync {
@@ -21,9 +25,15 @@ public final class PlayerAppearanceSync {
     private record Pending(Appearance appearance, long deadline) {}
     private static final Map<UUID, Pending> PENDING = new HashMap<>();
     private static Object world;
+    private static ClientPlayNetworkHandler joiningConnection;
+    private static boolean originDataLoaded;
     private PlayerAppearanceSync() {}
 
     public static void register() {
+        var loader = FabricLoader.getInstance();
+        if (loader.isModLoaded("connectormod") || loader.isModLoaded("connector")) {
+            registerLocalFormSync();
+        }
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> clear());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clear());
         ClientPlayNetworking.registerGlobalReceiver(SscAddonNetworking.PACKET_BROADCAST_FORMS, (client, handler, buf, sender) -> {
@@ -57,6 +67,29 @@ public final class PlayerAppearanceSync {
             if (!PENDING.isEmpty()) {
                 long now = System.nanoTime();
                 PENDING.values().removeIf(pending -> now >= pending.deadline);
+            }
+        });
+    }
+
+    private static void registerLocalFormSync() {
+        ClientPlayConnectionEvents.INIT.register((handler, client) -> {
+            joiningConnection = handler;
+            originDataLoaded = false;
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            if (joiningConnection == handler) joiningConnection = null;
+        });
+        // SSC fires this on the client thread after installing the origin and layer registries.
+        // A cold Connector login can receive its own CCA components before these registries.
+        OriginDataLoadedCallback.EVENT.register(isClient -> {
+            if (isClient && joiningConnection != null) originDataLoaded = true;
+        });
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (joiningConnection == null || !originDataLoaded || client.player == null
+                    || client.world == null || client.getNetworkHandler() != joiningConnection) return;
+            if (ClientPlayNetworking.canSend(SscAddonNetworking.PACKET_REQUEST_SELF_FORM_SYNC)) {
+                ClientPlayNetworking.send(SscAddonNetworking.PACKET_REQUEST_SELF_FORM_SYNC, PacketByteBufs.empty());
+                joiningConnection = null;
             }
         });
     }

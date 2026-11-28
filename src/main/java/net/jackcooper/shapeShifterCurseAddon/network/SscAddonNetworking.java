@@ -1,8 +1,10 @@
 package net.jackcooper.shapeShifterCurseAddon.network;
 
 import io.netty.buffer.Unpooled;
+import dev.onyxstudios.cca.api.v3.component.ComponentProvider;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion;
@@ -13,7 +15,10 @@ import net.jackcooper.shapeShifterCurseAddon.block.InfusionAltarBlockEntity;
 import net.jackcooper.shapeShifterCurseAddon.evolution.EvolutionManager;
 import net.jackcooper.shapeShifterCurseAddon.screen.InfusionAltarScreenHandler;
 import net.jackcooper.shapeShifterCurseAddon.util.WhitelistUtils;
+import net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents;
+import net.onixary.shapeShifterCurseFabric.player_form.utils.PlayerFormComponent;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -167,6 +172,7 @@ public class SscAddonNetworking {
 	public static final Identifier PACKET_REQUEST_ALL_FORM_SYNC = new Identifier("ssc_addon", "request_all_form_sync");
 	/** C2S: join repair for this observer; other peers receive only this player's appearance. */
 	public static final Identifier PACKET_REQUEST_FORM_SYNC_V2 = new Identifier("ssc_addon", "request_form_sync_v2");
+	public static final Identifier PACKET_REQUEST_SELF_FORM_SYNC = new Identifier("ssc_addon", "request_self_form_sync");
 	/** S2C：服务端广播所有在场玩家的形态 ID。payload: int count + count*(UUID + String formId) */
 	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("ssc_addon", "broadcast_forms");
 	/** S2C：把所有 SSCA 进化路线定义（JSON）同步给客户端，供进化树 UI 渲染。payload: int count + count*(routeId + rawJson) */
@@ -186,6 +192,7 @@ public class SscAddonNetworking {
 	/** 同一玩家两次白名单操作的最小间隔，单位：millis。 */
 	private static final long WHITELIST_PACKET_MIN_INTERVAL_MS = 100L;
 	private static final FormRepairBudget FORM_REPAIR_BUDGET = new FormRepairBudget();
+	private static final Set<ServerPlayNetworkHandler> SELF_FORM_SYNCED = new HashSet<>();
 	private static final EvolutionRequestBudget EVOLUTION_BUDGET = new EvolutionRequestBudget();
 
 	/**
@@ -458,10 +465,12 @@ public class SscAddonNetworking {
         registerEvolutionRouteSync();
         net.jackcooper.shapeShifterCurseAddon.event.PlayerSessionCleanup.register((handler, server) -> {
             FORM_REPAIR_BUDGET.remove(handler);
+            SELF_FORM_SYNCED.remove(handler);
             LAST_WHITELIST_PACKET_TICK.remove(handler.player.getUuid());
         });
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             FORM_REPAIR_BUDGET.clear();
+            SELF_FORM_SYNCED.clear();
             LAST_WHITELIST_PACKET_TICK.clear();
         });
 		// 施法打断网关（2026-09-22 需求）：玩家正在施法读条时按下任何 SP 技能键 → 立即按
@@ -828,6 +837,16 @@ public class SscAddonNetworking {
 			});
 		});
 
+		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_SELF_FORM_SYNC, (server, player, handler, buf, sender) -> {
+			if (buf.isReadable()) return;
+			ServerPacketExecutor.execute(server, player, handler, false, () -> {
+				if (SELF_FORM_SYNCED.add(handler)) {
+					ComponentProvider owner = (ComponentProvider) player;
+					PlayerFormComponent.COMPONENT.syncWith(player, owner);
+					ModComponents.ORIGIN.syncWith(player, owner);
+				}
+			});
+		});
 		// Both protocol generations share one per-connection budget. A repair sends all
 		// forms to the requester and only that player's form to peers (linear payload).
 		ServerPlayNetworking.registerGlobalReceiver(PACKET_REQUEST_ALL_FORM_SYNC, (server, player, handler, buf, responseSender) ->
