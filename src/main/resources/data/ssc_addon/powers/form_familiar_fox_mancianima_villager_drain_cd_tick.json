@@ -1,0 +1,14 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 1,
+    "entity_action": {
+        "type": "ssc_addon:tick_countdown",
+        "resource": "ssc_addon:form_familiar_fox_mancianima_villager_drain_cd"
+    },
+    "condition": {
+        "type": "apoli:resource",
+        "resource": "ssc_addon:form_familiar_fox_mancianima_villager_drain_cd",
+        "comparison": ">",
+        "compare_to": 0
+    }
+}

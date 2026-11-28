@@ -13,7 +13,7 @@ public class Form_SnowFoxSP extends AbstractFeralForm {
 			new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(ShapeShifterCurseFabric.identifier("form_feral_common_sneak_idle"))
 	);
 	public static final AbstractAnimStateController FALL_CONTROLLER_SP = new OneAnimController(
-			new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(new Identifier("my_addon", "form_snow_fox_sp_fall"))
+			new net.onixary.shapeShifterCurseFabric.player_animation.v3.AnimUtils.AnimationHolderData(new Identifier("ssc_addon", "form_snow_fox_sp_fall"))
 	);
 
 	public Form_SnowFoxSP(Identifier formID) {
@@ -23,7 +23,7 @@ public class Form_SnowFoxSP extends AbstractFeralForm {
 	@Override
 	public void Anim_registerAnims() {
 		super.Anim_registerAnims();
-		anim_fall = new AnimationHolder(new Identifier("my_addon", "form_snow_fox_sp_fall"), true);
+		anim_fall = new AnimationHolder(new Identifier("ssc_addon", "form_snow_fox_sp_fall"), true);
 	}
 
 	@Override

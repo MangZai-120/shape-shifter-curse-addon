@@ -638,7 +638,7 @@ public class LunarSpiritEntity extends PathAwareEntity implements GeoEntity,
 		return true;
 	}
 
-	// ========== GeoEntity 实现：三段动画（geo 模型 my_addon/moon_spirit） ==========
+	// ========== GeoEntity 实现：三段动画（geo 模型 ssc_addon/moon_spirit） ==========
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {

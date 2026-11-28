@@ -38,7 +38,7 @@ public final class SnowFoxWorldProbe {
                         .equals(FormIdentifiers.SNOW_FOX_FROSTSPINE),"Moon ring endpoint");
                 var state=SnowFoxMotion.STATE.get(p);
                 state.serverTick();
-                var source=new Identifier("my_addon","snow_fox_talents");
+                var source=new Identifier("ssc_addon","snow_fox_talents");
                 check(PowerHolderComponent.KEY.get(p).getPowersFromSource(source).isEmpty(),"No unearned native powers");
                 var nodes=java.util.List.of("running_jumps","air_control","ground_rebound","falling_strike","snowball_throw","snowball_freeze");
                 progress.setExp(EvolutionComponent.levelToTotalExp(30)*2);

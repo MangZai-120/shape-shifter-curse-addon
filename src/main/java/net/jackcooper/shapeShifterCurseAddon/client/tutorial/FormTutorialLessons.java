@@ -18,7 +18,7 @@ import java.util.Map;
 
 /** Client-only illustrated lessons. Each entry teaches exactly one named mechanic. */
 public final class FormTutorialLessons {
-    private static final Identifier DATA = new Identifier("my_addon", "tutorial/form_lessons.json");
+    private static final Identifier DATA = new Identifier("ssc_addon", "tutorial/form_lessons.json");
     private static volatile Map<Identifier, List<Lesson>> forms = Map.of();
 
     public enum Kind { ACTIVE, PASSIVE, TRAIT }

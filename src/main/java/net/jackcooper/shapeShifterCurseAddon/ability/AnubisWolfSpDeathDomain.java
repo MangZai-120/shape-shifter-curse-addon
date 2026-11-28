@@ -110,7 +110,7 @@ public class AnubisWolfSpDeathDomain {
 	// ==================== 状态追踪 ====================
 	private static final ConcurrentHashMap<UUID, DomainData> ACTIVE_DOMAINS = new ConcurrentHashMap<>();
 	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
-	private static final String SKILL_ID = "my_addon:form_anubis_wolf_sp_death_domain";
+	private static final String SKILL_ID = "ssc_addon:form_anubis_wolf_sp_death_domain";
 	// COOLDOWN_PLAYERS 已由统一服务 SkillCastManager 接管（写入已移除；clearPlayer/clearCooldowns 仍引用此表作兜底清理，字段在用）
 	private static final ConcurrentHashMap<UUID, Long> COOLDOWN_PLAYERS = new ConcurrentHashMap<>();
 

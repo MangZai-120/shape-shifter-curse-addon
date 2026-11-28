@@ -83,5 +83,5 @@ public final class GoldenSandstormPerks {
         var power = PowerHolderComponent.KEY.get(player).getPower(PowerTypeRegistry.get(id));
         return power != null && power.isActive();
     }
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
 }

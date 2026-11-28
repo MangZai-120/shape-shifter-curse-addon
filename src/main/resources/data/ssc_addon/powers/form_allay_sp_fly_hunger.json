@@ -1,0 +1,9 @@
+{
+    "type": "apoli:exhaust",
+    "interval": 5,
+    "exhaustion": 1.333,
+    "condition": {
+        "type": "apoli:power_active",
+        "power": "ssc_addon:form_allay_sp_levitate"
+    }
+}

@@ -19,9 +19,9 @@ import net.jackcooper.shapeShifterCurseAddon.entity.LunarSpiritEntity;
 public class LunarSpiritOverlayLayer extends GeoRenderLayer<LunarSpiritEntity> {
 
 	private static final Identifier[] OVERLAY_TEXTURES = {
-			new Identifier("my_addon", "textures/entity/moon_spirit_pink_overlay.png"),
-			new Identifier("my_addon", "textures/entity/moon_spirit_cyan_overlay.png"),
-			new Identifier("my_addon", "textures/entity/moon_spirit_green_overlay.png")
+			new Identifier("ssc_addon", "textures/entity/moon_spirit_pink_overlay.png"),
+			new Identifier("ssc_addon", "textures/entity/moon_spirit_cyan_overlay.png"),
+			new Identifier("ssc_addon", "textures/entity/moon_spirit_green_overlay.png")
 	};
 
 	public LunarSpiritOverlayLayer(GeoEntityRenderer<LunarSpiritEntity> renderer) {

@@ -6,7 +6,7 @@
       "remove": []
     },
     "forms": {
-      "my_addon:snow_fox_frostspine": {
+      "ssc_addon:snow_fox_frostspine": {
         "add": [
           "shape-shifter-curse:form_snow_fox_frost_pawglove_trinket_plus",
           "shape-shifter-curse:form_snow_fox_snowball_effect_cooldown"

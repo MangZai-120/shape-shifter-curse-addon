@@ -125,7 +125,7 @@ public final class FormationResearchIntegrationTest {
         }
         private static void checkRunePresentation(WorldRuneState world)throws Exception{
             var previous=net.minecraft.util.Language.getInstance();Map<String,String> translations=new HashMap<>();
-            try(var input=FormationResearchIntegrationTest.class.getResourceAsStream("/assets/my_addon/lang/zh_cn.json")){
+            try(var input=FormationResearchIntegrationTest.class.getResourceAsStream("/assets/ssc_addon/lang/zh_cn.json")){
                 net.minecraft.util.Language.load(input,translations::put);
             }
             net.minecraft.util.Language.setInstance(new net.minecraft.util.Language(){

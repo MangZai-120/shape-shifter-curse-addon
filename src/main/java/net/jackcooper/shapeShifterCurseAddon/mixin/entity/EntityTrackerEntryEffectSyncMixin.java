@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 的渲染 mixin 判 {@code hasStatusEffect(SHEEP_FORM)}，客户端侧恒 false → 立刻画回原模型
  * （「玩家退出再回来羊立刻变回原型」的由来）。</p>
  *
- * <p><b>影响面</b>：仅补发 my_addon / ssc_addon 注册的效果，修复羊形态及其它
+ * <p><b>影响面</b>：仅补发 ssc_addon 注册的效果，修复羊形态及其它
  * SSCA 效果在重追踪后客户端丢失显示的问题；原版和其它模组效果保持原追踪行为。
  * 客户端按效果 id 覆盖式添加，重复补发幂等；效果到期时原版照常发移除包，最终一致。</p>
  */
@@ -38,8 +38,7 @@ public abstract class EntityTrackerEntryEffectSyncMixin {
 				// Fabric START_TRACKING runs before the spawn packet; retain this post-spawn hook.
 				// Only SSCA-owned effects need our extra tracking synchronization.
 				var id = net.minecraft.registry.Registries.STATUS_EFFECT.getId(effect.getEffectType());
-				if (id == null || !(id.getNamespace().equals("ssc_addon")
-						|| id.getNamespace().equals("my_addon"))) continue;
+				if (id == null || !id.getNamespace().equals("ssc_addon")) continue;
 				player.networkHandler.sendPacket(new EntityStatusEffectS2CPacket(living.getId(), effect));
 			}
 		}

@@ -26,7 +26,7 @@ public final class SpiderTutorialMechanicsProbe {
         player.setNoGravity(false);
         var powers = io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(player);
         for (String id : java.util.List.of("form_spider_salticidae_jump_kill", "form_spider_salticidae_venom", "form_spider_salticidae_venom_fang")) {
-            powers.addPower(io.github.apace100.apoli.power.PowerTypeRegistry.get(new net.minecraft.util.Identifier("my_addon", id)),
+            powers.addPower(io.github.apace100.apoli.power.PowerTypeRegistry.get(new net.minecraft.util.Identifier("ssc_addon", id)),
                     new net.minecraft.util.Identifier("ssc_addon", "spider_tutorial_probe"));
         }
         player.getServerWorld().setBlockState(BlockPos.ofFloored(player.getPos()).down(), Blocks.STONE.getDefaultState());

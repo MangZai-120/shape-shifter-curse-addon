@@ -45,9 +45,9 @@ public final class OriginPowerReloadIntegrationProbe {
             for (Identifier power : perk.powerRemove) AxolotlSpPerkIntegrationProbe.register(power, null);
         }
         AxolotlSpPerkIntegrationProbe.register(AxolotlSpPerks.WATER_MAGIC,
-                AxolotlSpPerkIntegrationProbe.json("my_addon", AxolotlSpPerks.WATER_MAGIC.getPath()));
+                AxolotlSpPerkIntegrationProbe.json("ssc_addon", AxolotlSpPerks.WATER_MAGIC.getPath()));
         AxolotlSpPerkIntegrationProbe.register(AxolotlSpPerks.TIDAL_PULL,
-                AxolotlSpPerkIntegrationProbe.json("my_addon", AxolotlSpPerks.TIDAL_PULL.getPath()));
+                AxolotlSpPerkIntegrationProbe.json("ssc_addon", AxolotlSpPerks.TIDAL_PULL.getPath()));
         var form = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_SP);
         var p = AxolotlSpPerkIntegrationProbe.player();
         p.form.setForm(form); p.form.nowPerkTree = form.getPerkTreeID();
@@ -176,7 +176,7 @@ public final class OriginPowerReloadIntegrationProbe {
         System.out.println("Origin power reload integration: " + checks + " transformed CCA/Apoli checks passed; no world/server was started.");
     }
 
-    private static Identifier id(String path) { return new Identifier("my_addon", "reload_test_" + path); }
+    private static Identifier id(String path) { return new Identifier("ssc_addon", "reload_test_" + path); }
     private static PowerType<Power> simple(String path) {
         var type = new PowerType<Power>(id(path), DUMMY.read(new JsonObject()));
         PowerTypeRegistry.register(type.getIdentifier(), type); return type;

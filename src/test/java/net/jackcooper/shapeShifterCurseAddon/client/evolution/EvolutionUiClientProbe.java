@@ -291,17 +291,17 @@ public final class EvolutionUiClientProbe {
                     mc.options.getGuiScale().setValue(5); mc.onResolutionChanged();
                     mc.setScreen(new JobChangeSelectScreen()); stage++;
                 } else if (stage == 146) {
-                    check(selectionPage(mc) == 0 && !selectionButton(mc, Text.translatable("evolution.my_addon.start.select.choose").getString()).active,
+                    check(selectionPage(mc) == 0 && !selectionButton(mc, Text.translatable("evolution.ssc_addon.start.select.choose").getString()).active,
                             "job selector disables the player's current familiar form");
                     save(mc, "job-change-familiar-current-gui5.png");
                     beforePoints = comp.getPoints();
                     var jobScreen = mc.currentScreen;
-                    clickSelection(mc, Text.translatable("evolution.my_addon.start.select.choose").getString());
+                    clickSelection(mc, Text.translatable("evolution.ssc_addon.start.select.choose").getString());
                     check(mc.currentScreen == jobScreen && comp.getPoints() == beforePoints,
                             "clicking the current form neither submits nor spends points");
                     clickSelection(mc, ">"); stage++;
                 } else if (stage == 147) {
-                    check(selectionPage(mc) == 1 && selectionButton(mc, Text.translatable("evolution.my_addon.start.select.choose").getString()).active,
+                    check(selectionPage(mc) == 1 && selectionButton(mc, Text.translatable("evolution.ssc_addon.start.select.choose").getString()).active,
                             "job selector enables a different form after paging");
                     save(mc, "job-change-axolotl-target-gui5.png");
                     clickSelection(mc, ">");
@@ -401,7 +401,7 @@ public final class EvolutionUiClientProbe {
         } finally { EvolutionTestRoutes.loadServer(routes); }
 
         var holder = PowerHolderComponent.KEY.get(player);
-        PowerType<?> chargeType = PowerTypeRegistry.get(new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge"));
+        PowerType<?> chargeType = PowerTypeRegistry.get(new Identifier("ssc_addon", "perk_upgrade_axolotl_tidal_pull_charge"));
         var source = new Identifier("test", "effective_talent_lifecycle");
         holder.addPower(chargeType, source);
         // Manual fixture grants must publish the holder before SSC sends per-power charge NBT.

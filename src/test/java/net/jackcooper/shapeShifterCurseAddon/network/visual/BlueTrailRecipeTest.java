@@ -71,10 +71,16 @@ public final class BlueTrailRecipeTest {
                     "Original JSON fixture checksum: " + entry.getKey());
         }
     }
+    private static JsonObject originalInCurrentNamespace(String filename) throws Exception {
+        String json = json(ROOT + filename).toString().replace("\"my_addon:", "\"ssc_addon:");
+        return JsonParser.parseString(json).getAsJsonObject();
+    }
+
     private static List<Layer> originalLayersAndUnchangedGameplay() throws Exception {
-        JsonObject originalBase = json(ROOT + "base.json"), originalAmulet = json(ROOT + "amulet.json");
-        JsonObject newBase = json("data/my_addon/powers/form_familiar_fox_sp_blue_fire_ring.json");
-        JsonObject newAmulet = json("data/my_addon/powers/form_familiar_fox_sp_blue_fire_ring_amulet.json");
+        JsonObject originalBase = originalInCurrentNamespace("base.json");
+        JsonObject originalAmulet = originalInCurrentNamespace("amulet.json");
+        JsonObject newBase = json("data/ssc_addon/powers/form_familiar_fox_sp_blue_fire_ring.json");
+        JsonObject newAmulet = json("data/ssc_addon/powers/form_familiar_fox_sp_blue_fire_ring_amulet.json");
         List<Layer> layers = List.of(
                 new Layer(originalBase.getAsJsonObject("particle_loop"), newBase.getAsJsonObject("particle_loop"), 0),
                 new Layer(originalBase.getAsJsonObject("particle_loop_amulet"), newBase.getAsJsonObject("particle_loop_amulet"), 1),
@@ -141,7 +147,7 @@ public final class BlueTrailRecipeTest {
         String type=action.get("type").getAsString();
         switch(type) {
             case "apoli:and" -> { for(JsonElement element:action.getAsJsonArray("actions")) originalAction(element.getAsJsonObject(),owned,width,eye,output); }
-            case "my_addon:self_decoration" -> originalAction(action.getAsJsonObject("entity_action"),true,width,eye,output);
+            case "ssc_addon:self_decoration" -> originalAction(action.getAsJsonObject("entity_action"),true,width,eye,output);
             case "apoli:execute_command" -> {
                 String[] command=action.get("command").getAsString().split(" +");
                 check(command.length==12 && command[0].equals("particle") && command[11].equals("@a"),"Original center command retains original audience");

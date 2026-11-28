@@ -61,7 +61,7 @@ public final class SscPerkClientData {
     private record Mapping(Identifier tree, String prefix) {}
 
     static Text description(IForm form, Identifier perk) {
-        if (form == null || !"my_addon".equals(form.getFormID().getNamespace())) return null;
+        if (form == null || !"ssc_addon".equals(form.getFormID().getNamespace())) return null;
         String path = FormIdMigration.legacy(form.getFormID()).getPath();
         if (path.equals("snow_fox_sp") || path.equals("snow_fox_frostspine")) {
             return RegPerks.P_SnowFoxFrostDive.equals(perk)

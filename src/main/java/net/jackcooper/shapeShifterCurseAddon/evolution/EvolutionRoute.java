@@ -137,7 +137,7 @@ public class EvolutionRoute {
             throw new IllegalArgumentException("Invalid route id: " + routeId);
         boolean enabled = !o.has("enabled") || o.get("enabled").getAsBoolean();
         String displayNameKey = o.has("display_name") ? o.get("display_name").getAsString()
-                : "evolution.my_addon." + routeId + ".name";
+                : "evolution.ssc_addon." + routeId + ".name";
         Identifier startForm = o.has("start_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
                 .canonical(Identifier.tryParse(o.get("start_form").getAsString())) : null;
         int autoBranchLevel = o.has("auto_branch_level") ? EvolutionNode.readInt(o.get("auto_branch_level")) : -1;
@@ -170,7 +170,7 @@ public class EvolutionRoute {
                 String bid = en.getKey();
                 JsonObject b = en.getValue().getAsJsonObject();
                 String bName = b.has("display_name") ? b.get("display_name").getAsString()
-                        : "evolution.my_addon." + routeId + ".branch." + bid;
+                        : "evolution.ssc_addon." + routeId + ".branch." + bid;
                 Identifier spForm = b.has("sp_form") ? net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration
                         .canonical(Identifier.tryParse(b.get("sp_form").getAsString())) : null;
                 List<String> req = new ArrayList<>();

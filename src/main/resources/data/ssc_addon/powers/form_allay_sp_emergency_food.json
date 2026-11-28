@@ -1,0 +1,41 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 20,
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:food_level",
+                "comparison": "==",
+                "compare_to": 0
+            },
+            {
+                "type": "apoli:resource",
+                "resource": "ssc_addon:form_allay_sp_mana_resource",
+                "comparison": ">=",
+                "compare_to": 50
+            }
+        ]
+    },
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:change_resource",
+                "resource": "ssc_addon:form_allay_sp_mana_resource",
+                "change": -50
+            },
+            {
+                "type": "apoli:change_resource",
+                "resource": "ssc_addon:form_allay_sp_mana_cooldown_resource",
+                "operation": "set",
+                "change": 70
+            },
+            {
+                "type": "apoli:feed",
+                "food": 1,
+                "saturation": 0
+            }
+        ]
+    }
+}

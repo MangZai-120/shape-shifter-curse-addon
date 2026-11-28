@@ -89,7 +89,7 @@ public class JobChangeSelectScreen extends EvolutionFormSelectionScreen {
     private ButtonWidget chooseButton;
 
     public JobChangeSelectScreen() {
-        super(Text.translatable("evolution.my_addon.job_change.select.title"));
+        super(Text.translatable("evolution.ssc_addon.job_change.select.title"));
     }
 
     @Override
@@ -111,7 +111,7 @@ public class JobChangeSelectScreen extends EvolutionFormSelectionScreen {
         this.addDrawableChild(next);
 
         this.chooseButton = paperButton(this.width / 2 - 80, py + PANEL_H - 54, 160, 20,
-                Text.translatable("evolution.my_addon.start.select.choose"), b -> chooseCurrentForm(), 0);
+                Text.translatable("evolution.ssc_addon.start.select.choose"), b -> chooseCurrentForm(), 0);
         this.addDrawableChild(this.chooseButton);
         updateChooseButtonState();
 
@@ -172,7 +172,7 @@ public class JobChangeSelectScreen extends EvolutionFormSelectionScreen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         updateChooseButtonState();
         FormEntry form = forms.isEmpty() ? null : forms.get(page);
-        Text status = isCurrentPageOwnForm() ? Text.translatable("evolution.my_addon.job_change.current") : null;
+        Text status = isCurrentPageOwnForm() ? Text.translatable("evolution.ssc_addon.job_change.current") : null;
         renderFormPage(ctx, mouseX, mouseY, delta, page, forms.size(), form == null ? null :
                 new FormPage(form.routeId, form.portrait, Text.translatable(form.nameKey), Text.translatable(form.descKey)), status);
     }

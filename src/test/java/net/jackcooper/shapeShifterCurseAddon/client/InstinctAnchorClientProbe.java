@@ -49,7 +49,7 @@ public final class InstinctAnchorClientProbe {
             if (mc.getOverlay()!=null) return;
             if (!starting && mc.currentScreen instanceof TitleScreen) {
                 check(net.minecraft.registry.Registries.ITEM.getIds().stream().noneMatch(id->id.getNamespace().equals("ssca_neomagic")),"药水与试管归入附属命名空间，旧实验物品保持移除");
-                check(!net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.getGlobalReceivers().contains(new Identifier("ssca_neomagic","state_v2")),"真实客户端不再接收旧研究页协议");
+                check(!net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.getGlobalReceivers().contains(new Identifier("ssc_addon","state_v2")),"真实客户端不再接收旧研究页协议");
                 starting = true; mc.options.pauseOnLostFocus = false;
                 mc.options.getViewDistance().setValue(4); mc.options.getMaxFps().setValue(60);
                 mc.options.getGuiScale().setValue(3); mc.onResolutionChanged();

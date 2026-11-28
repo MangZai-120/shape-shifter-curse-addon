@@ -20,8 +20,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms;
 /** Real server world: input gates, native velocity, moisture and cooldown resources. */
 public final class AxolotlWaterSpurtWorldProbe {
     private static int checks;
-    private static final Identifier LAND = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
-    private static final Identifier WATER = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
+    private static final Identifier LAND = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_land");
+    private static final Identifier WATER = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_water");
     private static void check(boolean ok, String why) { checks++; if (!ok) throw new AssertionError(why); }
     private static void tap(ServerPlayerEntity player) {
         AxolotlWaterSpurtHandler.setClientSprintHeld(player, false);

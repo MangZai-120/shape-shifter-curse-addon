@@ -62,7 +62,7 @@ public final class EvolutionSystemIntegrationProbe {
         rawRoutes = new LinkedHashMap<>();
         for (String route : List.of("familiar_fox", "axolotl")) {
             try (var input = EvolutionSystemIntegrationProbe.class.getResourceAsStream(
-                    "/data/my_addon/ssca_evolution/routes/" + route + ".json")) {
+                    "/data/ssc_addon/ssca_evolution/routes/" + route + ".json")) {
                 rawRoutes.put(route, new String(Objects.requireNonNull(input).readAllBytes(), StandardCharsets.UTF_8));
             }
         }
@@ -393,7 +393,7 @@ public final class EvolutionSystemIntegrationProbe {
         Map<Identifier, Resource> resources = new LinkedHashMap<>();
         for (var entry : rawRoutes.entrySet()) {
             String content = entry.getKey().equals("axolotl") ? entry.getValue().replaceFirst("\"cost\": 1", "\"cost\": 2") : entry.getValue();
-            resources.put(new Identifier("my_addon", "ssca_evolution/routes/" + entry.getKey() + ".json"),
+            resources.put(new Identifier("ssc_addon", "ssca_evolution/routes/" + entry.getKey() + ".json"),
                     new Resource(null, () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))));
         }
         ResourceManager manager = (ResourceManager) Proxy.newProxyInstance(ResourceManager.class.getClassLoader(), new Class[]{ResourceManager.class},
@@ -478,7 +478,7 @@ public final class EvolutionSystemIntegrationProbe {
         missingStart.remove("start_form");
         invalid.add(missingStart.toString());
         for (String json : invalid) {
-            var resources = Map.of(new Identifier("my_addon", "ssca_evolution/routes/familiar_fox.json"),
+            var resources = Map.of(new Identifier("ssc_addon", "ssca_evolution/routes/familiar_fox.json"),
                     new Resource(null, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))));
             ResourceManager manager = (ResourceManager) Proxy.newProxyInstance(ResourceManager.class.getClassLoader(), new Class[]{ResourceManager.class},
                     (proxy, method, args) -> method.getName().equals("findResources") ? resources : null);
@@ -514,7 +514,7 @@ public final class EvolutionSystemIntegrationProbe {
 
     private static void loadServerRoutes(Map<String, String> raw) {
         Map<Identifier, Resource> resources = new LinkedHashMap<>();
-        raw.forEach((id, json) -> resources.put(new Identifier("my_addon", "ssca_evolution/routes/" + id + ".json"),
+        raw.forEach((id, json) -> resources.put(new Identifier("ssc_addon", "ssca_evolution/routes/" + id + ".json"),
                 new Resource(null, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)))));
         ResourceManager manager = (ResourceManager) Proxy.newProxyInstance(ResourceManager.class.getClassLoader(), new Class[]{ResourceManager.class},
                 (proxy, method, args) -> method.getName().equals("findResources") ? resources : null);
@@ -722,7 +722,7 @@ public final class EvolutionSystemIntegrationProbe {
         EvolutionManager.tickPlayer(stone);
         check(stone.evolution.getBranch().equals("mancianima"), "trained familiar selected the evolution stone path");
         check(EvolutionManager.canUpgradeFoxEvolve(stone), "stone regression reaches its transform call");
-        Identifier sp = new Identifier("my_addon", "familiar_fox_mancianima");
+        Identifier sp = new Identifier("ssc_addon", "familiar_fox_mancianima");
         var originalSp = RegPlayerForms.getPlayerForm(sp);
         RegPlayerForms.registerPlayerForm(new RejectedForm(sp));
         var stack = new ItemStack(net.minecraft.item.Items.DIAMOND, 2);

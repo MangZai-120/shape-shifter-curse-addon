@@ -78,34 +78,34 @@ public class EvolutionStoneItem extends Item {
 				}
 				// 允许原版三阶段使魔使用进化石进化为契灵（与月髓环→灵界之主的路径并行存在）
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "familiar_fox_3"))) {
-					targetFormId = new Identifier("my_addon", "familiar_fox_mancianima");
+					targetFormId = new Identifier("ssc_addon", "familiar_fox_mancianima");
 					canEvolve = true;
 				}
 				// 进化使魔选择契灵后可用进化石。
 				else if (playerFormID.equals(FormIdentifiers.UPGRADE_FAMILIAR_FOX)) {
-					targetFormId = new Identifier("my_addon", "familiar_fox_mancianima");
+					targetFormId = new Identifier("ssc_addon", "familiar_fox_mancianima");
 					canEvolve = true;
 				}
 				// 允许原版三阶段蝙蝠使用进化石进化为寄生果蝠
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "bat_3"))) {
-					targetFormId = new Identifier("my_addon", "bat_parasitic_fruit");
+					targetFormId = new Identifier("ssc_addon", "bat_parasitic_fruit");
 					canEvolve = true;
 				}
 				// 允许原版三阶段美西螈使用进化石进化为荧光幼灵
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "axolotl_3"))) {
-					targetFormId = new Identifier("my_addon", "axolotl_fluorescent");
+					targetFormId = new Identifier("ssc_addon", "axolotl_fluorescent");
 					canEvolve = true;				}
 				// 进化美西螈选择荧光幼灵后可用进化石。
 				else if (playerFormID.equals(FormIdentifiers.UPGRADE_AXOLOTL)) {
-					targetFormId = new Identifier("my_addon", "axolotl_fluorescent");
+					targetFormId = new Identifier("ssc_addon", "axolotl_fluorescent");
 					canEvolve = true;				}				// 允许原版豹猫永久形态 ocelot_3 使用进化石进化为朔望（与月髓环→风灵并行存在，不同道具不冲突）
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "ocelot_3"))) {
-					targetFormId = new Identifier("my_addon", "ocelot_nova");
+					targetFormId = new Identifier("ssc_addon", "ocelot_nova");
 					canEvolve = true;
 				}
 				// 允许原版三阶段蜘蛛使用进化石进化为跳蛛（与月髓环→月织蛛并行存在，不同道具不冲突）
 				else if (playerFormID.equals(new Identifier("shape-shifter-curse", "spider_3"))) {
-					targetFormId = new Identifier("my_addon", "spider_salticidae");
+					targetFormId = new Identifier("ssc_addon", "spider_salticidae");
 					canEvolve = true;
 				}			}
 

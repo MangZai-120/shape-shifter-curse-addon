@@ -19,12 +19,12 @@ public final class NetworkCompatibilityTest {
             check(NetworkCompatibility.accepts(true, buffer), "Matching layout accepted");
         } finally { buffer.release(); }
         check(!NetworkCompatibility.accepts(false, null), "Old client missing query responder is rejected without reading a null body");
-        for (int revision : new int[]{-1,0,1,3,Integer.MAX_VALUE}) {
+        for (int revision : new int[]{-1,0,1,2,4,Integer.MAX_VALUE}) {
             buffer=buffer();
             try { buffer.writeVarInt(revision);check(!NetworkCompatibility.accepts(true,buffer),"Different/invalid layout rejected: "+revision); }
             finally { buffer.release(); }
         }
-        for (int[] bytes : new int[][]{{},{0x80},{2,0},{0x80,0x80,0x80,0x80,0x80,0x80}}) {
+        for (int[] bytes : new int[][]{{},{0x80},{NetworkCompatibility.ENTITY_WIRE_REVISION,0},{0x80,0x80,0x80,0x80,0x80,0x80}}) {
             buffer=buffer();
             try { for(int b:bytes)buffer.writeByte(b);check(!NetworkCompatibility.accepts(true,buffer),"Malformed/trailing/oversized login frame rejected"); }
             finally { buffer.release(); }

@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "#ssc_addon:pull_immune",
+    "minecraft:iron_golem",
+    "minecraft:wither",
+    "minecraft:ender_dragon",
+    "minecraft:shulker",
+    "minecraft:warden",
+    "minecraft:elder_guardian"
+  ]
+}

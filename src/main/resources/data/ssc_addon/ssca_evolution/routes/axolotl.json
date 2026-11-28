@@ -1,0 +1,27 @@
+{
+  "_comment": "SSCA 进化路线（数据驱动）：美西螈 axolotl。文件名=route id。节点 name/desc 省略时自动用 evolution.ssc_addon.axolotl.node.<id>.name/.desc。加/改进化树只改本文件，无需改 Java。",
+
+  "enabled": true,
+  "display_name": "evolution.ssc_addon.axolotl.name",
+  "start_form": "ssc_addon:axolotl_upgrade",
+  "base_node": "axolotl_base",
+  "level_milestones": [5, 10, 15, 20, 30, 40],
+  "branch_choice_level": 50,
+
+  "nodes": [
+    { "id": "axolotl_base",   "icon": "minecraft:axolotl_spawn_egg",  "cost": 0, "prereqs": [],                                 "col": 0, "row": 1, "auto_unlock": true },
+    { "id": "aquatic_adapt",  "icon": "minecraft:prismarine_crystals", "cost": 1, "prereqs": ["axolotl_base"],                   "col": 1, "row": 0 },
+    { "id": "water_propel",   "icon": "minecraft:nautilus_shell",     "cost": 1, "prereqs": ["axolotl_base"],                   "col": 1, "row": 2 },
+    { "id": "water_spurt",    "icon": "minecraft:water_bucket",       "cost": 1, "prereqs": ["aquatic_adapt", "water_propel"], "col": 2, "row": 1 },
+    { "id": "water_spear",    "icon": "minecraft:trident",            "cost": 1, "prereqs": ["water_spurt"],                    "col": 3, "row": 0 },
+    { "id": "vortex_guide",   "icon": "minecraft:heart_of_the_sea",   "cost": 1, "prereqs": ["water_spurt"],                    "col": 3, "row": 2 },
+    { "id": "become_water",   "icon": "minecraft:conduit",            "cost": 1, "prereqs": ["water_spear", "vortex_guide"],   "col": 4, "row": 1 },
+    { "id": "branch_moon_ring", "icon": "minecraft:heart_of_the_sea", "cost": 1, "prereqs": ["become_water"], "col": 5, "row": 0, "auto_unlock": false, "branch": "moon_ring" },
+    { "id": "branch_stone",     "icon": "minecraft:sea_lantern",      "cost": 1, "prereqs": ["become_water"], "col": 5, "row": 2, "auto_unlock": false, "branch": "evolution_stone" }
+  ],
+
+  "branches": {
+    "moon_ring":       { "sp_form": "ssc_addon:axolotl_abyssal_overlord",          "requires_nodes": ["become_water"] },
+    "evolution_stone": { "sp_form": "ssc_addon:axolotl_fluorescent", "requires_nodes": ["become_water"] }
+  }
+}

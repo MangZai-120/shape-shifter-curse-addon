@@ -23,163 +23,163 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SscAddonNetworking {
 	/** 契灵 - 次要技能：瞬移。payload: byte mode (0=RAYCAST, 1=PLATFORM) */
-	public static final Identifier PACKET_MANCIANIMA_TELEPORT = new Identifier("my_addon", "mancianima_teleport");
+	public static final Identifier PACKET_MANCIANIMA_TELEPORT = new Identifier("ssc_addon", "mancianima_teleport");
 	/** 契灵 - 主要技能：三段标记。无 payload，服务端根据当前状态分支。 */
-	public static final Identifier PACKET_MANCIANIMA_PRIMARY = new Identifier("my_addon", "mancianima_primary");
+	public static final Identifier PACKET_MANCIANIMA_PRIMARY = new Identifier("ssc_addon", "mancianima_primary");
 	/** 风灵「疾风连爪」：C2S 上报左键按住(boolean)；S2C 同步爪击阶段(int)+准星条进度(float)。 */
-	public static final Identifier PACKET_CLAW_HOLD = new Identifier("my_addon", "claw_hold");
-	public static final Identifier PACKET_CLAW_STATE = new Identifier("my_addon", "claw_state");
+	public static final Identifier PACKET_CLAW_HOLD = new Identifier("ssc_addon", "claw_hold");
+	public static final Identifier PACKET_CLAW_STATE = new Identifier("ssc_addon", "claw_state");
 	/** 风灵副技能：C2S 按 sp_secondary 触发 +50% 增伤 buff。无 payload。 */
-	public static final Identifier PACKET_CLAW_BUFF = new Identifier("my_addon", "claw_buff");
+	public static final Identifier PACKET_CLAW_BUFF = new Identifier("ssc_addon", "claw_buff");
 	/** 风灵「风之冲刺」：C2S 按主技能键（无 payload，服务端按阶段分支）；S2C 同步阶段(int)+targetY(double)。 */
-	public static final Identifier PACKET_WIND_DASH = new Identifier("my_addon", "wind_dash");
-	public static final Identifier PACKET_DASH_STATE = new Identifier("my_addon", "dash_state");
+	public static final Identifier PACKET_WIND_DASH = new Identifier("ssc_addon", "wind_dash");
+	public static final Identifier PACKET_DASH_STATE = new Identifier("ssc_addon", "dash_state");
 	/** 朔望「灵跃闪身」：S2C 同步第 2 段窗口时长给施法者。payload: varint windowTicks（>0 开启倒数，0 关闭）。 */
-	public static final Identifier PACKET_NOVA_LEAP_WINDOW = new Identifier("my_addon", "nova_leap_window");
+	public static final Identifier PACKET_NOVA_LEAP_WINDOW = new Identifier("ssc_addon", "nova_leap_window");
 	/** 堕落悦灵「召唤恼鬼」：S2C 同步召唤物存活窗口给施法者。payload: varint windowTicks（>0 开启倒数，0 关闭）。 */
-	public static final Identifier PACKET_FALLEN_ALLAY_VEX_WINDOW = new Identifier("my_addon", "fallen_allay_vex_window");
+	public static final Identifier PACKET_FALLEN_ALLAY_VEX_WINDOW = new Identifier("ssc_addon", "fallen_allay_vex_window");
 
 	// ===== 白名单 GUI 网络包 =====/** S2C：服务端把调用者当前白名单 UUID 集合推给客户端，用于打开/刷新 GUI。payload: int n + n*UUID */
-	public static final Identifier PACKET_WHITELIST_GUI_SYNC = new Identifier("my_addon", "whitelist_gui_sync");
+	public static final Identifier PACKET_WHITELIST_GUI_SYNC = new Identifier("ssc_addon", "whitelist_gui_sync");
 	/** C2S：玩家在 GUI 中请求把某 UUID 加入自己的白名单。payload: UUID */
-	public static final Identifier PACKET_WHITELIST_GUI_ADD = new Identifier("my_addon", "whitelist_gui_add");
+	public static final Identifier PACKET_WHITELIST_GUI_ADD = new Identifier("ssc_addon", "whitelist_gui_add");
 	/** C2S：玩家在 GUI 中请求把某 UUID 从自己的白名单移除。payload: UUID */
-	public static final Identifier PACKET_WHITELIST_GUI_REMOVE = new Identifier("my_addon", "whitelist_gui_remove");
+	public static final Identifier PACKET_WHITELIST_GUI_REMOVE = new Identifier("ssc_addon", "whitelist_gui_remove");
 	/** C2S：玩家切换模式。payload: byte (0=默认, 1=自定义) */
-	public static final Identifier PACKET_WHITELIST_GUI_MODE = new Identifier("my_addon", "whitelist_gui_mode");
+	public static final Identifier PACKET_WHITELIST_GUI_MODE = new Identifier("ssc_addon", "whitelist_gui_mode");
 	/** C2S：玩家从生物白名单中移除一个 UUID。payload: UUID */
-	public static final Identifier PACKET_WHITELIST_GUI_MOB_REMOVE = new Identifier("my_addon", "whitelist_gui_mob_remove");
+	public static final Identifier PACKET_WHITELIST_GUI_MOB_REMOVE = new Identifier("ssc_addon", "whitelist_gui_mob_remove");
 
 	/** C2S：美西螈装死期间按技能键请求提前结束装死。无 payload。 */
-	public static final Identifier PACKET_PLAY_DEAD_END = new Identifier("my_addon", "play_dead_end");
+	public static final Identifier PACKET_PLAY_DEAD_END = new Identifier("ssc_addon", "play_dead_end");
 
 	/** C2S：美西螈漩涡开始蓄力。无 payload。 */
-	public static final Identifier PACKET_VORTEX_START = new Identifier("my_addon", "vortex_start");
+	public static final Identifier PACKET_VORTEX_START = new Identifier("ssc_addon", "vortex_start");
 	/** C2S：美西螈漩涡释放（提前释放）。无 payload。 */
-	public static final Identifier PACKET_VORTEX_RELEASE = new Identifier("my_addon", "vortex_release");
+	public static final Identifier PACKET_VORTEX_RELEASE = new Identifier("ssc_addon", "vortex_release");
 	/** C2S：月尘魔法书 - 释放书内指定槽魔法。payload: varint slot。 */
-	public static final Identifier PACKET_SPELL_CAST = new Identifier("my_addon", "spell_cast");
+	public static final Identifier PACKET_SPELL_CAST = new Identifier("ssc_addon", "spell_cast");
 	/** C2S：月尘魔法书 - 更新当前选中槽（滚轮切换）。payload: varint slot。 */
-	public static final Identifier PACKET_SPELL_SELECT = new Identifier("my_addon", "spell_select");
+	public static final Identifier PACKET_SPELL_SELECT = new Identifier("ssc_addon", "spell_select");
 	/** C2S：月尘魔法书 - 设置卷轴施放档位（低阶选档，阶段 C §6.4）。payload: varint slot + varint castLevel(0=跟随卷轴等级)。 */
-	public static final Identifier PACKET_SPELL_SET_CAST_LEVEL = new Identifier("my_addon", "spell_set_cast_level");
+	public static final Identifier PACKET_SPELL_SET_CAST_LEVEL = new Identifier("ssc_addon", "spell_set_cast_level");
 	/** C2S：月尘魔法书 - 法力不足三连击触发的临时降档施放（自动选付得起的最高档，本次 CD ×1.2）。payload: varint slot。 */
-	public static final Identifier PACKET_SPELL_CAST_DOWNGRADED = new Identifier("my_addon", "spell_cast_downgraded");
+	public static final Identifier PACKET_SPELL_CAST_DOWNGRADED = new Identifier("ssc_addon", "spell_cast_downgraded");
 	/** C2S：月织蛛织网术 - 潜行双击主键切换 搭路/攻击 模式。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_TOGGLE = new Identifier("my_addon", "spider_moon_weaver_toggle");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_TOGGLE = new Identifier("ssc_addon", "spider_moon_weaver_toggle");
 	/** C2S：月织蛛织网术 - 主键按下开始蓄力。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_START = new Identifier("my_addon", "spider_moon_weaver_charge_start");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_START = new Identifier("ssc_addon", "spider_moon_weaver_charge_start");
 	/** C2S：月织蛛织网术 - 主键按下开始「平铺搭桥」蓄力（双击长按 / 潜行长按触发）。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT = new Identifier("my_addon", "spider_moon_weaver_charge_start_flat");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_START_FLAT = new Identifier("ssc_addon", "spider_moon_weaver_charge_start_flat");
 	/** C2S：月织蛛织网术 - 主键松开释放。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE = new Identifier("my_addon", "spider_moon_weaver_charge_release");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_CHARGE_RELEASE = new Identifier("ssc_addon", "spider_moon_weaver_charge_release");
 	/** C2S：月织蛛二段跳 - 空中按跳跃键。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP = new Identifier("my_addon", "spider_moon_weaver_double_jump");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_DOUBLE_JUMP = new Identifier("ssc_addon", "spider_moon_weaver_double_jump");
 	/** C2S：月织蛛蛛丝荡漾 - 次键按下（发射/断丝切换）。无 payload。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_PRESS = new Identifier("my_addon", "spider_moon_weaver_swing_press");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_PRESS = new Identifier("ssc_addon", "spider_moon_weaver_swing_press");
 	/** C2S：月织蛛蛛丝荡漾 - 摆荡中上报当前绳长 + 收放意图（服务端权威扣 mana）。payload: double ropeLen + varint reel(>0收/<0放/0无)。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_SYNC = new Identifier("my_addon", "spider_moon_weaver_swing_sync");	/** C2S：寒棘狐冰刺 - 长按开始蕠力（每 1.2s 凝聚一根冰锥）。无 payload。 */
-	public static final Identifier PACKET_FROST_SPIKE_CHARGE_START = new Identifier("my_addon", "frost_spike_charge_start");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_SYNC = new Identifier("ssc_addon", "spider_moon_weaver_swing_sync");	/** C2S：寒棘狐冰刺 - 长按开始蕠力（每 1.2s 凝聚一根冰锥）。无 payload。 */
+	public static final Identifier PACKET_FROST_SPIKE_CHARGE_START = new Identifier("ssc_addon", "frost_spike_charge_start");
 	/** C2S：寒棘狐冰刺 - 松开停止蕠力（保留已凝聚冰锥）。无 payload。 */
-	public static final Identifier PACKET_FROST_SPIKE_CHARGE_RELEASE = new Identifier("my_addon", "frost_spike_charge_release");
+	public static final Identifier PACKET_FROST_SPIKE_CHARGE_RELEASE = new Identifier("ssc_addon", "frost_spike_charge_release");
 	/** C2S：寒棘狐冰刺 - 点按发射一根冰锥。无 payload。 */
-	public static final Identifier PACKET_FROST_SPIKE_FIRE = new Identifier("my_addon", "frost_spike_fire");
+	public static final Identifier PACKET_FROST_SPIKE_FIRE = new Identifier("ssc_addon", "frost_spike_fire");
 	/** C2S：寒棘狐凝棘（次技能） - 长按开始蓄力（每 1s 消耗一个环绕冰锥强化）。无 payload。 */
-	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_START = new Identifier("my_addon", "frost_spike_secondary_start");
+	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_START = new Identifier("ssc_addon", "frost_spike_secondary_start");
 	/** C2S：寒棘狐凝棘（次技能） - 松开发射一根强化冰锥。无 payload。 */
-	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_RELEASE = new Identifier("my_addon", "frost_spike_secondary_release");
+	public static final Identifier PACKET_FROST_SPIKE_SECONDARY_RELEASE = new Identifier("ssc_addon", "frost_spike_secondary_release");
 	/** C2S：跳蛛跳杀 - 主键按下开始蓄力（蓄越久索敌越远）。无 payload。 */
-	public static final Identifier PACKET_JUMP_KILL_CHARGE_START = new Identifier("my_addon", "jump_kill_charge_start");
+	public static final Identifier PACKET_JUMP_KILL_CHARGE_START = new Identifier("ssc_addon", "jump_kill_charge_start");
 	/** C2S：跳蛛跳杀 - 主键松开向前跳扑锁定目标。无 payload。 */
-	public static final Identifier PACKET_JUMP_KILL_CHARGE_RELEASE = new Identifier("my_addon", "jump_kill_charge_release");
+	public static final Identifier PACKET_JUMP_KILL_CHARGE_RELEASE = new Identifier("ssc_addon", "jump_kill_charge_release");
 	/** C2S：跳蛛毒液（次技能） - 次键按下（基础区域/丝线强化冲刺由服务端判定）。无 payload。 */
-	public static final Identifier PACKET_VENOM_SKILL_PRESS = new Identifier("my_addon", "venom_skill_press");
+	public static final Identifier PACKET_VENOM_SKILL_PRESS = new Identifier("ssc_addon", "venom_skill_press");
 	/** S2C：月织蛛蛛丝荡漾 - 状态同步给附近玩家（销点/绳长/状态/canExtend）。payload: UUID + boolean active + 3×double anchor + double ropeLen + varint state + boolean canExtend。 */
-	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_STATE = new Identifier("my_addon", "spider_moon_weaver_swing_state");
+	public static final Identifier PACKET_SPIDER_MOON_WEAVER_SWING_STATE = new Identifier("ssc_addon", "spider_moon_weaver_swing_state");
 	/** S2C：跳蛛安全丝 - 锚点状态广播（active=false 即断丝/结束，仅传 UUID）。payload: UUID + boolean + 3×double 锦点。 */
-	public static final Identifier PACKET_JUMP_KILL_SILK_STATE = new Identifier("my_addon", "jump_kill_silk_state");
+	public static final Identifier PACKET_JUMP_KILL_SILK_STATE = new Identifier("ssc_addon", "jump_kill_silk_state");
 
 	/** C2S：进化美西蟠上报「真正疾跑键」按住状态（区分双击 W/游泳自动疾跑）。payload: boolean held。 */
-	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("my_addon", "axolotl_sprint_key");
+	public static final Identifier PACKET_AXOLOTL_SPRINT_KEY = new Identifier("ssc_addon", "axolotl_sprint_key");
 	/** S2C：踩网蓝色高亮——仅向施法者发送，令其客户端把受害者描蓝边。payload: varint entityId + varint duration。 */
-	public static final Identifier PACKET_WEB_HIGHLIGHT = new Identifier("my_addon", "web_highlight");
-	public static final Identifier PACKET_DEATH_DOMAIN_OUTLINES = new Identifier("my_addon", "death_domain_outlines");
+	public static final Identifier PACKET_WEB_HIGHLIGHT = new Identifier("ssc_addon", "web_highlight");
+	public static final Identifier PACKET_DEATH_DOMAIN_OUTLINES = new Identifier("ssc_addon", "death_domain_outlines");
 	/** S2C：食梦魔「入梦」目标屏幕粉色晕影——仅向入梦目标本人发送。payload: varint durationTicks（<=0 = 该食梦魔的入梦关系结束）+ UUID nightmareUuid（入梦你的食梦魔）。 */
-	public static final Identifier PACKET_DREAM_VEIL = new Identifier("my_addon", "dream_veil");
+	public static final Identifier PACKET_DREAM_VEIL = new Identifier("ssc_addon", "dream_veil");
 	/** S2C：食梦魔「恐惧」状态——仅向恐惧目标本人发送。payload: varint durationTicks（<=0 = 恐惧结束）。驱动粉雾淡入/心跳节奏/出梦表现。 */
-	public static final Identifier PACKET_FEAR_STATE = new Identifier("my_addon", "fear_state");
+	public static final Identifier PACKET_FEAR_STATE = new Identifier("ssc_addon", "fear_state");
 	/** S2C：恐惧目标「1 秒看不见梦魔」窗口——仅向恐惧目标本人发送。payload: UUID nightmareUuid + varint hideTicks。 */
-	public static final Identifier PACKET_FEAR_HIDE = new Identifier("my_addon", "fear_hide");
+	public static final Identifier PACKET_FEAR_HIDE = new Identifier("ssc_addon", "fear_hide");
 	/** S2C：恐惧目标「梦魇显形 1 秒」——梦魔攻击恐惧目标时，该梦魔在其眼里显形（清除隐匿窗口并 1s 内不再隐匿）。payload: UUID nightmareUuid + varint revealTicks。 */
-	public static final Identifier PACKET_FEAR_REVEAL = new Identifier("my_addon", "fear_reveal");
+	public static final Identifier PACKET_FEAR_REVEAL = new Identifier("ssc_addon", "fear_reveal");
 	/** S2C：「惊吓」幽灵实体标记（幽灵苦力怕/幽灵野猫）——仅目标本人。payload: UUID ghostUuid + varint lifeTicks（客户端对该实体局部取消隐身→只有目标看得见它）。 */
-	public static final Identifier PACKET_SPOOK_GHOST = new Identifier("my_addon", "spook_ghost");
+	public static final Identifier PACKET_SPOOK_GHOST = new Identifier("ssc_addon", "spook_ghost");
 	/** C2S：注魔台 - 点击「升级」按钮请求升级魔法书。无 payload，服务端重验条件后扣材料。 */
-	public static final Identifier PACKET_INFUSION_ALTAR_UPGRADE = new Identifier("my_addon", "infusion_altar_upgrade");
+	public static final Identifier PACKET_INFUSION_ALTAR_UPGRADE = new Identifier("ssc_addon", "infusion_altar_upgrade");
 	/** C2S：法术研究台 - 抄写法阵。payload: String elementId + varint level。服务端重验：已学习+纸+对应系墨×等级。 */
-	public static final Identifier PACKET_FORMATION_SCRIBE = new Identifier("my_addon", "formation_scribe");
+	public static final Identifier PACKET_FORMATION_SCRIBE = new Identifier("ssc_addon", "formation_scribe");
 	/** C2S：法术研究台 - 学习法阵。payload: String elementId + varint level。服务端重验：已记录+月尘够。 */
-	public static final Identifier PACKET_FORMATION_LEARN = new Identifier("my_addon", "formation_learn");
+	public static final Identifier PACKET_FORMATION_LEARN = new Identifier("ssc_addon", "formation_learn");
 	/** C2S：卷轴工坊 - 定向制作卷轴（阶段 C）。payload: String spellPath + varint level。重验：图谱+纸+墨+尘。 */
-	public static final Identifier PACKET_SCROLL_CRAFT = new Identifier("my_addon", "scroll_craft");
+	public static final Identifier PACKET_SCROLL_CRAFT = new Identifier("ssc_addon", "scroll_craft");
 	/** C2S：卷轴工坊 - 升级主卷轴（阶段 C）。payload: String spellPath + varint targetLevel。重验：图谱+主卷轴+墨+触媒。 */
-	public static final Identifier PACKET_SCROLL_UPGRADE = new Identifier("my_addon", "scroll_upgrade");
+	public static final Identifier PACKET_SCROLL_UPGRADE = new Identifier("ssc_addon", "scroll_upgrade");
 	/** C2S：卷轴工坊 - 修复卷轴（阶段 C）。无 payload。重验：产出槽卷轴未满+墨×1+尘×2。 */
-	public static final Identifier PACKET_SCROLL_REPAIR = new Identifier("my_addon", "scroll_repair");
+	public static final Identifier PACKET_SCROLL_REPAIR = new Identifier("ssc_addon", "scroll_repair");
 	/** C2S：卷轴工坊 - 拆解卷轴（阶段 C）。无 payload。重验：产出槽有卷轴。 */
-	public static final Identifier PACKET_SCROLL_IMPRINT = new Identifier("my_addon", "scroll_imprint");
-	public static final Identifier PACKET_SCROLL_SALVAGE = new Identifier("my_addon", "scroll_salvage");
+	public static final Identifier PACKET_SCROLL_IMPRINT = new Identifier("ssc_addon", "scroll_imprint");
+	public static final Identifier PACKET_SCROLL_SALVAGE = new Identifier("ssc_addon", "scroll_salvage");
 
 	/** C2S：进化美西螈主技能「投掷水矛」按键。无 payload。 */
-	public static final Identifier PACKET_UPGRADE_AXOLOTL_SPEAR = new Identifier("my_addon", "upgrade_axolotl_spear");
+	public static final Identifier PACKET_UPGRADE_AXOLOTL_SPEAR = new Identifier("ssc_addon", "upgrade_axolotl_spear");
 
 	/** S2C：动画调试记录开关切换（由 /ssc_addon debug anim 指令触发，服务端转发给执行者客户端）。无 payload。 */
-	public static final Identifier PACKET_ANIM_DEBUG_TOGGLE = new Identifier("my_addon", "anim_debug_toggle");
-	public static final Identifier PACKET_UPGRADE_AXOLOTL_VORTEX = new Identifier("my_addon", "upgrade_axolotl_vortex");
+	public static final Identifier PACKET_ANIM_DEBUG_TOGGLE = new Identifier("ssc_addon", "anim_debug_toggle");
+	public static final Identifier PACKET_UPGRADE_AXOLOTL_VORTEX = new Identifier("ssc_addon", "upgrade_axolotl_vortex");
 	/** S2C：进化美西螈「投掷水矛」蓄力期手持水矛渲染状态（对追踪者+自身广播）。payload: UUID + boolean charging */
-	public static final Identifier PACKET_SPEAR_CHARGE_STATE = new Identifier("my_addon", "spear_charge_state");
+	public static final Identifier PACKET_SPEAR_CHARGE_STATE = new Identifier("ssc_addon", "spear_charge_state");
 
 	// ===== 荧光幼灵技能网络包 =====/** C2S：荧光幼灵主要技能（法阵激光）按键。无 payload。 */
-	public static final Identifier PACKET_FLUO_LASER = new Identifier("my_addon", "fluo_laser_key");
+	public static final Identifier PACKET_FLUO_LASER = new Identifier("ssc_addon", "fluo_laser_key");
 	/** C2S：荧光幼灵次要技能（潮汐波动）按键。无 payload。 */
-	public static final Identifier PACKET_FLUO_TIDAL = new Identifier("my_addon", "fluo_tidal_key");
+	public static final Identifier PACKET_FLUO_TIDAL = new Identifier("ssc_addon", "fluo_tidal_key");
 	/** S2C：荧光幼灵「潮汐束缚」把被拴目标的 entityId 同步给客机，用于渲染守卫者激光。payload: varint orbId + varint count + count*varint entityId */
-	public static final Identifier PACKET_TIDAL_TETHER = new Identifier("my_addon", "tidal_tether");
+	public static final Identifier PACKET_TIDAL_TETHER = new Identifier("ssc_addon", "tidal_tether");
 
 	// ===== 寒棘狐技能网络包 =====/** S2C：寒棘狐主技能蓄力状态（事件级，蓄力开始/结束各 1 包）：客户端本地自算下个冰锥位的汇聚流，替代原每 4t 粒子波。payload: UUID player + boolean charging */
-	public static final Identifier PACKET_FROST_SPIKE_CHARGE_STATE = new Identifier("my_addon", "frost_spike_charge_state");
+	public static final Identifier PACKET_FROST_SPIKE_CHARGE_STATE = new Identifier("ssc_addon", "frost_spike_charge_state");
 
 	// ===== SSCA 进化加点系统网络包（框架） =====/** C2S：玩家选择进化路线。payload: String routeId */
-	public static final Identifier PACKET_EVO_SELECT_ROUTE = new Identifier("my_addon", "evo_select_route");
+	public static final Identifier PACKET_EVO_SELECT_ROUTE = new Identifier("ssc_addon", "evo_select_route");
 	/** C2S：玩家选择 SP 分支。payload: String branchId */
-	public static final Identifier PACKET_EVO_SELECT_BRANCH = new Identifier("my_addon", "evo_select_branch");
+	public static final Identifier PACKET_EVO_SELECT_BRANCH = new Identifier("ssc_addon", "evo_select_branch");
 	/** C2S：玩家请求解锁一个天赋节点。payload: String nodeId */
-	public static final Identifier PACKET_EVO_UNLOCK = new Identifier("my_addon", "evo_unlock");
+	public static final Identifier PACKET_EVO_UNLOCK = new Identifier("ssc_addon", "evo_unlock");
 	/** Route-bound purchase and correlated authoritative response (request id, status). */
-	public static final Identifier PACKET_EVO_PURCHASE = new Identifier("my_addon", "evo_purchase");
-    public static final Identifier PACKET_EVO_INVEST = new Identifier("my_addon", "evo_invest");
-	public static final Identifier PACKET_EVO_RESULT = new Identifier("my_addon", "evo_result");
+	public static final Identifier PACKET_EVO_PURCHASE = new Identifier("ssc_addon", "evo_purchase");
+    public static final Identifier PACKET_EVO_INVEST = new Identifier("ssc_addon", "evo_invest");
+	public static final Identifier PACKET_EVO_RESULT = new Identifier("ssc_addon", "evo_result");
 	/** C2S：一次性提交多个待确认节点（按点击顺序），服务端限频一次后顺序逐个解锁。payload: int count + count*String */
-	public static final Identifier PACKET_EVO_UNLOCK_BATCH = new Identifier("my_addon", "evo_unlock_batch");
+	public static final Identifier PACKET_EVO_UNLOCK_BATCH = new Identifier("ssc_addon", "evo_unlock_batch");
 	/** C2S：开局选形态界面选定一个 SSCA 进化形态、直接走 SSCA 路线进化。payload: String formId */
-	public static final Identifier PACKET_SSCA_START_ROUTE = new Identifier("my_addon", "ssca_start_route");
+	public static final Identifier PACKET_SSCA_START_ROUTE = new Identifier("ssc_addon", "ssca_start_route");
 	/** C2S：客机加入后请求服务端把所有在场玩家的形态+皮肤同步过来（修复客机看其它玩家默认白模型）。无 payload */
-	public static final Identifier PACKET_REQUEST_ALL_FORM_SYNC = new Identifier("my_addon", "request_all_form_sync");
+	public static final Identifier PACKET_REQUEST_ALL_FORM_SYNC = new Identifier("ssc_addon", "request_all_form_sync");
 	/** C2S: join repair for this observer; other peers receive only this player's appearance. */
-	public static final Identifier PACKET_REQUEST_FORM_SYNC_V2 = new Identifier("my_addon", "request_form_sync_v2");
+	public static final Identifier PACKET_REQUEST_FORM_SYNC_V2 = new Identifier("ssc_addon", "request_form_sync_v2");
 	/** S2C：服务端广播所有在场玩家的形态 ID。payload: int count + count*(UUID + String formId) */
-	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("my_addon", "broadcast_forms");
+	public static final Identifier PACKET_BROADCAST_FORMS = new Identifier("ssc_addon", "broadcast_forms");
 	/** S2C：把所有 SSCA 进化路线定义（JSON）同步给客户端，供进化树 UI 渲染。payload: int count + count*(routeId + rawJson) */
-	public static final Identifier PACKET_EVO_ROUTES_SYNC = new Identifier("my_addon", "evo_routes_sync");
+	public static final Identifier PACKET_EVO_ROUTES_SYNC = new Identifier("ssc_addon", "evo_routes_sync");
 	/** S2C：把服务端的法术数值配置（JSON）同步给客机（多人环境客户端无 datapack 数据，tooltip/HUD 数值需一致）。
 	 *  payload: int count + count*(spellPath + rawJson) */
-	public static final Identifier PACKET_SPELL_CONFIG_SYNC = new Identifier("my_addon", "spell_config_sync");
+	public static final Identifier PACKET_SPELL_CONFIG_SYNC = new Identifier("ssc_addon", "spell_config_sync");
 	/** S2C：灵能宝珠长按成功后，让客户端打开「转职选择形态」界面。无 payload。 */
-	public static final Identifier PACKET_OPEN_JOB_CHANGE = new Identifier("my_addon", "open_job_change");
+	public static final Identifier PACKET_OPEN_JOB_CHANGE = new Identifier("ssc_addon", "open_job_change");
 	/** C2S：玩家在转职界面选定目标进化形态并确认。payload: String formId */
-	public static final Identifier PACKET_JOB_CHANGE_CONFIRM = new Identifier("my_addon", "job_change_confirm");
+	public static final Identifier PACKET_JOB_CHANGE_CONFIRM = new Identifier("ssc_addon", "job_change_confirm");
 	/** C2S：玩家打开进化加点界面（触发旧存档迁移检测）。无 payload。 */
-	public static final Identifier PACKET_EVO_OPEN = new Identifier("my_addon", "evo_open");
+	public static final Identifier PACKET_EVO_OPEN = new Identifier("ssc_addon", "evo_open");
 
 	/** C2S 限频：每玩家每个事件类型记录上一次服务端接收时间，防外挂客户端 spam。 */
 	private static final Map<UUID, Long> LAST_WHITELIST_PACKET_TICK = new ConcurrentHashMap<>();

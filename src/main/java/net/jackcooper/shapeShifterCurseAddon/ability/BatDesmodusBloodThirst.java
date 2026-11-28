@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 吸血蝙蝠 - 血渴值（Blood Thirst）系统。
- * 复用 Apoli 资源 my_addon:form_bat_desmodus_blood_resource，默认上限为 100。
+ * 复用 Apoli 资源 ssc_addon:form_bat_desmodus_blood_resource，默认上限为 100。
  *
  * 累积:
  *   - 普攻命中非白名单生物 +8 (内部冷却 0.3s)

@@ -15,8 +15,8 @@ import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 
 final class OrcafisWaterFlow {
-    private static final Identifier FLOW = new Identifier("my_addon","textures/entity/orcafis/water_flow.png");
-    private static final Identifier INTAKE = new Identifier("my_addon","textures/entity/orcafis/intake_foam.png");
+    private static final Identifier FLOW = new Identifier("ssc_addon","textures/entity/orcafis/water_flow.png");
+    private static final Identifier INTAKE = new Identifier("ssc_addon","textures/entity/orcafis/intake_foam.png");
     private static final double TAU = Math.PI*2;
 
     static void render(OrcafisEntity boss, Vec3d mouth, float t, float partial, MatrixStack m, VertexConsumerProvider buffers, int light) {

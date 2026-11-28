@@ -53,10 +53,10 @@ public class SnowFoxSpTeleportAttack {
 
 	/**
 	 * 执行瞬移攻击
-	 * 门禁：power JSON（my_addon:fail_aware_active_self）原生 cooldown / fail_cooldown 字段管理，
+	 * 门禁：power JSON（ssc_addon:fail_aware_active_self）原生 cooldown / fail_cooldown 字段管理，
 	 * 本方法只负责效果与失败标记：无目标/蓝不够 → markFail()（按 fail_cooldown 进 CD）。
 	 */
-	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_secondary";
+	private static final String SKILL_ID = "ssc_addon:form_snow_fox_sp_melee_secondary";
 
 	public static boolean execute(ServerPlayerEntity player) {
 		if (net.jackcooper.shapeShifterCurseAddon.anomaly.AnomalyTeleportGuard.reject(player)) return false;

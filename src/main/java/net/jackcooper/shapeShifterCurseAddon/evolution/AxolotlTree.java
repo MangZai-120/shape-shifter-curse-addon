@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * 美西螈（axolotl）进化路线的便捷访问器 + 节点 id 常量表。
  *
- * <p>节点树本体在 datapack JSON {@code data/my_addon/ssca_evolution/routes/axolotl.json}，
+ * <p>节点树本体在 datapack JSON {@code data/ssc_addon/ssca_evolution/routes/axolotl.json}，
  * 由 {@link EvolutionRegistry} 加载。本类仅保留节点 id 常量（供 Java 技能门控引用）
  * 与到 {@link EvolutionRegistry} 的转发。加 / 改进化树只需改上述 JSON。</p>
  */

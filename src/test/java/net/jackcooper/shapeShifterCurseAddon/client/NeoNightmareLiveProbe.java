@@ -86,10 +86,10 @@ public final class NeoNightmareLiveProbe {
             ticks++;if(ticks==70){
                 target=server.getPlayerManager().getPlayerList().get(0);origin=target.getPos();target.changeGameMode(GameMode.SURVIVAL);target.getAbilities().invulnerable=false;target.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(200);target.setHealth(200);target.setNoGravity(true);target.setYaw(0);target.setPitch(0);
                 server.getGameRules().get(GameRules.DO_MOB_SPAWNING).set(false,server);server.getGameRules().get(GameRules.NATURAL_REGENERATION).set(false,server);server.getOverworld().setTimeOfDay(6000);
-                var function=new TestFunction("nightmare","live","ssca_neomagic:empty",800,0,true,t->{});
+                var function=new TestFunction("nightmare","live","ssc_addon:empty",800,0,true,t->{});
                 var context=new TestContext(new GameTestState(function,BlockRotation.NONE,target.getServerWorld()));caster=context.createMockCreativeServerPlayerInWorld();casterId=caster.getUuid();caster.setNoGravity(true);caster.refreshPositionAndAngles(origin.x,origin.y,origin.z+8,180,0);
                 RegPlayerFormComponent.PLAYER_FORM.get(caster).nowForm=RegPlayerForms.playerForms.get(FormIdentifiers.WILD_CAT_NIGHTMARE);caster.addCommandTag(WhitelistUtils.WHITELIST_MOB_TAG_PREFIX+caster.getUuid());
-                net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.applyLayer(caster,new Pair<>(new Identifier("origins","origin"),new Identifier("my_addon","form_wild_cat_nightmare")),false);
+                net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.applyLayer(caster,new Pair<>(new Identifier("origins","origin"),new Identifier("ssc_addon","form_wild_cat_nightmare")),false);
                 RegPlayerFormComponent.PLAYER_FORM.sync(caster);net.onixary.shapeShifterCurseFabric.integration.origins.registry.ModComponents.ORIGIN.sync(caster);
                 slowBase=(float)target.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED);
             }

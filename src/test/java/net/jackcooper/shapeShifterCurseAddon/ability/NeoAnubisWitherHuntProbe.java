@@ -20,7 +20,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 /** Uses the loaded Apoli multiple power and its real component tick instead of duplicating the scan. */
 public final class NeoAnubisWitherHuntProbe {
     private static int checks;
-    private static final String ROOT = "my_addon:form_anubis_wolf_sp_wither_hunt";
+    private static final String ROOT = "ssc_addon:form_anubis_wolf_sp_wither_hunt";
     private static void check(boolean ok, String reason) {
         checks++;
         if (!ok) throw new AssertionError(reason);

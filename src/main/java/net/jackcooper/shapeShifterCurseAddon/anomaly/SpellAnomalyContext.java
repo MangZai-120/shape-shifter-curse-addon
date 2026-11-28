@@ -37,7 +37,11 @@ public record SpellAnomalyContext(Identifier spellId, String element, int level,
                 || !nbt.contains("Amount", NbtElement.NUMBER_TYPE)
                 || !nbt.containsUuid("Caster") || !nbt.containsUuid("Cast")) return null;
         try {
-            return new SpellAnomalyContext(new Identifier(nbt.getString("Spell")), nbt.getString("Element"),
+            Identifier spellId = new Identifier(nbt.getString("Spell"));
+            if (spellId.getNamespace().equals("ssca_neomagic") && spellId.getPath().startsWith("blueprint/")) {
+                spellId = new Identifier("ssc_addon", spellId.getPath());
+            }
+            return new SpellAnomalyContext(spellId, nbt.getString("Element"),
                     nbt.getInt("Level"), nbt.getDouble("Amount"), nbt.getUuid("Caster"), nbt.getUuid("Cast"));
         } catch (IllegalArgumentException invalid) {
             return null;

@@ -1,0 +1,21 @@
+{
+    "type": "ssc_addon:fail_aware_active_self",
+    "name": "power.ssc_addon.form_golden_sandstorm_sp_erosion_brand.name",
+    "description": "power.ssc_addon.form_golden_sandstorm_sp_erosion_brand.description",
+    "entity_action": {
+        "type": "ssc_addon:golden_sandstorm_detonate"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "condition": {
+        "type": "apoli:sneaking",
+        "inverted": true
+    },
+    "cooldown": 200,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_cast",
+    "hud_render": {
+        "should_render": false
+    }
+}

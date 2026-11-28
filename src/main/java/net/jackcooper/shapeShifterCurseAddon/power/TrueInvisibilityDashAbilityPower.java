@@ -43,7 +43,7 @@ public class TrueInvisibilityDashAbilityPower extends ActiveCooldownPower {
 	}
 
 	public static PowerFactory<Power> createFactory() {
-		return new PowerFactory<>(new Identifier("my_addon", "true_invisibility_dash"),
+		return new PowerFactory<>(new Identifier("ssc_addon", "true_invisibility_dash"),
 				new SerializableData()
 						.add("cooldown", SerializableDataTypes.INT, COOLDOWN_TICKS)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)

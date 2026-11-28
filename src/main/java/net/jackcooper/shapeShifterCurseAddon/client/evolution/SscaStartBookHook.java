@@ -44,7 +44,7 @@ public final class SscaStartBookHook {
             int myButtonX = scaledWidth / 2 - BUTTON_W / 2;
 
             ButtonWidget button = ButtonWidget.builder(
-                    Text.translatable("evolution.my_addon.start.button"),
+                    Text.translatable("evolution.ssc_addon.start.button"),
                     b -> openConfirm(client, screen)
             ).dimensions(myButtonX, myButtonY, BUTTON_W, BUTTON_H).build();
             Screens.getButtons(screen).add(button);
@@ -61,10 +61,10 @@ public final class SscaStartBookHook {
                         client.setScreen(startScreen);
                     }
                 },
-                Text.translatable("evolution.my_addon.start.confirm.title"),
-                Text.translatable("evolution.my_addon.start.confirm.message"),
-                Text.translatable("evolution.my_addon.start.confirm.yes"),
-                Text.translatable("evolution.my_addon.start.confirm.no"));
+                Text.translatable("evolution.ssc_addon.start.confirm.title"),
+                Text.translatable("evolution.ssc_addon.start.confirm.message"),
+                Text.translatable("evolution.ssc_addon.start.confirm.yes"),
+                Text.translatable("evolution.ssc_addon.start.confirm.no"));
         client.setScreen(confirm);
     }
 }

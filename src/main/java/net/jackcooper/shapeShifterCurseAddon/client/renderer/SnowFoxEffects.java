@@ -33,7 +33,7 @@ public final class SnowFoxEffects {
     private static final List<Spike> SPIKES=new ArrayList<>();
     private static final WeakHashMap<PlayerEntity,Rotation> ROTATIONS=new WeakHashMap<>();
     private static final Identifier SNOW=new Identifier("minecraft","textures/block/snow.png");
-    private static final Identifier ICE=new Identifier("my_addon","textures/effect/snow_fox/ice_spikes.png");
+    private static final Identifier ICE=new Identifier("ssc_addon","textures/effect/snow_fox/ice_spikes.png");
     private static final DustParticleEffect FROST = new DustParticleEffect(new Vector3f(.41f,.87f,.93f), .65f);
     private static final BlockStateParticleEffect SNOW_GRAINS = new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.SNOW_BLOCK.getDefaultState());
     private static final BlockStateParticleEffect ICE_CHIPS = new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.PACKED_ICE.getDefaultState());

@@ -30,9 +30,9 @@ import java.util.List;
  */
 public final class BalanceIntegration {
 
-    public static final Identifier PACKET_BALANCE_S2C = new Identifier("my_addon", "balance_sync");
-    public static final Identifier PACKET_BALANCE_ACK = new Identifier("my_addon", "balance_ack");
-    public static final Identifier PACKET_BALANCE_RESYNC = new Identifier("my_addon", "balance_resync");
+    public static final Identifier PACKET_BALANCE_S2C = new Identifier("ssc_addon", "balance_sync");
+    public static final Identifier PACKET_BALANCE_ACK = new Identifier("ssc_addon", "balance_ack");
+    public static final Identifier PACKET_BALANCE_RESYNC = new Identifier("ssc_addon", "balance_resync");
 
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 

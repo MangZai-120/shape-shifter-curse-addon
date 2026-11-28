@@ -33,7 +33,7 @@ import java.util.UUID;
 @Environment(EnvType.CLIENT)
 public final class SpiderMoonWeaverSwingRenderer {
 
-	private static final Identifier ROPE_TEXTURE = new Identifier("my_addon", "textures/entity/web_swing_rope.png");
+	private static final Identifier ROPE_TEXTURE = new Identifier("ssc_addon", "textures/entity/web_swing_rope.png");
 	private static final float ROPE_HALF_WIDTH = 0.04f;
 
 	private SpiderMoonWeaverSwingRenderer() {}

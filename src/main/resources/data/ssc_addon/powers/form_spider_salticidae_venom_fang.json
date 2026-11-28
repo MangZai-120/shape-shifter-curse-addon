@@ -1,0 +1,23 @@
+{
+    "type": "apoli:action_on_hit",
+    "bientity_action": {
+        "type": "ssc_addon:salticidae_venom_fang"
+    },
+    "damage_condition": {
+        "type": "apoli:amount",
+        "comparison": ">",
+        "compare_to": 0
+    },
+    "bientity_condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:target_condition",
+                "condition": { "type": "apoli:living" }
+            },
+            {
+                "type": "ssc_addon:not_actor_whitelisted"
+            }
+        ]
+    }
+}

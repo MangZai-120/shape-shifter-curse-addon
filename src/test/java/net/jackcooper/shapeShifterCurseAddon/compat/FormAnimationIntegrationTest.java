@@ -89,12 +89,12 @@ public final class FormAnimationIntegrationTest {
                 player.tracker.startTracking(key, new NbtCompound());
             }
             var forms = List.of(
-                    new Form_Axolotl3(new Identifier("my_addon", "form_axolotl_sp")),
-                    new Form_Axolotl3(new Identifier("my_addon", "form_upgrade_axolotl")),
-                    new Form_AxolotlFluorescent(new Identifier("my_addon", "form_axolotl_fluorescent")),
-                    new Form_AxolotlFluorescent(new Identifier("my_addon", "form_axolotl_aling")),
-                    new Form_Allay(new Identifier("my_addon", "form_allay_sp")),
-                    new Form_FallenAllaySP(new Identifier("my_addon", "form_fallen_allay_sp")));
+                    new Form_Axolotl3(new Identifier("ssc_addon", "form_axolotl_sp")),
+                    new Form_Axolotl3(new Identifier("ssc_addon", "form_upgrade_axolotl")),
+                    new Form_AxolotlFluorescent(new Identifier("ssc_addon", "form_axolotl_fluorescent")),
+                    new Form_AxolotlFluorescent(new Identifier("ssc_addon", "form_axolotl_aling")),
+                    new Form_Allay(new Identifier("ssc_addon", "form_allay_sp")),
+                    new Form_FallenAllaySP(new Identifier("ssc_addon", "form_fallen_allay_sp")));
             List<ItemCase> items = new ArrayList<>();
             items.add(new ItemCase("stick", Items.STICK, false));
             items.add(new ItemCase("vanilla sword", Items.IRON_SWORD, false));

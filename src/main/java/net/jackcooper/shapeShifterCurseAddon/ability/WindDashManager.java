@@ -50,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>悬浮 3 秒超时未按键：<b>FALL 缓慢落下</b>（3 格/秒），落地无伤害但进入 CD。
  *
  * <p>所有判定在服务端，粒子通过 ServerWorld 广播，落点预览纯客户端各自计算。
- * 伤害 AOE 默认白名单（{@code my_addon:not_actor_whitelisted} 对应 WhitelistUtils）。
+ * 伤害 AOE 默认白名单（{@code ssc_addon:not_actor_whitelisted} 对应 WhitelistUtils）。
  */
 public final class WindDashManager {
 
@@ -70,7 +70,7 @@ public final class WindDashManager {
     // 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
     private static final BalanceReader BAL = new BalanceReader("abilities.wind_dash");
     /** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
-    private static final String SKILL_ID = "my_addon:form_ocelot_wind_spirit_wind_dash";
+    private static final String SKILL_ID = "ssc_addon:form_ocelot_wind_spirit_wind_dash";
 
     // ===== 阶段 =====
     public static final int PHASE_NONE = 0;

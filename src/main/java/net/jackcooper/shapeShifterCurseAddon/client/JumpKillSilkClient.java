@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Environment(EnvType.CLIENT)
 public final class JumpKillSilkClient {
 
-	private static final Identifier ROPE_TEXTURE = new Identifier("my_addon", "textures/entity/web_swing_rope.png");
+	private static final Identifier ROPE_TEXTURE = new Identifier("ssc_addon", "textures/entity/web_swing_rope.png");
 	private static final float ROPE_HALF_WIDTH = 0.04f;
 
 	/** UUID → 锚点坐标（active 镜像；断丝即移除）。 */

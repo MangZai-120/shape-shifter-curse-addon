@@ -73,7 +73,7 @@ public final class FountainBeltCompatibilityChecks {
         String suffix = plus ? "_plus" : "";
         String item = "shape-shifter-curse:fountain_belt" + suffix;
         String originalPower = "shape-shifter-curse:form_axolotl_fountain_belt_trinket" + suffix;
-        String addonPower = "my_addon:form_axolotl_sp_fountain_belt_trinket" + suffix;
+        String addonPower = "ssc_addon:form_axolotl_sp_fountain_belt_trinket" + suffix;
         JsonObject original = json("fountain_belt" + suffix);
         JsonObject addon = json("ssc_addon_fountain_belt" + suffix);
         check(original.getAsJsonObject(item).has("layers"), "SSCA does not shadow original " + item + " resource");
@@ -89,7 +89,7 @@ public final class FountainBeltCompatibilityChecks {
                 check(originalPowers.equals(List.of(new Identifier(originalPower))), "original axolotl keeps its fountain " + suffix);
                 check(List.of(new Identifier(addonPower)).equals(data.formPowerAdd.get(FormIdentifiers.AXOLOTL_SP)),
                         "SP receives only its replacement fountain " + suffix);
-                check(data.formPowerRemove.get(FormIdentifiers.AXOLOTL_SP).contains(new Identifier("my_addon:form_axolotl_sp_water_ball")),
+                check(data.formPowerRemove.get(FormIdentifiers.AXOLOTL_SP).contains(new Identifier("ssc_addon:form_axolotl_sp_water_ball")),
                         "SP belt replaces its burst " + suffix);
                 check(data.layerPowerRemoveMap.get(new Identifier("origins:origin"))
                         .get(new Identifier("shape-shifter-curse:form_axolotl_3"))

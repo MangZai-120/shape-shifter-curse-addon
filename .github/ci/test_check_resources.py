@@ -1,4 +1,4 @@
-"""Exercise cache selection through the real resource-checker command line."""
+"""Exercise cache selection, namespace references and packaging through the checker CLI."""
 from pathlib import Path
 import os
 import shutil
@@ -6,11 +6,66 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from zipfile import ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKER = ROOT / 'tools/check_resources.py'
 CLIENT_SUFFIX = Path('caches/fabric-loom/1.20.1/minecraft-client.jar')
+
+
+class ResourceLayoutTest(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory(prefix='ssca-layout-')
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.checker = self.root / 'tools/check_resources.py'
+        self.checker.parent.mkdir()
+        shutil.copyfile(CHECKER, self.checker)
+        self.resources = self.root / 'src/main/resources'
+        self.put('fabric.mod.json', b'{"id":"ssc_addon","mixins":["ssc_addon.mixins.json"]}')
+        self.put('ssc_addon.mixins.json', b'{}')
+
+    def put(self, name, content):
+        file = self.resources / name
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_bytes(content)
+
+    def failure(self, *args):
+        result = subprocess.run([sys.executable, '-X', 'utf8', str(self.checker), 'resources', *args],
+                                capture_output=True, text=True, encoding='utf-8', timeout=30)
+        self.assertNotEqual(result.returncode, 0)
+        return result.stderr
+
+    def test_old_id_in_moved_origin(self):
+        origin = 'data/ssc_addon/origins/test.json'
+        self.put(origin, b'{"powers":["my_addon:old"]}')
+        error = self.failure()
+        self.assertIn(origin, error)
+        self.assertIn('my_addon:old', error)
+
+    def test_texture_lookup_is_case_sensitive_on_every_platform(self):
+        self.put('assets/ssc_addon/textures/fx.png', b'image')
+        self.put('assets/ssc_addon/ssc_form_model/test.json', b'{"texture":"ssc_addon:textures/Fx.png"}')
+        self.assertIn('textures/Fx.png', self.failure())
+
+    def test_jar_reports_missing_stale_changed_and_duplicate_files(self):
+        icon = 'assets/ssc_addon/icon.png'
+        power = 'data/ssc_addon/powers/test.json'
+        legacy = 'data/my_addon/powers/test.json'
+        self.put(icon, b'current')
+        self.put(power, b'{}')
+        package = self.root / 'build.jar'
+        with ZipFile(package, 'w') as jar:
+            jar.write(self.resources / 'fabric.mod.json', 'fabric.mod.json')
+            jar.writestr(icon, b'outdated')
+            with self.assertWarns(UserWarning):
+                jar.writestr(icon, b'outdated')
+            jar.writestr(legacy, b'{}')
+        error = self.failure('--addon-jar', str(package))
+        for issue in ('missing: ' + power, 'missing: ssc_addon.mixins.json', 'unexpected: ' + legacy,
+                      'changed: ' + icon, 'duplicate: ' + icon):
+            self.assertIn(issue, error)
 
 
 class ResourceCheckerCliTest(unittest.TestCase):

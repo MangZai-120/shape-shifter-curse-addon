@@ -73,7 +73,7 @@ public final class ControlledAbilityInterruption {
                     && PowerHolderComponent.KEY.get(player).hasPower(PowerTypeRegistry.get(id))
                     && PowerUtils.getResourceValue(player, id) != 0) PowerUtils.setResourceValueAndSync(player, id, 0);
         }
-        if (root.startsWith("my_addon:form_familiar_fox_")
+        if (root.startsWith("ssc_addon:form_familiar_fox_")
                 && (root.endsWith("_blue_fire_ring") || root.endsWith("_blue_fire_ring_amulet"))) {
             player.removeStatusEffect(net.jackcooper.shapeShifterCurseAddon.SscAddon.BLUE_FIRE_RING);
         }

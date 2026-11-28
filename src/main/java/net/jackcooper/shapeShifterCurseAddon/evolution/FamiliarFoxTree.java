@@ -6,7 +6,7 @@ import java.util.List;
  * 使魔（familiar_fox）进化路线的便捷访问器 + 节点 id 常量表。
  *
  * <p><b>【数据驱动重构】</b>节点树本体已迁移到 datapack JSON
- * {@code data/my_addon/ssca_evolution/routes/familiar_fox.json}，由 {@link EvolutionRegistry} 加载。
+ * {@code data/ssc_addon/ssca_evolution/routes/familiar_fox.json}，由 {@link EvolutionRegistry} 加载。
  * 本类不再硬编码节点，仅承担两件事：</p>
  * <ol>
  *   <li>保留各节点 id 常量（供少数按「具体节点」做特殊渲染 / 业务的地方引用，

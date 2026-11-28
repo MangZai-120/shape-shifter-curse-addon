@@ -148,7 +148,7 @@ public final class NeoAnomalyHitWorldProbe {
             var record=new NeoState.Experiment();record.blueprint=blueprint;record.dimension=p.getWorld().getRegistryKey().getValue().toString();
             var active=NeoTestFixtures.active(session,record,ItemStack.EMPTY,Hand.MAIN_HAND,new NeoEffects.Anchor(a.getPos(),a.getUuid()),new Random(1));
             check(NeoEffects.release(p,active),"Actual hostile blueprint releases");
-            check(hits.size()==1&&hits.get(0).context.spellId().getNamespace().equals("ssca_neomagic")&&hits.get(0).context.element().equals("fire"),"Blueprint hostile hit retains final-output identity and zero default amount");
+            check(hits.size()==1&&hits.get(0).context.spellId().getNamespace().equals("ssc_addon")&&hits.get(0).context.element().equals("fire"),"Blueprint hostile hit retains final-output identity and zero default amount");
             check(record.damage>0&&hits.get(0).context.amount()==0,"Original blueprint damage is measured before its anomaly event");
 
             var outer=snapshot;

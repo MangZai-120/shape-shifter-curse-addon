@@ -482,7 +482,7 @@ public final class SpellAuditIntegrationProbe {
         near((double)method.invoke(null,state,snow,59L),.85,"Actual client ice preview uses authoritative preparation multiplier");
         near((double)method.invoke(null,state,snow,60L),1,"Client preparation expires at the same boundary as server");
         state.putDouble("FrostSpellMultiplier",.75);state.putString("Form",spine.toString());near((double)method.invoke(null,state,spine,120L),.75,"Thorn discount is independent of SP preparation expiry");
-        near((double)method.invoke(null,state,new Identifier("my_addon","familiar_fox_sp"),0L),1,"Stale frost HUD cannot grant another form the bonus");
+        near((double)method.invoke(null,state,new Identifier("ssc_addon","familiar_fox_sp"),0L),1,"Stale frost HUD cannot grant another form the bonus");
         near((double)method.invoke(null,state,snow,0L),1,"A form packet arriving before its HUD cannot reuse the other snow form's multiplier");
         state.putDouble("FrostSpellMultiplier",Double.NaN);near((double)method.invoke(null,state,spine,0L),1,"Malformed nonfinite multiplier is ignored");
         state.putDouble("FrostSpellMultiplier",-1);near((double)method.invoke(null,state,spine,0L),1,"Negative multiplier is ignored");

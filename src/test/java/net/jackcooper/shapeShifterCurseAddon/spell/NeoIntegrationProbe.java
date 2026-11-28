@@ -29,8 +29,8 @@ public final class NeoIntegrationProbe {
         check(Registries.BLOCK.getIds().stream().noneMatch(id->id.getNamespace().equals("ssca_neomagic")),"Retired experimental blocks are not registered");
         check(Registries.ITEM_GROUP.getIds().stream().noneMatch(id->id.getNamespace().equals("ssca_neomagic")),"Retired creative group is absent");
         for(String name:java.util.List.of("guiding_wand","observation_notebook","blueprint","research_table","observation_target","sample_thermal","sample_frost","sample_lunar","sample_curse","sample_summon","sample_void","sample_space","carrier_self","carrier_contact","carrier_projectile","carrier_area","carrier_lock","control_split","control_merge","control_store","control_constrain","control_bridge","control_convert")) {
-            check(NeoIntegrationProbe.class.getClassLoader().getResource("data/ssca_neomagic/recipes/"+name+".json")==null,"Retired recipe absent: "+name);
-            check(NeoIntegrationProbe.class.getClassLoader().getResource("assets/ssca_neomagic/models/item/"+name+".json")==null,"Retired item model absent: "+name);
+            check(NeoIntegrationProbe.class.getClassLoader().getResource("data/ssc_addon/recipes/"+name+".json")==null,"Retired recipe absent: "+name);
+            check(NeoIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/models/item/"+name+".json")==null,"Retired item model absent: "+name);
         }
         check(Registries.STATUS_EFFECT.containsId(NeoMagic.id("breakdown")),"Live collapse status backend remains registered");
         ItemStack wand=new ItemStack(net.jackcooper.shapeShifterCurseAddon.spell.NeoTestFixtures.WAND);var blueprint=new Blueprint("test",Core.THERMAL,Carrier.PROJECTILE,List.of(Control.SPLIT,Control.CONSTRAIN),Core.FROST,2,35,24);
@@ -94,10 +94,10 @@ public final class NeoIntegrationProbe {
         check(NbtIo.readCompressed(saved).equals(large),"Large history writes and reloads as byte arrays, without 64KiB string corruption");
         var largePacket=net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create();largePacket.writeNbt(large);
         check(largePacket.readNbt().equals(large),"Large history packet roundtrip");
-        var zh=json("assets/my_addon/lang/zh_cn.json");var en=json("assets/my_addon/lang/en_us.json");
+        var zh=json("assets/ssc_addon/lang/zh_cn.json");var en=json("assets/ssc_addon/lang/en_us.json");
         check(zh.keySet().equals(en.keySet()),"Locale keys match");
         for(var entry:zh.entrySet())check(!entry.getValue().getAsString().contains("�"),"UTF8 localization: "+entry.getKey());
-        var rules=json("data/ssca_neomagic/rules/defaults.json");
+        var rules=json("data/ssc_addon/rules/defaults.json");
         check(rules.getAsJsonObject("forms").size()>=57,"Explicit form defaults included");
         for(Core core:Core.values())check(rules.getAsJsonObject("costs").has(core.name()),"Independent core cost: "+core);
         checks+=net.jackcooper.shapeShifterCurseAddon.client.hud.NeoHudChecks.run();

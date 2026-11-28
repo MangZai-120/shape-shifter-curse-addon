@@ -68,7 +68,7 @@ public class EvolutionNode {
      * 从 route JSON 的单个节点对象解析。
      *
      * <p>字段：{@code id}(必填)；{@code name}/{@code desc}(lang key，缺省自动按
-     * {@code evolution.my_addon.<route>.node.<id>.name/.desc} 生成)；{@code icon}(物品 id，缺省屏障)；
+     * {@code evolution.ssc_addon.<route>.node.<id>.name/.desc} 生成)；{@code icon}(物品 id，缺省屏障)；
      * {@code cost}(默认 1)；{@code prereqs}(默认空)；{@code col}/{@code row}(默认 0)；
      * {@code auto_unlock}(默认 false)；{@code branch}(默认空)；{@code grants_powers}(默认空)。</p>
      *
@@ -77,9 +77,9 @@ public class EvolutionNode {
     public static EvolutionNode fromJson(String routeId, JsonObject o) {
         String id = o.get("id").getAsString();
         String nameKey = o.has("name") ? o.get("name").getAsString()
-                : "evolution.my_addon." + routeId + ".node." + id + ".name";
+                : "evolution.ssc_addon." + routeId + ".node." + id + ".name";
         String descKey = o.has("desc") ? o.get("desc").getAsString()
-                : "evolution.my_addon." + routeId + ".node." + id + ".desc";
+                : "evolution.ssc_addon." + routeId + ".node." + id + ".desc";
         Item icon = Items.BARRIER;
         if (o.has("icon")) {
             Identifier iconId = Identifier.tryParse(o.get("icon").getAsString());

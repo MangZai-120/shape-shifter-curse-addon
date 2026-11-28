@@ -23,8 +23,8 @@ public final class GameplayAuditRegressionProbe {
         absorptionPersistence();
         totemData();
         for (var bar : BarKeys.ALL) check(LoginResourceRestoreHandler.isPersistentResource(bar.id), "persistent bar allowed");
-        check(!LoginResourceRestoreHandler.isPersistentResource(new Identifier("my_addon", "form_upgrade_axolotl_sp_vortex_state")), "charge state excluded");
-        check(!LoginResourceRestoreHandler.isPersistentResource(new Identifier("my_addon", "form_snow_fox_sp_regen_cooldown")), "timer excluded");
+        check(!LoginResourceRestoreHandler.isPersistentResource(new Identifier("ssc_addon", "form_upgrade_axolotl_sp_vortex_state")), "charge state excluded");
+        check(!LoginResourceRestoreHandler.isPersistentResource(new Identifier("ssc_addon", "form_snow_fox_sp_regen_cooldown")), "timer excluded");
         System.out.println("Gameplay audit regressions: " + checks + " checks passed. Live gameplay NOT tested.");
     }
 

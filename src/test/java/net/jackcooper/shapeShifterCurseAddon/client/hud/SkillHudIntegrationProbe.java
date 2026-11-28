@@ -142,7 +142,7 @@ public final class SkillHudIntegrationProbe {
         check(dash.cooldown().getPath().equals("form_upgrade_axolotl_dash_hud_water")
                 && dash.icon().getPath().endsWith("/water_dash_upgrade_axolotl.png"),
                 "lower dash retains its real cooldown and uses the dedicated illustrated icon");
-        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + dash.icon().getPath()) != null,
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/" + dash.icon().getPath()) != null,
                 "dedicated Evolved Axolotl dash texture is packaged");
         player.evolution.unlock("water_spear");
         var spear = entries(player);
@@ -155,7 +155,7 @@ public final class SkillHudIntegrationProbe {
                 && full.get(1).skill().cooldown().getPath().equals("form_upgrade_axolotl_vortex_guide")
                 && full.get(2).skill().equals(dash) && full.get(2).slot() == SkillHudLayout.Slot.LOWER,
                 "unlocking Vortex Guide never displaces the visible lower dash");
-        var perkId = new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge");
+        var perkId = new Identifier("ssc_addon", "perk_upgrade_axolotl_tidal_pull_charge");
         player.form.formPerkMap.put(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree,
                 List.of(net.onixary.shapeShifterCurseFabric.perk.RegPerks.P_AxolotlTidalPull));
         player.powers.addPower(PowerTypeRegistry.get(perkId), new Identifier("test", "dash_layout"));
@@ -175,11 +175,11 @@ public final class SkillHudIntegrationProbe {
     }
 
     private static void evolvedAxolotlDashCooldown(TestPlayer player, SkillHudCatalog.Skill dash) throws Exception {
-        Identifier landId = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
-        Identifier waterId = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
-        var resources = data("my_addon/powers/form_upgrade_axolotl_dash_hud");
+        Identifier landId = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_land");
+        Identifier waterId = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_water");
+        var resources = data("ssc_addon/powers/form_upgrade_axolotl_dash_hud");
         for (String part : List.of("land", "water")) {
-            Identifier id = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_" + part);
+            Identifier id = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_" + part);
             if (!PowerTypeRegistry.contains(id)) {
                 PowerFactory<?> factory = ResourcePower.createFactory();
                 PowerTypeRegistry.register(id, new PowerType<>(id, factory.read(resources.getAsJsonObject(part))));
@@ -290,10 +290,10 @@ public final class SkillHudIntegrationProbe {
         } finally { EvolutionRegistry.CLIENT.applyClientSync(routes); }
         check(entries(player).stream().anyMatch(e -> "fire_ring".equals(e.skill().talent())), "route synchronization restores the skill without new acquisition");
         player.evolution.setUnlockAll(true);
-        player.form.nowForm = new NormalForm(new Identifier("my_addon", "axolotl_upgrade"));
+        player.form.nowForm = new NormalForm(new Identifier("ssc_addon", "axolotl_upgrade"));
         check(!SkillHudCatalog.isAvailable(ring, player), "admin HUD follows the actual form");
         var axolotl = player(unsafe, client, EvolutionRegistry.CLIENT.getRoute("axolotl").startForm);
-        var perkId = new Identifier("my_addon", "perk_upgrade_axolotl_tidal_pull_charge");
+        var perkId = new Identifier("ssc_addon", "perk_upgrade_axolotl_tidal_pull_charge");
         var tree = net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree;
         axolotl.form.formPerkMap.put(tree, List.of(net.onixary.shapeShifterCurseFabric.perk.RegPerks.P_AxolotlTidalPull));
         axolotl.powers.addPower(PowerTypeRegistry.get(perkId), new Identifier("test", "evolution"));
@@ -307,14 +307,14 @@ public final class SkillHudIntegrationProbe {
 
     private static void perkCooldownParity(sun.misc.Unsafe unsafe, TestWorld server, TestWorld client) throws Exception {
         for (String path : List.of("shape-shifter-curse/powers/perks/axolotl_tidal_pull",
-                "my_addon/powers/perk_axolotl_sp_tidal_pull", "my_addon/powers/perk_upgrade_axolotl_tidal_pull")) {
+                "ssc_addon/powers/perk_axolotl_sp_tidal_pull", "ssc_addon/powers/perk_upgrade_axolotl_tidal_pull")) {
             JsonObject charge = data(path).getAsJsonObject("charge");
             check(charge.get("tier0_cooldown").getAsInt() == 20, "tidal pull uses the intended one second in the actual packaged resource: " + path);
             // Parse the real timing fields with SSC's factory; omit actions that need a running raycast world.
             var timing = new JsonObject();
             for (String key : List.of("tier0_enable", "tier0_charge_time", "tier0_cooldown", "tier1_enable")) timing.add(key, charge.get(key));
             TestOwner owner = (TestOwner) unsafe.allocateInstance(TestOwner.class); owner.testWorld = server;
-            var type = new PowerType<>(new Identifier("my_addon", "tidal_timing_probe"), ChargePower.createFactory().read(timing));
+            var type = new PowerType<>(new Identifier("ssc_addon", "tidal_timing_probe"), ChargePower.createFactory().read(timing));
             ChargePower power = (ChargePower) type.create(owner);
             power.ChargeTierList.get(0).use(power);
             check(power.nowCooldown == 20, "actual SSC release logic starts 20 ticks: " + path);
@@ -344,10 +344,10 @@ public final class SkillHudIntegrationProbe {
         };
         for (var pair : pairs) {
             int original = data("shape-shifter-curse/powers/perks/" + pair[0]).get("cooldown").getAsInt();
-            int addon = data("my_addon/powers/" + pair[1]).get("cooldown").getAsInt();
+            int addon = data("ssc_addon/powers/" + pair[1]).get("cooldown").getAsInt();
             check(original == addon && addon == Integer.parseInt(pair[2]), "active Perk cooldown parity: " + pair[1]);
         }
-        check(data("my_addon/powers/perk_golden_sandstorm_recall").get("fail_cooldown").getAsInt() == 0,
+        check(data("ssc_addon/powers/perk_golden_sandstorm_recall").get("fail_cooldown").getAsInt() == 0,
                 "empty golden recall still has no failure cooldown");
     }
     private static JsonObject data(String path) throws Exception {
@@ -359,8 +359,8 @@ public final class SkillHudIntegrationProbe {
 
     private static void dynamicCatalog(sun.misc.Unsafe unsafe, TestWorld world,
                                        List<SkillHudCatalog.PerkSkill> registrations) throws Exception {
-        var factory = new PowerFactory<Power>(new Identifier("my_addon", "hud_probe"), new SerializableData(), data -> Power::new);
-        Identifier source = new Identifier("my_addon", "hud_probe");
+        var factory = new PowerFactory<Power>(new Identifier("ssc_addon", "hud_probe"), new SerializableData(), data -> Power::new);
+        Identifier source = new Identifier("ssc_addon", "hud_probe");
         for (var registration : registrations) {
             for (var formId : registration.forms()) {
                 TestPlayer player = player(unsafe, world, formId);
@@ -394,24 +394,24 @@ public final class SkillHudIntegrationProbe {
                 player.form.formPerkMap.clear();
                 check(entries(player).equals(base), "Perk reset removes the frame and background extension: " + formId);
                 player.form.formPerkMap.put(registration.tree(), List.of(registration.perk()));
-                player.form.nowForm = new NormalForm(new Identifier("my_addon", "wild_cat_moonlight_phantom"));
+                player.form.nowForm = new NormalForm(new Identifier("ssc_addon", "wild_cat_moonlight_phantom"));
                 var switched = entries(player);
                 check(switched.size() == 3 && SkillHudLayout.extraCount(switched) == 1
                         && switched.stream().noneMatch(e -> e.skill().equals(registration.forForm(formId))), "unrelated forms cannot display lingering learned powers");
             }
         }
         // Retained powers from forms sharing the same Perk tree must not create duplicate extras.
-        TestPlayer player = player(unsafe, world, new Identifier("my_addon", "ocelot_wind_spirit"));
+        TestPlayer player = player(unsafe, world, new Identifier("ssc_addon", "ocelot_wind_spirit"));
         for (var registration : registrations) {
             player.form.formPerkMap.computeIfAbsent(registration.tree(), ignored -> new ArrayList<>()).add(registration.perk());
             player.powers.addPower(PowerTypeRegistry.get(registration.skill().cooldown()), source);
         }
         check(entries(player).size() == 3, "all purchased Perks and stale powers still produce only the active form's third skill");
-        player.form.nowForm = new NormalForm(new Identifier("my_addon", "ocelot_nova"));
+        player.form.nowForm = new NormalForm(new Identifier("ssc_addon", "ocelot_nova"));
         var nova = entries(player);
         check(nova.size() == 3 && nova.get(2).skill().cooldown().getPath().equals("perk_ocelot_nova_metabolic_overload"),
                 "switching between forms in one tree selects the current form's implementation");
-        TestPlayer rejoined = player(unsafe, world, new Identifier("my_addon", "ocelot_nova"));
+        TestPlayer rejoined = player(unsafe, world, new Identifier("ssc_addon", "ocelot_nova"));
         check(entries(rejoined).size() == 2, "a new player entity does not inherit the previous entity's unlocked frame");
 
         var tidal = registrations.stream().filter(r -> r.skill().cooldown().getPath().equals("perk_axolotl_sp_tidal_pull_charge"))
@@ -428,7 +428,7 @@ public final class SkillHudIntegrationProbe {
                 "icon variant does not alter native extra-skill assignments");
         check(fluorescent.skill().cooldown().equals(abyssal.skill().cooldown()) && fluorescent.skill().talent() == null,
                 "the two appearances retain the same purchased Perk and actual cooldown power");
-        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + fluorescent.skill().icon().getPath()) != null,
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/" + fluorescent.skill().icon().getPath()) != null,
                 "fluorescent-specific icon is packaged");
         axolotl.form.nowForm = new NormalForm(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.AXOLOTL_ALING);
         var aling = entries(axolotl).get(2);
@@ -446,7 +446,7 @@ public final class SkillHudIntegrationProbe {
         var spiritDive = entries(snow).get(3);
         check(spiritDive.skill().icon().getPath().endsWith("/perk_frost_dive_frost_spirit.png")
                 && spiritDive.slot() == SkillHudLayout.Slot.UPPER, "frost spirit uses the approved ice-claw artwork in its upper frame");
-        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + spiritDive.skill().icon().getPath()) != null,
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/" + spiritDive.skill().icon().getPath()) != null,
                 "approved frost-spirit Perk artwork is packaged");
         snow.form.nowForm = new NormalForm(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.SNOW_FOX_FROSTSPINE);
         var spineDive = entries(snow).get(2);
@@ -467,14 +467,14 @@ public final class SkillHudIntegrationProbe {
         var judge = entries(wolf).get(2);
         check(judge.skill().icon().getPath().endsWith("/perk_soul_recall_netherjudge.png")
                 && judge.slot() == SkillHudLayout.Slot.LOWER, "Netherjudge shows its approved soul-gathering artwork in the third slot");
-        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + judge.skill().icon().getPath()) != null,
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/" + judge.skill().icon().getPath()) != null,
                 "approved Netherjudge soul-recall artwork is packaged");
         wolf.form.nowForm = new NormalForm(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.GOLDEN_SANDSTORM_SP);
         var sand = entries(wolf).get(2);
         check(sand.skill().icon().getPath().endsWith("/perk_brand_recall_golden_sandstorm.png")
                 && sand.slot() == SkillHudLayout.Slot.LOWER, "Golden Sandstorm uses its approved brand-absorption artwork in the third slot");
         check(!sand.skill().icon().equals(judge.skill().icon()), "brand recall and soul recall retain their distinct approved appearances");
-        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + sand.skill().icon().getPath()) != null,
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/" + sand.skill().icon().getPath()) != null,
                 "approved Golden Sandstorm artwork is packaged");
         check(sand.skill().cooldown().equals(sandRecall.skill().cooldown()) && judge.skill().cooldown().equals(judgeRecall.skill().cooldown()),
                 "shared purchase records and retained powers still use the correct form-specific recall implementation");
@@ -492,7 +492,7 @@ public final class SkillHudIntegrationProbe {
         var wind = entries(cat).get(2);
         check(wind.skill().icon().getPath().endsWith("/perk_metabolic_overload_wind_spirit.png")
                 && wind.slot() == SkillHudLayout.Slot.LOWER, "Wind Spirit uses its approved running-cat overload artwork in the third slot");
-        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/my_addon/" + wind.skill().icon().getPath()) != null,
+        check(SkillHudIntegrationProbe.class.getClassLoader().getResource("assets/ssc_addon/" + wind.skill().icon().getPath()) != null,
                 "approved Wind Spirit overload artwork is packaged");
         cat.form.nowForm = new NormalForm(net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers.OCELOT_NOVA);
         var novaCat = entries(cat).get(2);

@@ -42,9 +42,9 @@ public class SnowFoxSpFrostStorm {
             new net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader("abilities.snow_fox_sp_frost_storm");
     //未使用: private static final int COOLDOWN = 600;  30秒CD = 600tick（CD 已回归 power JSON 原生管理）
     
-    private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_snow_fox_sp_resource");
-    public static final String SKILL_ID = "my_addon:form_snow_fox_sp_ranged_secondary";
-    private static final Identifier REGEN_COOLDOWN_ID = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
+    private static final Identifier RESOURCE_ID = new Identifier("ssc_addon", "form_snow_fox_sp_resource");
+    public static final String SKILL_ID = "ssc_addon:form_snow_fox_sp_ranged_secondary";
+    private static final Identifier REGEN_COOLDOWN_ID = new Identifier("ssc_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
     
     /**
      * 开始蓄力（点按技能键时调用）

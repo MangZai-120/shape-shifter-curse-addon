@@ -110,7 +110,10 @@ public final class PotionTestTubes {
         if (stack.hasNbt()) {
             var effects = stack.getNbt().getList("CustomPotionEffects", 10);
             if (!effects.isEmpty()) result.put("CustomPotionEffects", effects.copy());
-            if (stack.getNbt().contains("targetForm", 8)) result.putString("targetForm", stack.getNbt().getString("targetForm"));
+            if (stack.getNbt().contains("targetForm", 8)) {
+                String form = stack.getNbt().getString("targetForm");
+                result.putString("targetForm", net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(form));
+            }
         }
         return result;
     }

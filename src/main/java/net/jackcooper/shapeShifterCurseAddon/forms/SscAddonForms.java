@@ -30,7 +30,7 @@ public final class SscAddonForms {
 		// 与原版共用解锁记录，形态专属的效果替换由 AxolotlSpPerks 处理。
 		axolotlForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		RegPlayerForms.registerPlayerForm(axolotlForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_sp")).registerForm(1, 5, axolotlForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_axolotl_sp")).registerForm(1, 5, axolotlForm));
 
 		// 进化美西螈（Upgrade Axolotl）- SSCA 进化加点路线起点形态，复用 SP 美西螈模型/动画，能力按进化树解锁
 		Form_Axolotl3 upgradeAxolotlForm = new Form_Axolotl3(FormIdentifiers.UPGRADE_AXOLOTL);
@@ -38,7 +38,7 @@ public final class SscAddonForms {
 		upgradeAxolotlForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(1.0f, 1.0f));
 		upgradeAxolotlForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		RegPlayerForms.registerPlayerForm(upgradeAxolotlForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_upgrade_axolotl")).registerForm(1, 5, upgradeAxolotlForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_upgrade_axolotl")).registerForm(1, 5, upgradeAxolotlForm));
 
 		// 荧光幼灵（Axolotl Fluorescent）- SP美西螈经进化石进化获得，复用美西螈模型/动画，体型缩小到 0.75
 		Form_AxolotlFluorescent fluorescentForm = new Form_AxolotlFluorescent(FormIdentifiers.AXOLOTL_FLUORESCENT);
@@ -47,7 +47,7 @@ public final class SscAddonForms {
 		fluorescentForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 1.0f));
 		fluorescentForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		RegPlayerForms.registerPlayerForm(fluorescentForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_fluorescent")).registerForm(1, 5, fluorescentForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_axolotl_fluorescent")).registerForm(1, 5, fluorescentForm));
 
 		// 阿澪（Aling）- 特殊形态，基于荧光幼灵（技能完全一致），专属模型/贴图，颜色不可改。复用 Form_AxolotlFluorescent 类。
 		Form_AxolotlFluorescent alingForm = new Form_AxolotlFluorescent(FormIdentifiers.AXOLOTL_ALING);
@@ -55,7 +55,7 @@ public final class SscAddonForms {
 		alingForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Axolotl3PerkTree);
 		alingForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 1.0f));
 		RegPlayerForms.registerPlayerForm(alingForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_axolotl_aling")).registerForm(1, 5, alingForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_axolotl_aling")).registerForm(1, 5, alingForm));
 
 		Form_FamiliarFox3 familiarFoxForm = new Form_FamiliarFox3(FormIdentifiers.FAMILIAR_FOX_SP);
 		familiarFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
@@ -64,7 +64,7 @@ public final class SscAddonForms {
 		familiarFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(familiarFoxForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_sp")).registerForm(1, 5, familiarFoxForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_familiar_fox_sp")).registerForm(1, 5, familiarFoxForm));
 
 		// 进化使魔（复用使魔模型/动画，能力按进化解锁——批次2 形态骨架）
 		Form_FamiliarFox3 upgradeFamiliarFoxForm = new Form_FamiliarFox3(FormIdentifiers.UPGRADE_FAMILIAR_FOX);
@@ -74,7 +74,7 @@ public final class SscAddonForms {
 		upgradeFamiliarFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(upgradeFamiliarFoxForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_upgrade_familiar_fox")).registerForm(1, 5, upgradeFamiliarFoxForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_upgrade_familiar_fox")).registerForm(1, 5, upgradeFamiliarFoxForm));
 
 		// 契灵（Mancianima）—— 复用使魔模型/动画，经月髓环/进化石进化获得。
 		// 之前是纯数据驱动(ssc_form json)，但原版新版 DynamicForm 缺 originLayerID 字段会 NPE 致其注册失败消失，
@@ -86,7 +86,7 @@ public final class SscAddonForms {
 		mancianimaForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(mancianimaForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_mancianima")).registerForm(1, 5, mancianimaForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_familiar_fox_mancianima")).registerForm(1, 5, mancianimaForm));
 
 		Form_FamiliarFoxRed familiarFoxRedForm = new Form_FamiliarFoxRed(FormIdentifiers.FAMILIAR_FOX_RED);
 		familiarFoxRedForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
@@ -95,7 +95,7 @@ public final class SscAddonForms {
 		familiarFoxRedForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_FamiliarFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(familiarFoxRedForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_familiar_fox_red")).registerForm(1, 5, familiarFoxRedForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_familiar_fox_red")).registerForm(1, 5, familiarFoxRedForm));
 
 		Form_SnowFoxSP snowFoxForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_SP);
 		snowFoxForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
@@ -104,14 +104,14 @@ public final class SscAddonForms {
 		snowFoxForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_SnowFox3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(snowFoxForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_sp")).registerForm(1, 7, snowFoxForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_snow_fox_sp")).registerForm(1, 7, snowFoxForm));
 
 		// 进化雪狐沿用雪狐体型，主动技能由路线节点解锁。
 		Form_SnowFoxSP evolvedSnowFox = new Form_SnowFoxSP(FormIdentifiers.UPGRADE_SNOW_FOX);
 		evolvedSnowFox.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		evolvedSnowFox.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		RegPlayerForms.registerPlayerForm(evolvedSnowFox);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_upgrade")).registerForm(1, 7, evolvedSnowFox));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_snow_fox_upgrade")).registerForm(1, 7, evolvedSnowFox));
 
 		// 寒棘狐为进化雪狐的月髓环分支。
 		Form_SnowFoxSP frostspineForm = new Form_SnowFoxSP(FormIdentifiers.SNOW_FOX_FROSTSPINE);
@@ -120,14 +120,14 @@ public final class SscAddonForms {
 		frostspineForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		frostspineForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_SnowFox3PerkTree);
 		RegPlayerForms.registerPlayerForm(frostspineForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_snow_fox_frostspine")).registerForm(1, 7, frostspineForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_snow_fox_frostspine")).registerForm(1, 7, frostspineForm));
 
 		Form_Allay allayForm = new Form_Allay(FormIdentifiers.ALLAY_SP);
 		allayForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
 		// 悦灵缩放对齐原版 ALLAY_SP 上调后的新体型（scale=0.55, eye_scale=1.0 保持正常视角高度）
 		allayForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 1.0f));
 		RegPlayerForms.registerPlayerForm(allayForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_allay_sp")).registerForm(1, 8, allayForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_allay_sp")).registerForm(1, 8, allayForm));
 
 		Form_FeralCatSP wildCatForm = new Form_FeralCatSP(FormIdentifiers.WILD_CAT_SP);
 		wildCatForm.formFlag(NoInstinct, NoCursedMoonEffect, SpecialForm, InhibitorImmune);
@@ -136,7 +136,7 @@ public final class SscAddonForms {
 		wildCatForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 
 		RegPlayerForms.registerPlayerForm(wildCatForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_sp")).registerForm(1, 5, wildCatForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_wild_cat_sp")).registerForm(1, 5, wildCatForm));
 
 		// 食梦魔（Nightmare）- 野猫线月髓环进化形态（原版野猫 feral_cat_sp 经月髓环进化），复用月光魅影野猫模型/贴图
 		// 被动与月光魅影对齐（不含真隐身/震慑冲刺两个主动）；核心被动「入梦」：累计 10 伤害 → 敌方入梦 20s，
@@ -147,7 +147,7 @@ public final class SscAddonForms {
 		// 缩放与月光魅影一致（原版野猫 form_feral_cat_sp_scale 同值）
 		nightmareForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 0.6f)).OverwriteEyeScale(0.6f);
 		RegPlayerForms.registerPlayerForm(nightmareForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_wild_cat_nightmare")).registerForm(1, 5, nightmareForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_wild_cat_nightmare")).registerForm(1, 5, nightmareForm));
 
 		// 风灵（月髓环豹猫）——完全复用原版豹猫 Form_Ocelot3 的模型与动画，四足兽形，可疾跑；核心为「疾风连爪」左键连击技能
 		Form_Ocelot3 ocelotSpForm = new Form_Ocelot3(FormIdentifiers.OCELOT_SP);
@@ -158,7 +158,7 @@ public final class SscAddonForms {
 		ocelotSpForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.6f)).OverwriteEyeScale(0.6f);
 		ocelotSpForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Ocelot3PerkTree);
 		RegPlayerForms.registerPlayerForm(ocelotSpForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_wind_spirit")).registerForm(1, 5, ocelotSpForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_ocelot_wind_spirit")).registerForm(1, 5, ocelotSpForm));
 
 		// 朔望（月髓环豹猫）——与风灵同源，复用原版豹猫 Form_Ocelot3 模型动画，四足兽形；定位九命灵猫（生存/不死），技能待设计
 		Form_Ocelot3 ocelotNovaForm = new Form_Ocelot3(FormIdentifiers.OCELOT_NOVA);
@@ -169,7 +169,7 @@ public final class SscAddonForms {
 		ocelotNovaForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.75f, 0.6f)).OverwriteEyeScale(0.6f);
 		ocelotNovaForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Ocelot3PerkTree);
 		RegPlayerForms.registerPlayerForm(ocelotNovaForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_ocelot_nova")).registerForm(1, 5, ocelotNovaForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_ocelot_nova")).registerForm(1, 5, ocelotNovaForm));
 
 		// Fallen Allay SP
 		Form_FallenAllaySP fallenAllayForm = new Form_FallenAllaySP(FormIdentifiers.FALLEN_ALLAY_SP);
@@ -177,7 +177,7 @@ public final class SscAddonForms {
 		// 堕落悦灵复用悦灵模型，缩放对齐原版 ALLAY_SP 上调后的新体型(scale=0.55, eye_scale=1.0 保持正常视角高度)
 		fallenAllayForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.55f, 1.0f));
 		RegPlayerForms.registerPlayerForm(fallenAllayForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_fallen_allay_sp")).registerForm(1, 8, fallenAllayForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_fallen_allay_sp")).registerForm(1, 8, fallenAllayForm));
 
 		// Anubis Wolf SP
 		Form_AnubisWolfSP anubisWolfForm = new Form_AnubisWolfSP(FormIdentifiers.ANUBIS_WOLF_SP);
@@ -188,7 +188,7 @@ public final class SscAddonForms {
 		anubisWolfForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_AnubisWolf3PerkTree);
 
 		RegPlayerForms.registerPlayerForm(anubisWolfForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_anubis_wolf_sp")).registerForm(1, 12, anubisWolfForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_anubis_wolf_sp")).registerForm(1, 12, anubisWolfForm));
 
 		// Golden Sandstorm SP (金沙岚)
 		Form_GoldenSandstormSP goldenSandstormForm = new Form_GoldenSandstormSP(FormIdentifiers.GOLDEN_SANDSTORM_SP);
@@ -198,7 +198,7 @@ public final class SscAddonForms {
 		goldenSandstormForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.8f, 0.6f)).OverwriteEyeScale(0.6f);
 		goldenSandstormForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_AnubisWolf3PerkTree);
 		RegPlayerForms.registerPlayerForm(goldenSandstormForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_golden_sandstorm_sp")).registerForm(1, 12, goldenSandstormForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_golden_sandstorm_sp")).registerForm(1, 12, goldenSandstormForm));
 
 		// 吸血蝙蝠（Desmodus）SP形态 - 复用蝙蝠模型/动画，经月髓环在诅咒之月夜进化获得
 		Form_BatDesmodus batDesmodusForm = new Form_BatDesmodus(FormIdentifiers.BAT_DESMODUS);
@@ -207,7 +207,7 @@ public final class SscAddonForms {
 		batDesmodusForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f)).OverwriteEyeScale(0.7f);
 		batDesmodusForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Bat3PerkTree);
 		RegPlayerForms.registerPlayerForm(batDesmodusForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_desmodus")).registerForm(1, 12, batDesmodusForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_bat_desmodus")).registerForm(1, 12, batDesmodusForm));
 
 		// 月织蛛（Moon Weaver）SP形态 - 复用原版蜘蛛三阶段模型/动画，经月髓环在诅咒之月夜进化获得
 		// 被动与特性完全与原版 spider_3 平齐（爬墙、吐丝、搭桥、毒素免疫、夜视等）
@@ -217,7 +217,7 @@ public final class SscAddonForms {
 		SpiderMoonWeaverForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.81f, 1.0f));
 		SpiderMoonWeaverForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Spider3PerkTree);
 		RegPlayerForms.registerPlayerForm(SpiderMoonWeaverForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_moon_weaver")).registerForm(1, 12, SpiderMoonWeaverForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_spider_moon_weaver")).registerForm(1, 12, SpiderMoonWeaverForm));
 
 		// 跳蛛（Salticidae）SP形态 - 复用原版蜘蛛三阶段模型/动画，经进化石从 spider_3 进化获得
 		// 与月髓环→月织蛛并行（同源不同道具，不冲突）；被动与特性完全与原版 spider_3 平齐
@@ -227,7 +227,7 @@ public final class SscAddonForms {
 		SpiderSalticidaeForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 1.0f));
 		SpiderSalticidaeForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Spider3PerkTree);
 		RegPlayerForms.registerPlayerForm(SpiderSalticidaeForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_spider_salticidae")).registerForm(1, 12, SpiderSalticidaeForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_spider_salticidae")).registerForm(1, 12, SpiderSalticidaeForm));
 
 		// 寄生果蝠 - 原版三阶段蝙蝠使用进化石进化获得，复用蝙蝠模型/动画
 		Form_BatParasiticFruit batParasiticFruitForm = new Form_BatParasiticFruit(FormIdentifiers.BAT_PARASITIC_FRUIT);
@@ -236,7 +236,7 @@ public final class SscAddonForms {
 		batParasiticFruitForm.applyScaleFunc(NormalForm.NORMAL_SCALE_FUNC_BUILDER.apply(0.6f, 0.7f)).OverwriteEyeScale(0.7f);
 		batParasiticFruitForm.perkTree(net.onixary.shapeShifterCurseFabric.perk.RegPerks.T_Bat3PerkTree);
 		RegPlayerForms.registerPlayerForm(batParasiticFruitForm);
-		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("my_addon", "group_bat_parasitic_fruit")).registerForm(1, 12, batParasiticFruitForm));
+		RegPlayerForms.registerPlayerFormGroup(new NormalGroup(new Identifier("ssc_addon", "group_bat_parasitic_fruit")).registerForm(1, 12, batParasiticFruitForm));
 
 		// 羊形态（羊了个羊法术专属，2026-09-29 用户定稿）——空壳 NormalForm：不挂任何 power（变羊后
 		// 技能/被动/魔法天然全失效，取代原 isActive 压制方案）；渲染由 SheepFormRenderMixin 画用户提供的

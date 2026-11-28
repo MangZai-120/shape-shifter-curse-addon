@@ -142,7 +142,7 @@ public class PowerUtils {
 	public static boolean isSpAllay(ServerPlayerEntity player) {
 		try {
 			return PowerHolderComponent.KEY.get(player).getPowers().stream()
-					.anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("my_addon")
+					.anyMatch(p -> p.getType().getIdentifier().getNamespace().equals("ssc_addon")
 							&& p.getType().getIdentifier().getPath().contains("form_allay_sp"));
 		} catch (Exception e) {
 			LOGGER.error("isSpAllay 检测失败", e);

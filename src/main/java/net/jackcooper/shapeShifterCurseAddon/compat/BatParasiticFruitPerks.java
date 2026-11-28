@@ -11,8 +11,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormCompon
 
 /** 寄生果蝠共用蝙蝠购买记录，独立加载夜间回声及技能3振翼。 */
 public final class BatParasiticFruitPerks {
-    public static final Identifier ECHOLOCATION = new Identifier("my_addon", "perk_bat_parasitic_fruit_echolocation");
-    public static final Identifier WINGBEAT = new Identifier("my_addon", "perk_bat_parasitic_fruit_wingbeat");
+    public static final Identifier ECHOLOCATION = new Identifier("ssc_addon", "perk_bat_parasitic_fruit_echolocation");
+    public static final Identifier WINGBEAT = new Identifier("ssc_addon", "perk_bat_parasitic_fruit_wingbeat");
     private static final Identifier ORIGINAL_ECHOLOCATION = original("bat_echolocation");
     private static final Identifier ORIGINAL_WINGBEAT = original("bat_wingbeat");
 

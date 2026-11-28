@@ -1,0 +1,22 @@
+{
+    "type": "ssc_addon:fail_aware_active_self",
+    "cooldown": 200,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_end",
+    "extra_cooldowns": {
+        "single_use": 120
+    },
+    "defer_release": true,
+    "repress_while_active": true,
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "entity_action": {
+        "type": "ssc_addon:nova_leap"
+    },
+    "name": "power.ssc_addon.form_ocelot_nova_leap.name",
+    "description": "power.ssc_addon.form_ocelot_nova_leap.description"
+}

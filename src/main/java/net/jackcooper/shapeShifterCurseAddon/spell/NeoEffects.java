@@ -26,7 +26,7 @@ public final class NeoEffects {
     private static final Map<UUID,Stored> STORED=new HashMap<>();
     private static final List<Bolt> BOLTS=new ArrayList<>();
     private static final Map<WolfEntity,Integer> SUMMONS=new HashMap<>();
-    static final String SUMMON_TAG="ssca_neomagic_summon";
+    static final String SUMMON_TAG="ssc_addon_summon";
     private static final class Bolt {
         final net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact weave=new net.jackcooper.shapeShifterCurseAddon.spell.SpiderSpellLink.Impact();
         final ServerPlayerEntity caster; final ServerWorld world; final NeoRuntime.Active active;
@@ -105,7 +105,7 @@ public final class NeoEffects {
         String controls=b.controls().isEmpty()?"direct":String.join("_",b.controls().stream().map(c->c.name().toLowerCase(Locale.ROOT)).toList());
         String identity="blueprint/"+b.core().name().toLowerCase(Locale.ROOT)+"/"+b.carrier().name().toLowerCase(Locale.ROOT)
                 +"/"+controls+"/"+b.output().name().toLowerCase(Locale.ROOT);
-        return new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(new Identifier("ssca_neomagic",identity),
+        return new net.jackcooper.shapeShifterCurseAddon.anomaly.SpellAnomalyContext(new Identifier("ssc_addon",identity),
                 NeoLegacyCasting.element(b.output()).id,b.band()+1,0,p.getUuid(),UUID.fromString(a.record.id));
     }
     private static <T> T healingBatch(NeoRuntime.Active active,java.util.function.Supplier<T> action) {
@@ -318,6 +318,11 @@ public final class NeoEffects {
         NeoRuntime.dirty(bolt.caster);
     }
     public static void register() {
-        ServerEntityEvents.ENTITY_LOAD.register((entity,world)->{if(entity.getCommandTags().contains(SUMMON_TAG)&&!SUMMONS.containsKey(entity))entity.discard();});
+        ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            var tags = entity.getCommandTags();
+            if ((tags.contains(SUMMON_TAG) || tags.contains("ssca_neomagic_summon")) && !SUMMONS.containsKey(entity)) {
+                entity.discard();
+            }
+        });
     }
 }

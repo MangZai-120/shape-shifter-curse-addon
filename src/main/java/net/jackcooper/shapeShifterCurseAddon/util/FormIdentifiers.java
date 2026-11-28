@@ -5,83 +5,83 @@ import net.minecraft.util.Identifier;
 public class FormIdentifiers {
 	// 羊形态（羊了个羊法术专属，2026-09-29 用户定稿）：空壳无 power 形态——变羊=切到它（技能/被动/魔法全失效），
 	// 渲染由 SheepFormRenderMixin 画原版羊模型；仅法术触发，不进选择菜单/进化链
-	public static final Identifier SHEEP_FORM = new Identifier("my_addon", "sheep_spell_form");
-	public static final Identifier FAMILIAR_FOX_SP = new Identifier("my_addon", "familiar_fox_spirit_realm_lord");
-	public static final Identifier UPGRADE_FAMILIAR_FOX = new Identifier("my_addon", "familiar_fox_upgrade");
-	public static final Identifier FAMILIAR_FOX_RED = new Identifier("my_addon", "familiar_fox_red");
-	public static final Identifier FAMILIAR_FOX_MANCIANIMA = new Identifier("my_addon", "familiar_fox_mancianima");
-	public static final Identifier UPGRADE_SNOW_FOX = new Identifier("my_addon", "snow_fox_upgrade");
-	public static final Identifier SNOW_FOX_SP = new Identifier("my_addon", "snow_fox_frost_spirit");
+	public static final Identifier SHEEP_FORM = new Identifier("ssc_addon", "sheep_spell_form");
+	public static final Identifier FAMILIAR_FOX_SP = new Identifier("ssc_addon", "familiar_fox_spirit_realm_lord");
+	public static final Identifier UPGRADE_FAMILIAR_FOX = new Identifier("ssc_addon", "familiar_fox_upgrade");
+	public static final Identifier FAMILIAR_FOX_RED = new Identifier("ssc_addon", "familiar_fox_red");
+	public static final Identifier FAMILIAR_FOX_MANCIANIMA = new Identifier("ssc_addon", "familiar_fox_mancianima");
+	public static final Identifier UPGRADE_SNOW_FOX = new Identifier("ssc_addon", "snow_fox_upgrade");
+	public static final Identifier SNOW_FOX_SP = new Identifier("ssc_addon", "snow_fox_frost_spirit");
 	// 寒棘狐（Frostspine）——雪狐线月髓环进化形态（原版雪狐 snow_fox_3 经月髓环进化）；复用原版雪狐模型/贴图，能力完全等同原版雪狐
-	public static final Identifier SNOW_FOX_FROSTSPINE = new Identifier("my_addon", "snow_fox_frostspine");
-	public static final Identifier ALLAY_SP = new Identifier("my_addon", "allay_crystal_sound");
-	public static final Identifier WILD_CAT_SP = new Identifier("my_addon", "wild_cat_moonlight_phantom");
+	public static final Identifier SNOW_FOX_FROSTSPINE = new Identifier("ssc_addon", "snow_fox_frostspine");
+	public static final Identifier ALLAY_SP = new Identifier("ssc_addon", "allay_crystal_sound");
+	public static final Identifier WILD_CAT_SP = new Identifier("ssc_addon", "wild_cat_moonlight_phantom");
 	// 食梦魔（Nightmare）——野猫线月髓环进化形态；入梦机制（累计伤害触发 debuff 免疫 + 粉红描边）
-	public static final Identifier WILD_CAT_NIGHTMARE = new Identifier("my_addon", "wild_cat_nightmare");
+	public static final Identifier WILD_CAT_NIGHTMARE = new Identifier("ssc_addon", "wild_cat_nightmare");
 	// 风灵（月髓环豹猫）——原版豹猫永久形态 ocelot_3 经月髓环进化获得；注册名 ocelot_wind_spirit
-	public static final Identifier OCELOT_SP = new Identifier("my_addon", "ocelot_wind_spirit");
+	public static final Identifier OCELOT_SP = new Identifier("ssc_addon", "ocelot_wind_spirit");
 	// 朔望（月髓环豹猫）——与风灵同为原版豹猫 ocelot_3 线；定位：九命灵猫（极限生存/不死）
-	public static final Identifier OCELOT_NOVA = new Identifier("my_addon", "ocelot_nova");
+	public static final Identifier OCELOT_NOVA = new Identifier("ssc_addon", "ocelot_nova");
 	// 朔望九命资源（0-9，被动死亡触发复活；HUD 用 NineLivesHudRenderer）
-	public static final Identifier OCELOT_NOVA_NINE_LIVES = new Identifier("my_addon", "form_ocelot_nova_nine_lives");
+	public static final Identifier OCELOT_NOVA_NINE_LIVES = new Identifier("ssc_addon", "form_ocelot_nova_nine_lives");
 	// 朔望舍身爆炸蓄力标记资源（0/1，同步客户端；蓄力期门控 sneaking_speed_up，禁 shift 潜行加速）
-	public static final Identifier OCELOT_NOVA_CHARGING = new Identifier("my_addon", "form_ocelot_nova_charging");
-	public static final Identifier AXOLOTL_SP = new Identifier("my_addon", "axolotl_abyssal_overlord");
+	public static final Identifier OCELOT_NOVA_CHARGING = new Identifier("ssc_addon", "form_ocelot_nova_charging");
+	public static final Identifier AXOLOTL_SP = new Identifier("ssc_addon", "axolotl_abyssal_overlord");
 	// 进化美西螈（Upgrade Axolotl）- SSCA 进化加点路线起点形态，基于原版美西螈 axolotl_3，能力按进化树解锁
-	public static final Identifier UPGRADE_AXOLOTL = new Identifier("my_addon", "axolotl_upgrade");
+	public static final Identifier UPGRADE_AXOLOTL = new Identifier("ssc_addon", "axolotl_upgrade");
 	// 荧光幼灵（Axolotl Fluorescent）- SP美西螈经进化石进化获得
-	public static final Identifier AXOLOTL_FLUORESCENT = new Identifier("my_addon", "axolotl_fluorescent");
+	public static final Identifier AXOLOTL_FLUORESCENT = new Identifier("ssc_addon", "axolotl_fluorescent");
 	// 阿澪（Aling）- 特殊形态，基于荧光幼灵，技能一致，专属模型/贴图，颜色不可改
-	public static final Identifier AXOLOTL_ALING = new Identifier("my_addon", "axolotl_aling");
-	public static final Identifier FALLEN_ALLAY_SP = new Identifier("my_addon", "allay_spirit_of_the_fallen");
-	public static final Identifier ANUBIS_WOLF_SP = new Identifier("my_addon", "anubis_wolf_netherjudge");
-	public static final Identifier SNOW_FOX_RESOURCE = new Identifier("my_addon", "form_snow_fox_sp_resource");
-	public static final Identifier SNOW_FOX_REGEN_COOLDOWN = new Identifier("my_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
-	public static final Identifier SNOW_FOX_MELEE_PRIMARY = new Identifier("my_addon", "form_snow_fox_sp_melee_primary");
-	public static final Identifier SNOW_FOX_MELEE_SECONDARY = new Identifier("my_addon", "form_snow_fox_sp_melee_secondary");
-	public static final Identifier SNOW_FOX_RANGED_SECONDARY = new Identifier("my_addon", "form_snow_fox_sp_ranged_secondary");
-	public static final Identifier ALLAY_MANA_RESOURCE = new Identifier("my_addon", "form_allay_sp_mana_resource");
-	public static final Identifier ALLAY_MANA_COOLDOWN = new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource");
-	public static final Identifier ALLAY_GROUP_HEAL = new Identifier("my_addon", "form_allay_sp_group_heal");
-	public static final Identifier ALLAY_GROUP_HEAL_EXECUTE = new Identifier("my_addon", "form_allay_sp_group_heal_heal_execute");
-	public static final Identifier ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER = new Identifier("my_addon", "form_allay_sp_group_heal_solo_damage_timer");
+	public static final Identifier AXOLOTL_ALING = new Identifier("ssc_addon", "axolotl_aling");
+	public static final Identifier FALLEN_ALLAY_SP = new Identifier("ssc_addon", "allay_spirit_of_the_fallen");
+	public static final Identifier ANUBIS_WOLF_SP = new Identifier("ssc_addon", "anubis_wolf_netherjudge");
+	public static final Identifier SNOW_FOX_RESOURCE = new Identifier("ssc_addon", "form_snow_fox_sp_resource");
+	public static final Identifier SNOW_FOX_REGEN_COOLDOWN = new Identifier("ssc_addon", "form_snow_fox_sp_frost_regen_cooldown_resource");
+	public static final Identifier SNOW_FOX_MELEE_PRIMARY = new Identifier("ssc_addon", "form_snow_fox_sp_melee_primary");
+	public static final Identifier SNOW_FOX_MELEE_SECONDARY = new Identifier("ssc_addon", "form_snow_fox_sp_melee_secondary");
+	public static final Identifier SNOW_FOX_RANGED_SECONDARY = new Identifier("ssc_addon", "form_snow_fox_sp_ranged_secondary");
+	public static final Identifier ALLAY_MANA_RESOURCE = new Identifier("ssc_addon", "form_allay_sp_mana_resource");
+	public static final Identifier ALLAY_MANA_COOLDOWN = new Identifier("ssc_addon", "form_allay_sp_mana_cooldown_resource");
+	public static final Identifier ALLAY_GROUP_HEAL = new Identifier("ssc_addon", "form_allay_sp_group_heal");
+	public static final Identifier ALLAY_GROUP_HEAL_EXECUTE = new Identifier("ssc_addon", "form_allay_sp_group_heal_heal_execute");
+	public static final Identifier ALLAY_GROUP_HEAL_SOLO_DAMAGE_TIMER = new Identifier("ssc_addon", "form_allay_sp_group_heal_solo_damage_timer");
 	// 使魔系红狐 SP 魔力初始化 resource（form_familiar_fox_sp_init_mana）
-	public static final Identifier FAMILIAR_FOX_MANA = new Identifier("my_addon", "form_familiar_fox_sp_init_mana");
+	public static final Identifier FAMILIAR_FOX_MANA = new Identifier("ssc_addon", "form_familiar_fox_sp_init_mana");
 	// 使魔系红狐 SP 隐身 resource（form_familiar_fox_sp_visibility）
-	public static final Identifier FAMILIAR_FOX_VISIBILITY = new Identifier("my_addon", "form_familiar_fox_sp_visibility");
+	public static final Identifier FAMILIAR_FOX_VISIBILITY = new Identifier("ssc_addon", "form_familiar_fox_sp_visibility");
 	// 通用技能CD资源（用于HUD显示）
-	public static final Identifier SP_PRIMARY_CD = new Identifier("my_addon", "form_sp_primary_cd");
-	public static final Identifier SP_SECONDARY_CD = new Identifier("my_addon", "form_sp_secondary_cd");
+	public static final Identifier SP_PRIMARY_CD = new Identifier("ssc_addon", "form_sp_primary_cd");
+	public static final Identifier SP_SECONDARY_CD = new Identifier("ssc_addon", "form_sp_secondary_cd");
 	// 阿努比斯之狼SP灵魂能量资源
-	public static final Identifier ANUBIS_WOLF_SP_SOUL_ENERGY = new Identifier("my_addon", "form_anubis_wolf_sp_soul_energy");
+	public static final Identifier ANUBIS_WOLF_SP_SOUL_ENERGY = new Identifier("ssc_addon", "form_anubis_wolf_sp_soul_energy");
 	// 吸血蝙蝠SP形态ID
-	public static final Identifier BAT_DESMODUS = new Identifier("my_addon", "bat_desmodus");
+	public static final Identifier BAT_DESMODUS = new Identifier("ssc_addon", "bat_desmodus");
 	// 月织蛛SP形态ID（月髓环进化）
-	public static final Identifier SPIDER_MOON_WEAVER = new Identifier("my_addon", "spider_moon_weaver");
+	public static final Identifier SPIDER_MOON_WEAVER = new Identifier("ssc_addon", "spider_moon_weaver");
 	// 跳蛛（Salticidae）：蜘蛛_3 进化石分支（与月髓环→月织蛛并行）
-	public static final Identifier SPIDER_SALTICIDAE = new Identifier("my_addon", "spider_salticidae");
+	public static final Identifier SPIDER_SALTICIDAE = new Identifier("ssc_addon", "spider_salticidae");
 	// 寄生果蝠形态ID
-	public static final Identifier BAT_PARASITIC_FRUIT = new Identifier("my_addon", "bat_parasitic_fruit");
+	public static final Identifier BAT_PARASITIC_FRUIT = new Identifier("ssc_addon", "bat_parasitic_fruit");
 	// 寄生果蝠"种子量"能量资源（最大 10）
-	public static final Identifier BAT_PARASITIC_FRUIT_SEED_ENERGY = new Identifier("my_addon", "form_bat_parasitic_fruit_seed_energy");
+	public static final Identifier BAT_PARASITIC_FRUIT_SEED_ENERGY = new Identifier("ssc_addon", "form_bat_parasitic_fruit_seed_energy");
 	// 吸血蝙蝠形态雾血资源
-	public static final Identifier BAT_BLOOD_RESOURCE = new Identifier("my_addon", "form_bat_desmodus_blood_resource");
+	public static final Identifier BAT_BLOOD_RESOURCE = new Identifier("ssc_addon", "form_bat_desmodus_blood_resource");
 	// 雪狐形态切换状态
-	public static final Identifier SNOW_FOX_SWITCH_STATE = new Identifier("my_addon", "form_snow_fox_sp_switch_state");
+	public static final Identifier SNOW_FOX_SWITCH_STATE = new Identifier("ssc_addon", "form_snow_fox_sp_switch_state");
 	// 金沙岚SP
-	public static final Identifier GOLDEN_SANDSTORM_SP = new Identifier("my_addon", "anubis_wolf_golden_sandstorm");
-	public static final Identifier GOLDEN_SANDSTORM_COUNTER_BURST_CD = new Identifier("my_addon", "form_golden_sandstorm_sp_counter_burst_cd");
+	public static final Identifier GOLDEN_SANDSTORM_SP = new Identifier("ssc_addon", "anubis_wolf_golden_sandstorm");
+	public static final Identifier GOLDEN_SANDSTORM_COUNTER_BURST_CD = new Identifier("ssc_addon", "form_golden_sandstorm_sp_counter_burst_cd");
 	// 契灵 - 抗伤栏与无敌帧资源
-	public static final Identifier MANCIANIMA_RESISTANCE = new Identifier("my_addon", "form_mancianima_resistance");
-	public static final Identifier MANCIANIMA_IFRAMES = new Identifier("my_addon", "form_mancianima_iframes");
+	public static final Identifier MANCIANIMA_RESISTANCE = new Identifier("ssc_addon", "form_mancianima_resistance");
+	public static final Identifier MANCIANIMA_IFRAMES = new Identifier("ssc_addon", "form_mancianima_iframes");
 	// 契灵 - 红标联动攻击独立 CD（10s；期间禁联动、普通闪现仍 3.5s）
-	public static final Identifier MANCIANIMA_LINK_CD = new Identifier("my_addon", "form_mancianima_link_cd");
+	public static final Identifier MANCIANIMA_LINK_CD = new Identifier("ssc_addon", "form_mancianima_link_cd");
 	// SP使魔 / 红堕落使魔「击杀赋能」被动资源（KillEmpowerManager）。
 	// 注意：宿主 power 是 apoli:multiple（form_empower_state），子资源真实 ID = power_id + "_" + sub_key
-	public static final Identifier EMPOWER_STATE = new Identifier("my_addon", "form_empower_state_state");
-	public static final Identifier EMPOWER_TICKS = new Identifier("my_addon", "form_empower_state_ticks");
-	public static final Identifier EMPOWER_RING_TICKS = new Identifier("my_addon", "form_empower_state_ring_ticks");
-	public static final Identifier EMPOWER_RING_DURATION = new Identifier("my_addon", "form_empower_state_ring_duration");
+	public static final Identifier EMPOWER_STATE = new Identifier("ssc_addon", "form_empower_state_state");
+	public static final Identifier EMPOWER_TICKS = new Identifier("ssc_addon", "form_empower_state_ticks");
+	public static final Identifier EMPOWER_RING_TICKS = new Identifier("ssc_addon", "form_empower_state_ring_ticks");
+	public static final Identifier EMPOWER_RING_DURATION = new Identifier("ssc_addon", "form_empower_state_ring_duration");
 
 	private FormIdentifiers() {
 	}

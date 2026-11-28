@@ -59,6 +59,8 @@ public final class FormMigrationWorldProbe {
                 unchangedInput();
                 ServerPlayerEntity player = context.createMockCreativeServerPlayerInWorld();
                 player.setNoGravity(true);
+                NamespaceMigrationWorldChecks.verify(player);
+                savedAdvancement(player);
                 for (var entry : FormIdMigration.aliases().entrySet()) {
                     testForm(context, player, entry.getKey(), entry.getValue());
                 }
@@ -79,6 +81,40 @@ public final class FormMigrationWorldProbe {
                 throw new RuntimeException(failure);
             }
         });
+    }
+
+    private static void savedAdvancement(ServerPlayerEntity player) throws Exception {
+        var server = player.getServer();
+        var file = java.nio.file.Files.createTempFile("ssca-advancement-migration-", ".json");
+        String oldId = "my_addon:on_transform_allay_sp";
+        String id = "ssc_addon:on_transform_allay_sp";
+        String criterion = "on_transform_allay_sp";
+        String earned = "2024-08-03 16:45:01 +0000";
+        var saved = new JsonObject();
+        var progress = new JsonObject();
+        var criteria = new JsonObject();
+        criteria.addProperty(criterion, earned);
+        progress.add("criteria", criteria);
+        progress.addProperty("done", true);
+        saved.add(oldId, progress);
+        saved.addProperty("DataVersion", net.minecraft.SharedConstants.getGameVersion().getSaveVersion().getId());
+        try {
+            java.nio.file.Files.writeString(file, saved.toString());
+            var tracker = new net.minecraft.advancement.PlayerAdvancementTracker(server.getDataFixer(),
+                    server.getPlayerManager(), server.getAdvancementLoader(), file, player);
+            try {
+                var advancement = server.getAdvancementLoader().get(new Identifier(id));
+                check(advancement != null && tracker.getProgress(advancement).isDone(), "Read earned pre-upgrade advancement");
+                tracker.save();
+                var result = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(file)).getAsJsonObject();
+                check(!result.has(oldId) && result.getAsJsonObject(id).getAsJsonObject("criteria").has(criterion),
+                        "Native advancement save emits only the canonical earned ID");
+            } finally {
+                tracker.clearCriteria();
+            }
+        } finally {
+            java.nio.file.Files.deleteIfExists(file);
+        }
     }
 
     private static void historySync(ServerPlayerEntity player) {
@@ -123,8 +159,8 @@ public final class FormMigrationWorldProbe {
         check(available.stream().filter(newId::equals).count() == 1 && !available.contains(oldId),
                 "selection/suggestions contain only one canonical form");
         check(commandForm(context, player, oldId) == form, "actual transformed command argument accepts legacy ID");
-        Identifier originId = new Identifier(oldId.getNamespace(), "form_" + oldId.getPath());
-        check(form.getFormLayer().getRight().equals(originId), "form retains its previous Origin/power resource identity");
+        Identifier originId = new Identifier("ssc_addon", "form_" + oldId.getPath());
+        check(form.getFormLayer().getRight().equals(originId), "form uses its original Origin path in the unified namespace");
         check(OriginRegistry.get(originId) != null, "existing Origin resource is loaded");
 
         FormUtils._setForm(player, form);

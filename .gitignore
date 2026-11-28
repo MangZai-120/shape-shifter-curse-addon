@@ -23,6 +23,8 @@ bin/
 # 开发辅助工具目录：不影响游戏内效果，不入版本库
 /tools/*
 !/tools/check_resources.py
+!/tools/migrate_namespace_pack.py
+!/tools/test_migrate_namespace_pack.py
 /story/
 /.settings/org.eclipse.buildship.core.prefs
 /.settings/org.eclipse.jdt.core.prefs

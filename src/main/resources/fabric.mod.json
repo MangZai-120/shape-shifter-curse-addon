@@ -59,7 +59,7 @@
     ]
   },
   "mixins": [
-    "my_addon.mixins.json"
+    "ssc_addon.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.14.21",

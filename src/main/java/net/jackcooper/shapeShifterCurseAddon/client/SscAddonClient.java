@@ -382,8 +382,7 @@ public class SscAddonClient implements ClientModInitializer {
 				var client = net.minecraft.client.MinecraftClient.getInstance();
 				SpellIconTooltipComponent.formatTooltip(client.textRenderer, lines, client.getWindow().getScaledWidth());
 			} else if (stack.getItem() instanceof net.onixary.shapeShifterCurseFabric.items.accessory.AccessoryItem
-					|| "ssc_addon".equals(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).getNamespace())
-					|| "my_addon".equals(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).getNamespace())) {
+					|| "ssc_addon".equals(net.minecraft.registry.Registries.ITEM.getId(stack.getItem()).getNamespace())) {
 				var client = net.minecraft.client.MinecraftClient.getInstance();
 				net.jackcooper.shapeShifterCurseAddon.client.tooltip.AddonTooltipFormatter.wrap(
 						client.textRenderer, lines, client.getWindow().getScaledWidth());

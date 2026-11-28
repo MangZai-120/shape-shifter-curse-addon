@@ -60,7 +60,7 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 	}
 
 	public static PowerFactory<Power> createFactory() {
-		return new PowerFactory<>(new Identifier("my_addon", "true_invisibility"),
+		return new PowerFactory<>(new Identifier("ssc_addon", "true_invisibility"),
 				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
 						.add("duration", SerializableDataTypes.INT, 100)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
@@ -343,6 +343,6 @@ public class TrueInvisibilityAbilityPower extends ActiveCooldownPower implements
 	/** 本 power 的稳定技能 ID（= power 注册路径，统一冷却服务存储键）。 */
 	public String powerIdentifier() {
 		return type != null && type.getIdentifier() != null
-				? type.getIdentifier().toString() : "my_addon:true_invisibility";
+				? type.getIdentifier().toString() : "ssc_addon:true_invisibility";
 	}
 }

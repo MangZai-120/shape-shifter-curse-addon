@@ -19,8 +19,8 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
  */
 @Environment(EnvType.CLIENT)
 public final class SeedEnergyHudRenderer extends SimpleResourceBarRenderer {
-    private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/bat_parasitic_fruit_seed_bar_empty.png");
-    private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/bat_parasitic_fruit_seed_bar_full.png");
+    private static final Identifier TEX_EMPTY = new Identifier("ssc_addon", "textures/gui/bat_parasitic_fruit_seed_bar_empty.png");
+    private static final Identifier TEX_FULL = new Identifier("ssc_addon", "textures/gui/bat_parasitic_fruit_seed_bar_full.png");
     /** 原图尺寸：86 像素宽 × 5 像素高，10 个圆点等距分布。 */
     private static final int TEX_WIDTH = 86;
 

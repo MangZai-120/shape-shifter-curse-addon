@@ -13,7 +13,7 @@ import java.util.Map;
  * <pre>{@code
  * register("familiar_fox_sp", "moon_marrow_to_familiar_fox_sp");
  * }</pre>
- * 参数 1 = 目标形态在 my_addon 命名空间下的 path（如 familiar_fox_sp）；
+ * 参数 1 = 目标形态在 ssc_addon 命名空间下的 path（如 familiar_fox_sp）；
  * 参数 2 = 对应成就 JSON 在 data/ssc_addon/advancements/ssc_addon/ 下的文件名（不含 .json）。
  * <p>
  * 添加新成就的 3 步：
@@ -40,11 +40,11 @@ public final class MoonMarrowFormAdvancements {
 
 	/**
 	 * 注册「目标形态 → 子成就」映射。
-	 * @param formPath 目标形态在 my_addon 下的 path
+	 * @param formPath 目标形态在 ssc_addon 下的 path
 	 * @param advPath  成就在 ssc_addon/ 下的文件名（不含 .json）
 	 */
 	public static void register(String formPath, String advPath) {
-		MAP.put(new Identifier("my_addon", formPath),
+		MAP.put(new Identifier("ssc_addon", formPath),
 				new Identifier("ssc_addon", advPath));
 	}
 

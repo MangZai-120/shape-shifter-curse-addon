@@ -15,8 +15,8 @@ import org.slf4j.*;
 
 /** 正式法术书共用的崩解度后端与月尘恢复药水；独立研究入口已移除。 */
 public final class NeoMagic implements ModInitializer {
-    public static final Logger LOG=LoggerFactory.getLogger("ssca_neomagic");
-    public static Identifier id(String path){return new Identifier("ssca_neomagic",path);}
+    public static final Logger LOG=LoggerFactory.getLogger("ssc_addon");
+    public static Identifier id(String path){return new Identifier("ssc_addon",path);}
     public static net.minecraft.text.MutableText text(String key,Object... args){return Text.translatable("neomagic."+key,args);}
     public static final StatusEffect DISORDER = new CollapseEffect(0xC79254,.15);
     public static final StatusEffect DISINTEGRATION = new CollapseEffect(0xA13C63,.35);

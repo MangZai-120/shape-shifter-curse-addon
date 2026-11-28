@@ -6,15 +6,15 @@
       "remove": []
     },
     "forms": {
-      "my_addon:ocelot_wind_spirit": {
+      "ssc_addon:ocelot_wind_spirit": {
         "add": [
-          "my_addon:form_ocelot_fiber_ball_plus_trinket"
+          "ssc_addon:form_ocelot_fiber_ball_plus_trinket"
         ],
         "remove": []
       },
-      "my_addon:ocelot_nova": {
+      "ssc_addon:ocelot_nova": {
         "add": [
-          "my_addon:form_ocelot_fiber_ball_plus_trinket"
+          "ssc_addon:form_ocelot_fiber_ball_plus_trinket"
         ],
         "remove": []
       }

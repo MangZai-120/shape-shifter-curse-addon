@@ -41,7 +41,7 @@ public final class AccessoryFormEffects {
             };
         }
         if (!item.getNamespace().equals("shape-shifter-curse")) return true;
-        boolean addonForm = form != null && form.getNamespace().equals("my_addon");
+        boolean addonForm = form != null && form.getNamespace().equals("ssc_addon");
         return switch (item.getPath()) {
             case "charm_of_night_crystal", "charm_of_night_crystal_plus" -> !BAT_PARASITIC_FRUIT.equals(form);
             case "amulet_bracelet_plus" -> !FAMILIAR_FOX_MANCIANIMA.equals(form);

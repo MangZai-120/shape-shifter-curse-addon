@@ -40,7 +40,7 @@ public final class ClientCodeAuditTest {
     }
 
     private static void orcafisIdleClip() throws IOException {
-        var stream = ClientCodeAuditTest.class.getResourceAsStream("/assets/my_addon/animations/orcafis.animation.json");
+        var stream = ClientCodeAuditTest.class.getResourceAsStream("/assets/ssc_addon/animations/orcafis.animation.json");
         try (var reader = new InputStreamReader(Objects.requireNonNull(stream), StandardCharsets.UTF_8)) {
             var animations = JsonParser.parseReader(reader).getAsJsonObject().getAsJsonObject("animations");
             var idle = animations.getAsJsonObject("animation.orcafis." + Motion.REST.clip);

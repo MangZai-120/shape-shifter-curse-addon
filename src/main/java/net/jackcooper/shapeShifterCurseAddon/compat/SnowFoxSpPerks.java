@@ -12,8 +12,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 /** Shared SP/Frostspine purchases, key-3 dive and complete interaction-distance multiplier. */
 public final class SnowFoxSpPerks {
-    public static final Identifier FROST_DIVE = new Identifier("my_addon", "perk_snow_fox_sp_frost_dive");
-    public static final Identifier ELUSIVE_PAWS = new Identifier("my_addon", "perk_snow_fox_sp_elusive_paws");
+    public static final Identifier FROST_DIVE = new Identifier("ssc_addon", "perk_snow_fox_sp_frost_dive");
+    public static final Identifier ELUSIVE_PAWS = new Identifier("ssc_addon", "perk_snow_fox_sp_elusive_paws");
     private static final Identifier ORIGINAL_FROST_DIVE = new Identifier("shape-shifter-curse", "perks/snow_fox_frost_dive");
     private static final Identifier ORIGINAL_ELUSIVE_PAWS = new Identifier("shape-shifter-curse", "perks/snow_fox_elusive_paws");
 

@@ -18,7 +18,7 @@ import net.minecraft.util.math.Vec3d;
  */
 public class LunarSpiritBoltRenderer extends EntityRenderer<LunarSpiritBoltEntity> {
 	/** 占位贴图（Lightning 层不采样，仅满足抽象方法）。 */
-	private static final Identifier TEXTURE = new Identifier("my_addon", "textures/entity/moon_spirit_green.png");
+	private static final Identifier TEXTURE = new Identifier("ssc_addon", "textures/entity/moon_spirit_green.png");
 	/** 光弹尺寸（格）。 */
 	private static final float BOLT_SIZE = 0.18f;
 	// 固定顶点只读复用，避免每枚光弹每帧重复创建六个向量。

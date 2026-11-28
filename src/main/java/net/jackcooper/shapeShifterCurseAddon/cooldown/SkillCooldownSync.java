@@ -9,7 +9,7 @@ import java.util.*;
 
 /** Owner-only snapshots: state transitions immediately, running clocks every second. */
 public final class SkillCooldownSync {
-    public static final Identifier ID = new Identifier("my_addon", "skill_cooldowns_v1");
+    public static final Identifier ID = new Identifier("ssc_addon", "skill_cooldowns_v1");
     private static final Map<UUID, Audience> SENT = new HashMap<>();
     private record Stamp(String skill, int phase, long end, int total) {}
     private record Audience(Object player, Object world, Object connection, ClockSnapshot clock) {}

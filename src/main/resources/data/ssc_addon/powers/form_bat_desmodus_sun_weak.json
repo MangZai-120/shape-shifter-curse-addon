@@ -1,0 +1,51 @@
+{
+    "type": "apoli:multiple",
+    "attack_down": {
+        "type": "apoli:conditioned_attribute",
+        "tick_rate": 1,
+        "modifier": {
+            "attribute": "minecraft:generic.attack_damage",
+            "operation": "multiply_total",
+            "value": -0.2,
+            "name": "Bat Desmodus Sun Weak Attack"
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                { "type": "apoli:exposed_to_sky" },
+                {
+                    "type": "apoli:or",
+                    "conditions": [
+                        { "type": "apoli:time_of_day", "comparison": "<", "compare_to": 13000 },
+                        { "type": "apoli:time_of_day", "comparison": ">", "compare_to": 23000 }
+                    ]
+                }
+            ]
+        }
+    },
+    "speed_down": {
+        "type": "apoli:conditioned_attribute",
+        "tick_rate": 1,
+        "modifier": {
+            "attribute": "minecraft:generic.movement_speed",
+            "operation": "multiply_total",
+            "value": -0.1,
+            "name": "Bat Desmodus Sun Weak Speed"
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                { "type": "apoli:exposed_to_sky" },
+                {
+                    "type": "apoli:or",
+                    "conditions": [
+                        { "type": "apoli:time_of_day", "comparison": "<", "compare_to": 13000 },
+                        { "type": "apoli:time_of_day", "comparison": ">", "compare_to": 23000 }
+                    ]
+                }
+            ]
+        }
+    },
+    "name": "power.ssc_addon.form_bat_desmodus_sun_weak.name",
+    "description": "power.ssc_addon.form_bat_desmodus_sun_weak.description"
+}

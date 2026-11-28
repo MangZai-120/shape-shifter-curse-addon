@@ -11,9 +11,9 @@ import net.minecraft.util.Identifier;
  */
 @Environment(EnvType.CLIENT)
 public class BatDesmodusBloodBar extends SimpleResourceBarRenderer {
-	private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/bat_desmodus_blood_bar_full.png");
-	private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/bat_desmodus_blood_bar_empty.png");
-	private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_bat_desmodus_blood_resource");
+	private static final Identifier TEX_FULL = new Identifier("ssc_addon", "textures/gui/bat_desmodus_blood_bar_full.png");
+	private static final Identifier TEX_EMPTY = new Identifier("ssc_addon", "textures/gui/bat_desmodus_blood_bar_empty.png");
+	private static final Identifier RESOURCE_ID = new Identifier("ssc_addon", "form_bat_desmodus_blood_resource");
 
 	@Override
 	protected Identifier resourceId() {

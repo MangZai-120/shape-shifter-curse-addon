@@ -28,6 +28,7 @@ import net.minecraft.world.World;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.balance.BalanceReader;
 import net.jackcooper.shapeShifterCurseAddon.compat.FluorescentAxolotlPerks;
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
 import net.jackcooper.shapeShifterCurseAddon.ability.FluorescentLaserAim;
 import net.jackcooper.shapeShifterCurseAddon.util.EntityDisplayClock;
@@ -530,7 +531,7 @@ public class LaserBeamEntity extends Entity {
 
 	/** laser_state 资源 id（0 空闲 /1 蓄力 /2 释放 /3 消退）。 */
 	public static final Identifier LASER_STATE =
-			new Identifier("my_addon", "form_axolotl_fluorescent_laser_state");
+			new Identifier("ssc_addon", "form_axolotl_fluorescent_laser_state");
 
 	/** Find the owner's normal laser; enhanced arrays have independent aiming. */
 	@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
@@ -572,7 +573,7 @@ public class LaserBeamEntity extends Entity {
 		this.dataTracker.set(CHARGE_DURATION, Math.max(1, nbt.contains("ChargeTicks")
 				? nbt.getInt("ChargeTicks") : BAL.i("charge_ticks", CHARGE_TICKS)));
 		if (nbt.contains("CooldownCastId")) cooldownCastId = nbt.getLong("CooldownCastId");
-		if (nbt.contains("CasterForm")) casterForm = Identifier.tryParse(nbt.getString("CasterForm"));
+		if (nbt.contains("CasterForm")) casterForm = FormIdMigration.canonical(Identifier.tryParse(nbt.getString("CasterForm")));
 		if (nbt.containsUuid("Owner")) ownerUuid = nbt.getUuid("Owner");
 	}
 

@@ -1,5 +1,5 @@
 {
-  "parent": "my_addon:on_transform_axolotl_fluorescent",
+  "parent": "ssc_addon:on_transform_axolotl_fluorescent",
   "display": {
     "icon": { "item": "minecraft:written_book" },
     "title": { "translate": "advancements.ssc_addon.tide_spirit_power.title" },

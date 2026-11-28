@@ -9,7 +9,7 @@ import net.minecraft.util.Identifier;
 final class MultiplayerSyncWireChecks {
     private static int checks;
     static int run() {
-        var key = new CountdownSync.Key(UUID.randomUUID(), new Identifier("my_addon", "test_clock"));
+        var key = new CountdownSync.Key(UUID.randomUUID(), new Identifier("ssc_addon", "test_clock"));
         var state = new CountdownSync.State(key, 17, new CountdownValue(40, 200, 0, true));
         var packet = PacketByteBufs.create();
         try {
@@ -33,7 +33,7 @@ final class MultiplayerSyncWireChecks {
         try {
             packet.writeVarInt(256);
             for (int i = 0; i < 256; i++) new CountdownSync.State(
-                    new CountdownSync.Key(new UUID(0, i / 8), new Identifier("my_addon", "clock_" + i % 8)),
+                    new CountdownSync.Key(new UUID(0, i / 8), new Identifier("ssc_addon", "clock_" + i % 8)),
                     i / 8, new CountdownValue(i, 200, 0, i != 0)).write(packet);
             check(CountdownSync.readStates(packet, 200).size() == 256, "32 owners with 8 clocks retain every entry");
         } finally { packet.release(); }

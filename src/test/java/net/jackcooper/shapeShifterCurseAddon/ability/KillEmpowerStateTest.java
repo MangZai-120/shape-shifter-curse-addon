@@ -70,14 +70,14 @@ public final class KillEmpowerStateTest {
 			JsonObject empowerGate = particles.getAsJsonObject("condition").getAsJsonArray("conditions").get(1).getAsJsonObject();
 			check(empowerGate.get("type").getAsString().equals("apoli:and"), "Empowered particle branch is amulet-gated");
 			JsonObject particleGate = empowerGate.getAsJsonArray("conditions").get(0).getAsJsonObject();
-			check(particleGate.get("resource").getAsString().equals("my_addon:form_empower_state_ring_ticks"), "Particle gate uses real independent subresource");
+			check(particleGate.get("resource").getAsString().equals("ssc_addon:form_empower_state_ring_ticks"), "Particle gate uses real independent subresource");
 			check(particleGate.get("comparison").getAsString().equals(">") && particleGate.get("compare_to").getAsInt() == 0,
 					"Particles remain enabled after earning another charge");
 			check(empowerGate.getAsJsonArray("conditions").get(1).getAsJsonObject().get("type").getAsString().equals("ssc_addon:has_blue_fire_amulet"),
 					"Full-size empowered particles require no amulet");
 			JsonObject amuletLoop = ringPower.getAsJsonObject("particle_loop_amulet");
 			check(amuletLoop.getAsJsonObject("condition").getAsJsonArray("conditions").get(0).getAsJsonObject()
-						.get("resource").getAsString().equals("my_addon:form_empower_state_ring_ticks")
+						.get("resource").getAsString().equals("ssc_addon:form_empower_state_ring_ticks")
 						&& amuletLoop.getAsJsonObject("condition").getAsJsonArray("conditions").get(1).getAsJsonObject()
 						.get("type").getAsString().equals("ssc_addon:has_blue_fire_amulet"),
 					"Compact empowered particles run only with the amulet");
@@ -87,7 +87,7 @@ public final class KillEmpowerStateTest {
 					.getAsJsonArray("conditions").get(2).getAsJsonObject();
 			check(manaGate.get("type").getAsString().equals("apoli:or"), "Low mana must not consume activation cooldown");
 			check(manaGate.getAsJsonArray("conditions").get(0).getAsJsonObject().get("resource").getAsString()
-					.equals("my_addon:form_familiar_fox_" + form + "_blue_fire_ring_toggle_state"), "Stopping normal ring ignores mana");
+					.equals("ssc_addon:form_familiar_fox_" + form + "_blue_fire_ring_toggle_state"), "Stopping normal ring ignores mana");
 			check(manaGate.getAsJsonArray("conditions").get(1).getAsJsonObject().get("mana").getAsDouble() == 99.0,
 					"Normal ring mana requirement stays unchanged");
 			JsonObject secondary = power("form_familiar_fox_" + form + "_fox_fire_breath");
@@ -98,7 +98,7 @@ public final class KillEmpowerStateTest {
 			JsonObject amulet = power("form_familiar_fox_" + form + "_blue_fire_ring_amulet");
 			check(!amulet.has("cooldown_timer"), "Amulet ring cooldown lives in the skill power");
 			JsonObject amuletActivation = amulet.getAsJsonObject("key_activation");
-			check(amuletActivation.get("type").getAsString().equals("my_addon:fail_aware_active_self")
+			check(amuletActivation.get("type").getAsString().equals("ssc_addon:fail_aware_active_self")
 					&& amuletActivation.get("cooldown").getAsInt() == 560
 					&& "on_end".equals(amuletActivation.get("cooldown_start").getAsString()), "Amulet ring has its own cooldown");
 			boolean amuletEmpowerGate = false;
@@ -120,7 +120,7 @@ public final class KillEmpowerStateTest {
 	}
 
 	private static JsonObject power(String name) throws Exception {
-		try (var stream = KillEmpowerStateTest.class.getResourceAsStream("/data/my_addon/powers/" + name + ".json")) {
+		try (var stream = KillEmpowerStateTest.class.getResourceAsStream("/data/ssc_addon/powers/" + name + ".json")) {
 			if (stream == null) throw new AssertionError("Missing power " + name);
 			return JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
 		}

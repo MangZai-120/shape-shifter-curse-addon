@@ -173,7 +173,7 @@ Bug 条目（录入「一、Bug 目录」）：
 ## 附录：历史修复记录索引
 
 - 2026-11-11：[Issue #38 全部 22 项核销审计](docs/testing/Issue-38-核销审计-2026-11-11.md)，包含当前源码依据、未采纳建议、未完成项与本轮测试结果；跳蛛范围增加已按用户决定归档为 I-A06。
-- B-0005/B-0006（原 NOW-01/02）：`assets/my_addon/lang/en_us.json` 与 `zh_cn.json`。
+- B-0005/B-0006（原 NOW-01/02）：`assets/ssc_addon/lang/en_us.json` 与 `zh_cn.json`。
 - B-0008（原 NOW-10）：`form_bat_parasitic_fruit_spore_bomb.json` 接入本地化键。
 - B-0009（原 NOW-12）：金沙岚形态及能力 JSON 接入本地化。
 - 信标系列（B-0007/0011～0014）见[朔望 HUD 与便携信标验证记录](../testing/朔望HUD与便携信标-修复与验证-2026-10-20.md)；Issue #38 系列见[修复与验证记录](../testing/Issue-38-修复与验证-2026-10-20.md)。

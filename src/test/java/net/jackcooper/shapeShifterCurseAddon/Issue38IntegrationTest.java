@@ -141,8 +141,8 @@ public final class Issue38IntegrationTest {
             tick.setAccessible(true);
             Method clear = AllaySPPortableBeacon.class.getDeclaredMethod("clearPlayer", ServerPlayerEntity.class);
             clear.setAccessible(true);
-            Identifier mana = new Identifier("my_addon", "form_allay_sp_mana_resource");
-            Identifier active = new Identifier("my_addon", "form_allay_sp_beacon_active");
+            Identifier mana = new Identifier("ssc_addon", "form_allay_sp_mana_resource");
+            Identifier active = new Identifier("ssc_addon", "form_allay_sp_beacon_active");
             TestPlayer owner = player(), ally = player(), outsider = player(), diagonal = player(), spectator = player();
             VariableIntPower energy = resource(owner, mana, 200, 10);
             VariableIntPower flag = resource(owner, active, 1, 0);
@@ -237,9 +237,9 @@ public final class Issue38IntegrationTest {
                 check(net.jackcooper.shapeShifterCurseAddon.util.PowerUtils.getResourceValue(owner, mana)
                         == energyBeforeToggles - (burst == 2 ? 1 : 0), "toggle cannot reset accumulated drain time: " + burst);
             }
-            VariableIntPower cooldown = resource(owner, new Identifier("my_addon", "form_allay_sp_mana_cooldown_resource"), 100, 0);
+            VariableIntPower cooldown = resource(owner, new Identifier("ssc_addon", "form_allay_sp_mana_cooldown_resource"), 100, 0);
             var manaJson = JsonParser.parseString(new String(Issue38IntegrationTest.class.getResourceAsStream(
-                    "/data/my_addon/powers/form_allay_sp_mana.json").readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+                    "/data/ssc_addon/powers/form_allay_sp_mana.json").readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
             var regenJson = manaJson.getAsJsonObject("regen").getAsJsonObject("condition");
             var regenFactory = io.github.apace100.apoli.registry.ApoliRegistries.ENTITY_CONDITION.get(
                     new Identifier(regenJson.get("type").getAsString()));
@@ -255,7 +255,7 @@ public final class Issue38IntegrationTest {
             net.jackcooper.shapeShifterCurseAddon.util.PowerUtils.setResourceValue(owner, mana, 200);
             check(!canRegenerate.test(owner), "existing full-energy limit remains effective");
             for (String path : List.of("form_allay_sp_beacon_effect", "form_allay_sp_beacon_mana_tick", "form_allay_sp_mana")) {
-                var text = new String(Issue38IntegrationTest.class.getResourceAsStream("/data/my_addon/powers/" + path + ".json").readAllBytes(), StandardCharsets.UTF_8);
+                var text = new String(Issue38IntegrationTest.class.getResourceAsStream("/data/ssc_addon/powers/" + path + ".json").readAllBytes(), StandardCharsets.UTF_8);
                 JsonObject json = JsonParser.parseString(text).getAsJsonObject();
                 if (path.equals("form_allay_sp_mana")) json = json.getAsJsonObject("beacon_consume");
                 check(json.get("type").getAsString().equals("apoli:simple"), "legacy duplicate action disabled: " + path);
@@ -415,18 +415,18 @@ public final class Issue38IntegrationTest {
 
         private static void descriptions() throws Exception {
             for (String lang : new String[]{"zh_cn", "en_us"}) {
-                JsonObject texts = json("assets/my_addon/lang/" + lang + ".json");
+                JsonObject texts = json("assets/ssc_addon/lang/" + lang + ".json");
                 for (String key : new String[]{"item.ssc_addon.blue_fire_amulet.tooltip_2", "item.ssc_addon.frost_amulet.tooltip.2",
                         "item.ssc_addon.active_coral_necklace.desc", "item.ssc_addon.active_coral_necklace.tooltip_decay",
-                        "power.my_addon.form_snow_fox_frostspine_frost_spike.description", "power.my_addon.form_snow_fox_frostspine_frost_forge.description"}) {
+                        "power.ssc_addon.form_snow_fox_frostspine_frost_spike.description", "power.ssc_addon.form_snow_fox_frostspine_frost_forge.description"}) {
                     check(texts.has(key) && !texts.get(key).getAsString().contains("???"), "translated gameplay description exists: " + lang + "/" + key);
                 }
-                String pros = texts.get("codex.form.my_addon.snow_fox_frostspine.pros").getAsString();
+                String pros = texts.get("codex.form.ssc_addon.snow_fox_frostspine.pros").getAsString();
                 check(pros.contains("1.2") && pros.contains("0.2") && pros.contains("10%"), "book explains both Frostspine actions");
             }
-            JsonObject origin = json("data/my_addon/origins/form_snow_fox_frostspine.json");
+            JsonObject origin = json("data/ssc_addon/origins/form_snow_fox_frostspine.json");
             check(origin.get("powers").toString().contains("form_snow_fox_frostspine_frost_forge"), "secondary explanation is attached to actual form");
-            check(!json("data/my_addon/powers/form_snow_fox_frostspine_frost_spike.json").get("hidden").getAsBoolean(), "main ability is visible in ability menu");
+            check(!json("data/ssc_addon/powers/form_snow_fox_frostspine_frost_spike.json").get("hidden").getAsBoolean(), "main ability is visible in ability menu");
         }
 
         private static JsonObject json(String path) throws Exception {

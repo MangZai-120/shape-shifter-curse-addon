@@ -52,9 +52,9 @@ public final class AxolotlSpPerkIntegrationProbe {
     static TestWorld world;
     private static int checks;
     private static final Identifier TREE = RegPerks.T_Axolotl3PerkTree;
-    private static final PowerFactory<Power> DUMMY = new PowerFactory<>(new Identifier("my_addon", "perk_test"),
+    private static final PowerFactory<Power> DUMMY = new PowerFactory<>(new Identifier("ssc_addon", "perk_test"),
             new SerializableData(), data -> Power::new);
-    private static final PowerFactory<Power> REFUND_TIMER = new PowerFactory<>(new Identifier("my_addon", "perk_test_refund_timer"),
+    private static final PowerFactory<Power> REFUND_TIMER = new PowerFactory<>(new Identifier("ssc_addon", "perk_test_refund_timer"),
             new SerializableData().add("cooldown", SerializableDataTypes.INT),
             data -> (type, entity) -> new TestCooldown(type, entity, data.getInt("cooldown")));
 
@@ -77,11 +77,11 @@ public final class AxolotlSpPerkIntegrationProbe {
             for (Identifier power : perk.powerAdd) register(power, json("shape-shifter-curse", power.getPath()));
             for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
         }
-        register(AxolotlSpPerks.WATER_MAGIC, json("my_addon", AxolotlSpPerks.WATER_MAGIC.getPath()));
-        register(AxolotlSpPerks.TIDAL_PULL, json("my_addon", AxolotlSpPerks.TIDAL_PULL.getPath()));
-        register(FluorescentAxolotlPerks.WATER_MAGIC, json("my_addon", FluorescentAxolotlPerks.WATER_MAGIC.getPath()));
-        register(FluorescentAxolotlPerks.DRY_TOLERANCE, json("my_addon", FluorescentAxolotlPerks.DRY_TOLERANCE.getPath()));
-        register(FluorescentAxolotlPerks.MOISTURE_RETURN, json("my_addon", FluorescentAxolotlPerks.MOISTURE_RETURN.getPath()));
+        register(AxolotlSpPerks.WATER_MAGIC, json("ssc_addon", AxolotlSpPerks.WATER_MAGIC.getPath()));
+        register(AxolotlSpPerks.TIDAL_PULL, json("ssc_addon", AxolotlSpPerks.TIDAL_PULL.getPath()));
+        register(FluorescentAxolotlPerks.WATER_MAGIC, json("ssc_addon", FluorescentAxolotlPerks.WATER_MAGIC.getPath()));
+        register(FluorescentAxolotlPerks.DRY_TOLERANCE, json("ssc_addon", FluorescentAxolotlPerks.DRY_TOLERANCE.getPath()));
+        register(FluorescentAxolotlPerks.MOISTURE_RETURN, json("ssc_addon", FluorescentAxolotlPerks.MOISTURE_RETURN.getPath()));
 
         IForm sp = RegPlayerForms.getPlayerForm(FormIdentifiers.AXOLOTL_SP);
         check(sp.getPerkTreeID().equals(TREE), "registered SP form shares the original saved unlocks");
@@ -150,7 +150,7 @@ public final class AxolotlSpPerkIntegrationProbe {
             for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
         }
         for (Identifier id : List.of(WindSpiritPerks.METABOLISM_1, WindSpiritPerks.METABOLISM_2, WindSpiritPerks.OVERLOAD, WindSpiritPerks.LONG_POUNCE))
-            register(id, json("my_addon", id.getPath()));
+            register(id, json("ssc_addon", id.getPath()));
         TestPlayer player = player();
         IForm form = RegPlayerForms.getPlayerForm(FormIdentifiers.OCELOT_SP);
         check(form.getPerkTreeID().equals(tree), "Wind Spirit shares the ocelot tree");
@@ -168,7 +168,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         var expected = json("shape-shifter-curse", "perks/ocelot_metabolic_overload").deepCopy();
         expected.getAsJsonObject("key").addProperty("key", "key.shape-shifter-curse.active_skill_3");
         expected.addProperty("description", "perk.ssc_addon.wind_spirit.ocelot_metabolic_overload.description");
-        check(expected.equals(json("my_addon", WindSpiritPerks.OVERLOAD.getPath())), "overload changes only key and description");
+        check(expected.equals(json("ssc_addon", WindSpiritPerks.OVERLOAD.getPath())), "overload changes only key and description");
         for (int rank : new int[]{1, 2}) {
             player.form.formPerkMap.put(tree, new ArrayList<>(rank == 1 ? List.of(RegPerks.P_OcelotMetabolism_1)
                     : List.of(RegPerks.P_OcelotMetabolism_1, RegPerks.P_OcelotMetabolism_2)));
@@ -225,7 +225,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         }
         for (Identifier id : List.of(NovaPerks.METABOLISM_1, NovaPerks.METABOLISM_2, NovaPerks.OVERLOAD, NovaPerks.LONG_POUNCE,
                 WindSpiritPerks.METABOLISM_1, WindSpiritPerks.METABOLISM_2, WindSpiritPerks.OVERLOAD, WindSpiritPerks.LONG_POUNCE))
-            register(id, json("my_addon", id.getPath()));
+            register(id, json("ssc_addon", id.getPath()));
         TestPlayer player = player();
         IForm form = RegPlayerForms.getPlayerForm(FormIdentifiers.OCELOT_NOVA);
         check(form.getPerkTreeID().equals(tree), "Nova shares original ocelot purchase tree");
@@ -242,7 +242,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         var expected = json("shape-shifter-curse", "perks/ocelot_metabolic_overload").deepCopy();
         expected.getAsJsonObject("key").addProperty("key", "key.shape-shifter-curse.active_skill_3");
         expected.addProperty("description", "perk.ssc_addon.ocelot_nova.ocelot_metabolic_overload.description");
-        check(expected.equals(json("my_addon", NovaPerks.OVERLOAD.getPath())), "Nova overload changes only key and description");
+        check(expected.equals(json("ssc_addon", NovaPerks.OVERLOAD.getPath())), "Nova overload changes only key and description");
         for (int rank : new int[]{0, 1, 2}) {
             var learned = new ArrayList<Identifier>();
             if (rank > 0) learned.add(RegPerks.P_OcelotMetabolism_1);
@@ -298,10 +298,10 @@ public final class AxolotlSpPerkIntegrationProbe {
             for (Identifier power : perk.powerAdd) register(power, json("shape-shifter-curse", power.getPath()));
             for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
         }
-        register(SnowFoxSpPerks.FROST_DIVE, json("my_addon", SnowFoxSpPerks.FROST_DIVE.getPath()));
-        register(SnowFoxSpPerks.ELUSIVE_PAWS, json("my_addon", SnowFoxSpPerks.ELUSIVE_PAWS.getPath()));
+        register(SnowFoxSpPerks.FROST_DIVE, json("ssc_addon", SnowFoxSpPerks.FROST_DIVE.getPath()));
+        register(SnowFoxSpPerks.ELUSIVE_PAWS, json("ssc_addon", SnowFoxSpPerks.ELUSIVE_PAWS.getPath()));
         JsonObject nativeJson = json("shape-shifter-curse", nativeDive.getPath());
-        JsonObject mappedJson = json("my_addon", SnowFoxSpPerks.FROST_DIVE.getPath());
+        JsonObject mappedJson = json("ssc_addon", SnowFoxSpPerks.FROST_DIVE.getPath());
         check(nativeJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_1"),
                 "SSC dive now uses key 1");
         check(mappedJson.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_3"),
@@ -335,11 +335,11 @@ public final class AxolotlSpPerkIntegrationProbe {
             }
             var unchanged = new ArrayList<>(List.of(original("form_snow_fox_3_keep_burn"), original("form_snow_fox_3_triple_jump")));
             if (formId.equals(FormIdentifiers.SNOW_FOX_SP)) {
-                unchanged.add(new Identifier("my_addon", "form_snow_fox_sp_hot_weakness"));
-                unchanged.add(new Identifier("my_addon", "form_snow_fox_sp_cold_strength"));
+                unchanged.add(new Identifier("ssc_addon", "form_snow_fox_sp_hot_weakness"));
+                unchanged.add(new Identifier("ssc_addon", "form_snow_fox_sp_cold_strength"));
             } else {
                 for (String path : List.of("form_snow_fox_frostspine_cold_metabolism", "form_snow_fox_frostspine_snow_stride",
-                        "form_snow_fox_frostspine_frost_spike", "form_snow_fox_frostspine_frost_forge")) unchanged.add(new Identifier("my_addon", path));
+                        "form_snow_fox_frostspine_frost_spike", "form_snow_fox_frostspine_frost_forge")) unchanged.add(new Identifier("ssc_addon", path));
                 unchanged.add(original("form_snow_fox_3_desert_health"));
                 unchanged.add(original("form_snow_fox_3_plain_health"));
             }
@@ -389,7 +389,7 @@ public final class AxolotlSpPerkIntegrationProbe {
             for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
         }
         for (Identifier id : List.of(FamiliarFoxSpPerks.SIPHON_1, FamiliarFoxSpPerks.SIPHON_2,
-                FamiliarFoxSpPerks.FIELD_1, FamiliarFoxSpPerks.FIELD_2)) register(id, json("my_addon", id.getPath()));
+                FamiliarFoxSpPerks.FIELD_1, FamiliarFoxSpPerks.FIELD_2)) register(id, json("ssc_addon", id.getPath()));
         for (Identifier familiarForm : List.of(FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.FAMILIAR_FOX_RED,
                 FormIdentifiers.FAMILIAR_FOX_MANCIANIMA)) {
             IForm sp = RegPlayerForms.getPlayerForm(familiarForm);
@@ -432,13 +432,13 @@ public final class AxolotlSpPerkIntegrationProbe {
             check(FamiliarFoxSpPerks.siphonAmount(player) == 4 && has(player, FamiliarFoxSpPerks.FIELD_2), "mapped powers survive Apoli NBT");
 
             var baseImmunity = new java.util.HashSet<String>();
-            for (var effect : json("my_addon", FamiliarFoxSpPerks.baseImmunity(sp).getPath()).getAsJsonArray("effects")) baseImmunity.add(effect.getAsString());
+            for (var effect : json("ssc_addon", FamiliarFoxSpPerks.baseImmunity(sp).getPath()).getAsJsonArray("effects")) baseImmunity.add(effect.getAsString());
             for (int rank : new int[]{1, 2}) {
                 var expected = new java.util.HashSet<>(baseImmunity);
                 expected.removeAll(List.of("minecraft:speed", "minecraft:haste", "minecraft:invisibility"));
                 if (rank == 2) expected.removeAll(List.of("minecraft:strength", "minecraft:water_breathing", "minecraft:night_vision"));
                 var actual = new java.util.HashSet<String>();
-                for (var effect : json("my_addon", "perk_familiar_fox_sp_permeable_field_" + rank).getAsJsonArray("effects")) actual.add(effect.getAsString());
+                for (var effect : json("ssc_addon", "perk_familiar_fox_sp_permeable_field_" + rank).getAsJsonArray("effects")) actual.add(effect.getAsString());
                 check(actual.equals(expected), "field rank " + rank + " preserves every other SP immunity");
             }
             player.form.formPerkMap.put(tree, new ArrayList<>(List.of(RegPerks.P_FamiliarFoxSiphon_1, RegPerks.P_FamiliarFoxManaCapacity_1, RegPerks.P_FamiliarFoxPermeableField_1)));
@@ -489,15 +489,15 @@ public final class AxolotlSpPerkIntegrationProbe {
                     && !has(player, original("perks/axolotl_dry_tolerance")), "dry tolerance maps to unconditional health");
             for (int tier = 0; tier <= 9; tier++) check(has(player, original("form_axolotl_2_new_oxygen_health_" + tier)),
                     "dry tolerance preserves moisture health tier " + tier);
-            var health = json("my_addon", FluorescentAxolotlPerks.DRY_TOLERANCE.getPath());
+            var health = json("ssc_addon", FluorescentAxolotlPerks.DRY_TOLERANCE.getPath());
             check("apoli:attribute".equals(health.get("type").getAsString()) && !health.has("condition")
                     && health.getAsJsonObject("modifier").get("value").getAsInt() == 6, "permanent plus six has no moisture condition");
             checkRefunds(player);
             String drainId = id.equals(FormIdentifiers.AXOLOTL_ALING)
                     ? "form_axolotl_aling_moisture_drain" : "form_axolotl_fluorescent_moisture_drain";
-            check(json("my_addon", drainId).get("interval").getAsInt() == (id.equals(FormIdentifiers.AXOLOTL_ALING) ? 27 : 20),
+            check(json("ssc_addon", drainId).get("interval").getAsInt() == (id.equals(FormIdentifiers.AXOLOTL_ALING) ? 27 : 20),
                     "each form retains its own ground-drain interval");
-            var drain = ApoliDataTypes.ENTITY_ACTION.read(json("my_addon", drainId).getAsJsonObject("entity_action"));
+            var drain = ApoliDataTypes.ENTITY_ACTION.read(json("ssc_addon", drainId).getAsJsonObject("entity_action"));
             player.air = 100;
             drain.accept(player);
             check(player.air == 99, "vegetation Perk reduces dry ground drain to one");
@@ -548,7 +548,7 @@ public final class AxolotlSpPerkIntegrationProbe {
 
     private static void checkBurstActions(TestPlayer player) {
         for (String name : List.of("form_axolotl_sp_water_ball", "form_axolotl_sp_fountain_belt_trinket", "form_axolotl_sp_fountain_belt_trinket_plus")) {
-            JsonObject root = json("my_addon", name);
+            JsonObject root = json("ssc_addon", name);
             JsonObject power = root.has("fountain") ? root.getAsJsonObject("fountain") : root;
             var actions = power.getAsJsonObject("entity_action").getAsJsonArray("actions");
             JsonObject payment = null;
@@ -609,7 +609,7 @@ public final class AxolotlSpPerkIntegrationProbe {
         JsonObject wave = json("shape-shifter-curse", "perks/axolotl_wave_efficiency");
         check(wave.get("interval").getAsInt() == 30 && wave.getAsJsonObject("entity_action").get("value").getAsInt() == -1,
                 "ongoing wave cost stays one per thirty ticks");
-        JsonObject root = json("my_addon", AxolotlSpPerks.TIDAL_PULL.getPath());
+        JsonObject root = json("ssc_addon", AxolotlSpPerks.TIDAL_PULL.getPath());
         JsonObject charge = root.getAsJsonObject("charge");
         check(charge.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_3"), "tidal pull is key 3");
         check(charge.getAsJsonObject("start_action").get("value").getAsInt() == -5, "tidal pull prepays five while requiring twenty");
@@ -618,7 +618,7 @@ public final class AxolotlSpPerkIntegrationProbe {
                 && charge.get("tier0_cooldown").getAsInt() == 20, "tidal pull is 20 blocks / 1 second, matching SSC");
         check(root.getAsJsonObject("glow").getAsJsonObject("condition").get("power").getAsString()
                 .equals(AxolotlSpPerks.TIDAL_PULL + "_charge"), "tidal highlighting tracks the mapped charge power");
-        JsonObject water = json("my_addon", AxolotlSpPerks.WATER_MAGIC.getPath());
+        JsonObject water = json("ssc_addon", AxolotlSpPerks.WATER_MAGIC.getPath());
         check(!water.has("explosion"), "mapped Perk contains no competing original explosion");
         for (var node : water.getAsJsonObject("attack").getAsJsonObject("bientity_action").getAsJsonArray("actions")) {
             var object = node.getAsJsonObject();

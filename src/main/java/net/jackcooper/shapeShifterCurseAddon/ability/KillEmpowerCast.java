@@ -84,10 +84,10 @@ public final class KillEmpowerCast {
 	}
 
 	/** 火环 toggle 资源 id 常量（红/SP × 普通/护符，避免 HUD 每帧 new Identifier）。 */
-	private static final Identifier TOGGLE_SP = new Identifier("my_addon", "form_familiar_fox_sp_blue_fire_ring_toggle_state");
-	private static final Identifier TOGGLE_RED = new Identifier("my_addon", "form_familiar_fox_red_blue_fire_ring_toggle_state");
-	private static final Identifier AMULET_TOGGLE_SP = new Identifier("my_addon", "form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state");
-	private static final Identifier AMULET_TOGGLE_RED = new Identifier("my_addon", "form_familiar_fox_red_blue_fire_ring_amulet_toggle_state");
+	private static final Identifier TOGGLE_SP = new Identifier("ssc_addon", "form_familiar_fox_sp_blue_fire_ring_toggle_state");
+	private static final Identifier TOGGLE_RED = new Identifier("ssc_addon", "form_familiar_fox_red_blue_fire_ring_toggle_state");
+	private static final Identifier AMULET_TOGGLE_SP = new Identifier("ssc_addon", "form_familiar_fox_sp_blue_fire_ring_amulet_toggle_state");
+	private static final Identifier AMULET_TOGGLE_RED = new Identifier("ssc_addon", "form_familiar_fox_red_blue_fire_ring_amulet_toggle_state");
 
 	/** 客户端按主技能键（赋能态）。返回 true 表示已处理。 */
 	public static boolean tryCastRing(ServerPlayerEntity player) {
@@ -111,11 +111,11 @@ public final class KillEmpowerCast {
 		if (normalRingOn) {
 			player.removeStatusEffect(SscAddon.BLUE_FIRE_RING);
 			String ringPrefix = (redForm ? "form_familiar_fox_red" : "form_familiar_fox_sp") + "_blue_fire_ring";
-			boolean amuletRingOn = PowerUtils.getResourceValue(player, new Identifier("my_addon", ringPrefix + "_amulet_toggle_state")) == 1;
+			boolean amuletRingOn = PowerUtils.getResourceValue(player, new Identifier("ssc_addon", ringPrefix + "_amulet_toggle_state")) == 1;
 			String ringPower = ringPrefix + (amuletRingOn ? "_amulet" : "");
-			PowerUtils.setResourceValueAndSync(player, new Identifier("my_addon", ringPower + "_toggle_state"), 0);
+			PowerUtils.setResourceValueAndSync(player, new Identifier("ssc_addon", ringPower + "_toggle_state"), 0);
 			// 关哪套环就按该火环 JSON 的 cooldown 起算
-			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, "my_addon:" + ringPower + "_key_activation");
+			net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.completed(player, "ssc_addon:" + ringPower + "_key_activation");
 			AddonSoundRange.play(world, null, player.getX(), player.getY(), player.getZ(),
 					SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.0f);
 			return true; // 本次按键只关环；赋能仍在（下次按键开赋能环）

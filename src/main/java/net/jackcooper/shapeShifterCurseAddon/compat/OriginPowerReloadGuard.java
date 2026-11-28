@@ -25,7 +25,7 @@ public final class OriginPowerReloadGuard {
         Identifier source = layer == null ? null : layer.getRight();
         Reload previous = CURRENT.get();
         if (forced || !(player instanceof ServerPlayerEntity) || !OriginPowerCompatibility.supportsForm(form) || source == null
-                || !(source.getNamespace().equals("my_addon") || source.getNamespace().equals("shape-shifter-curse"))) {
+                || !(source.getNamespace().equals("ssc_addon") || source.getNamespace().equals("shape-shifter-curse"))) {
             if (previous == null) load.run();
             else {
                 CURRENT.remove();

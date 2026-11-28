@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 
 /** Runs the configured craft action when vanilla reaches offhand item use. */
 public final class WaterSpearCraftPower extends CooldownPower {
-	public static final Identifier ID = new Identifier("my_addon", "form_axolotl_sp_water_spear_craft_spear");
+	public static final Identifier ID = new Identifier("ssc_addon", "form_axolotl_sp_water_spear_craft_spear");
 	private final Consumer<Entity> craft;
 
 	private WaterSpearCraftPower(PowerType<?> type, LivingEntity entity, int cooldown, HudRender hud, Consumer<Entity> craft) {
@@ -49,7 +49,7 @@ public final class WaterSpearCraftPower extends CooldownPower {
 	}
 
 	public static PowerFactory<Power> createFactory() {
-		return new PowerFactory<>(new Identifier("my_addon", "water_spear_craft"),
+		return new PowerFactory<>(new Identifier("ssc_addon", "water_spear_craft"),
 				new SerializableData().add("entity_action", ApoliDataTypes.ENTITY_ACTION)
 						.add("cooldown", SerializableDataTypes.INT)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER),

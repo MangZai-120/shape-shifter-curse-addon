@@ -18,7 +18,7 @@ public final class FormTutorialStateTest {
 
     public static void main(String[] args) {
         UUID alice = UUID.randomUUID(), bob = UUID.randomUUID();
-        Identifier form = new Identifier("my_addon", "ocelot_wind_spirit");
+        Identifier form = new Identifier("ssc_addon", "ocelot_wind_spirit");
         FormTutorialState state = new FormTutorialState();
         check(!state.hasSeen(alice, form), "A new player's form is unseen");
         check(state.markSeen(alice, form), "First display creates a viewing record");

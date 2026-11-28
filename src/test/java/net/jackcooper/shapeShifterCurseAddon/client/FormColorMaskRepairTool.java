@@ -138,7 +138,7 @@ public final class FormColorMaskRepairTool {
     }
 
     private void writeMask(String id, int width, int height, int[] values) throws Exception {
-        if (!id.startsWith("my_addon:") || !id.endsWith("_colormask.png")) throw new AssertionError("Only own packed masks may change: " + id);
+        if (!id.startsWith("ssc_addon:") || !id.endsWith("_colormask.png")) throw new AssertionError("Only own packed masks may change: " + id);
         BufferedImage packed = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         packed.setRGB(0, 0, width, height, values, 0, width);
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -176,7 +176,7 @@ public final class FormColorMaskRepairTool {
         if (expected == null || expected != meshVisible) throw new AssertionError("UV decoder differs from real baked model: " + name + " " + meshVisible + " expected " + expected);
         int[] bodyReference = null;
         if (name.contains("form_spider_salticidae")) bodyReference = pixels(image(
-                "my_addon:textures/form_spider_moon_weaver/form_spider_moon_weaver_colormask.png"));
+                "ssc_addon:textures/form_spider_moon_weaver/form_spider_moon_weaver_colormask.png"));
         int[] completedBody = null;
         for (String layer : new String[]{"texture", "overlay", "fullbright_texture", "emissive_overlay"}) {
             if (!json.has(layer)) continue;
@@ -205,7 +205,7 @@ public final class FormColorMaskRepairTool {
             }
             if (fills == 0) continue;
             String maskId;
-            if (json.has(maskKey) && json.get(maskKey).getAsString().startsWith("my_addon:")) maskId = json.get(maskKey).getAsString();
+            if (json.has(maskKey) && json.get(maskKey).getAsString().startsWith("ssc_addon:")) maskId = json.get(maskKey).getAsString();
             else {
                 String localTexture = json.get("texture").getAsString();
                 String dir = localTexture.substring(0, localTexture.lastIndexOf('/') + 1);
@@ -233,7 +233,7 @@ public final class FormColorMaskRepairTool {
 
     private Map<String, String> appearanceHashes() throws Exception {
         Map<String, String> hashes = new LinkedHashMap<>();
-        try (var paths = Files.walk(resources.resolve("assets/my_addon/textures"))) {
+        try (var paths = Files.walk(resources.resolve("assets/ssc_addon/textures"))) {
             for (Path path : paths.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".png"))
                     .filter(p -> !p.toString().contains("colormask")).sorted().toList()) {
                 hashes.put(root.relativize(path).toString(), HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))));
@@ -249,7 +249,7 @@ public final class FormColorMaskRepairTool {
         FormColorMaskRepairTool tool = new FormColorMaskRepairTool(root, jar);
         try {
             var appearanceBefore = tool.appearanceHashes();
-            try (var paths = Files.list(tool.resources.resolve("assets/my_addon/ssc_form_model"))) {
+            try (var paths = Files.list(tool.resources.resolve("assets/ssc_addon/ssc_form_model"))) {
                 for (Path path : paths.filter(p -> p.toString().endsWith(".json")).sorted().toList()) tool.repair(path);
             }
             for (var edit : tool.edits.entrySet()) {

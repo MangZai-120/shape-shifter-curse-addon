@@ -25,7 +25,7 @@ import net.minecraft.world.level.LevelInfo;
 
 /** Native client plus integrated server, using actual S2C packets and native respawn/teleport. */
 public final class MultiplayerSyncClientProbe {
-    private static final String CLOCK = "my_addon:sync_probe";
+    private static final String CLOCK = "ssc_addon:sync_probe";
     private static final long START = System.nanoTime();
     private static boolean starting, finished;
     private static boolean lanOpened;
@@ -36,7 +36,7 @@ public final class MultiplayerSyncClientProbe {
     private static int ticks, phase, checks;
     private static Object oldPlayer, oldWorld;
     private static io.github.apace100.apoli.power.PowerType<io.github.apace100.apoli.power.ResourcePower> pendingPower;
-    private static final net.minecraft.util.Identifier PENDING_POWER = new net.minecraft.util.Identifier("my_addon", "pending_sync_probe");
+    private static final net.minecraft.util.Identifier PENDING_POWER = new net.minecraft.util.Identifier("ssc_addon", "pending_sync_probe");
 
     public static void install() {
         if (!System.getProperty("ssca.sync.role", "host").equals("host")) {

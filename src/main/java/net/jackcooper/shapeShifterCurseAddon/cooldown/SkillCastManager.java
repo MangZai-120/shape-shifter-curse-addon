@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.cooldown;
 
+import net.jackcooper.shapeShifterCurseAddon.util.NamespaceMigration;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -24,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>线程模型：服务端主线程调用；ConcurrentHashMap 仅作防御。</p>
  *
- * <p>skillId 约定：使用 power JSON 的注册路径（如 "my_addon:form_snow_fox_sp_melee_primary"），
+ * <p>skillId 约定：使用 power JSON 的注册路径（如 "ssc_addon:form_snow_fox_sp_melee_primary"），
  * 保证与 Apoli power 一一对应、可直接反查 HUD 槽位。</p>
  */
 public class SkillCastManager extends PersistentState {
@@ -146,19 +147,19 @@ public class SkillCastManager extends PersistentState {
     }
 
     public static String domain(String skill) {
-        return skill.equals("my_addon:form_upgrade_familiar_fox_spark")
-                ? "my_addon:form_upgrade_familiar_fox_fire_ring" : skill;
+        return skill.equals("ssc_addon:form_upgrade_familiar_fox_spark")
+                ? "ssc_addon:form_upgrade_familiar_fox_fire_ring" : skill;
     }
 
     private static boolean persistentEffect(Cast cast) {
         return cast.phase == PHASE_ACTIVE && (cast.persistentEntity != null
-                || cast.skillId.equals("my_addon:form_snow_fox_sp_ranged_secondary"));
+                || cast.skillId.equals("ssc_addon:form_snow_fox_sp_ranged_secondary"));
     }
 
     public static boolean isAutonomousEffect(Cast cast) {
         return persistentEffect(cast) || cast.phase == PHASE_ACTIVE
-                && (cast.skillId.equals("my_addon:form_axolotl_fluorescent_tidal")
-                || cast.skillId.equals("my_addon:form_fallen_allay_sp_active_vex_key_activation"));
+                && (cast.skillId.equals("ssc_addon:form_axolotl_fluorescent_tidal")
+                || cast.skillId.equals("ssc_addon:form_fallen_allay_sp_active_vex_key_activation"));
     }
 
     public void bindEntity(long castId, UUID entityId) {
@@ -486,7 +487,7 @@ public class SkillCastManager extends PersistentState {
             cd.lastCastId = entry.getLong("cast");
             cd.pausedRemaining = entry.contains("paused") ? entry.getInt("paused") : -1;
             UUID owner = UUID.fromString(k.substring(0, k.indexOf('\u0000')));
-            String canonical = domain(k.substring(k.indexOf('\u0000') + 1));
+            String canonical = domain(NamespaceMigration.powerId(k.substring(k.indexOf('\u0000') + 1)));
             mgr.cooldowns.computeIfAbsent(owner, ignored -> new ConcurrentHashMap<>()).merge(canonical, cd, (a, b) ->
                     a.remaining(nbt.getLong("savedAt")) >= b.remaining(nbt.getLong("savedAt")) ? a : b);
             if (cd.pausedRemaining >= 0) mgr.offline.add(owner);
@@ -495,7 +496,7 @@ public class SkillCastManager extends PersistentState {
         NbtCompound active = nbt.getCompound("active");
         for (String k : active.getKeys()) {
             NbtCompound entry = active.getCompound(k);
-            Cast cast = new Cast(entry.getLong("cast"), entry.getUuid("owner"), entry.getString("skill"),
+            Cast cast = new Cast(entry.getLong("cast"), entry.getUuid("owner"), NamespaceMigration.powerId(entry.getString("skill")),
                     new ResolvedConfig(entry.getInt("normal"), entry.getInt("failed"), entry.getString("start")), entry.getLong("begin"));
             cast.phase = entry.getInt("phase");
             cast.cooldownStarted = entry.getBoolean("started");

@@ -119,7 +119,7 @@ public final class EnhancedAccessoryIntegrationTest {
                 check(AccessoryFormEffects.allows(current, Registries.ITEM.getId(RegCustomItem.CHARM_OF_NIGHT_CRYSTAL))
                         == !form.equals(FormIdentifiers.BAT_PARASITIC_FRUIT), "fruit bat night crystal");
                 check(AccessoryFormEffects.allows(current, Registries.ITEM.getId(RegCustomItem.FOUNTAIN_BELT_PLUS))
-                        == (!form.getNamespace().equals("my_addon") || form.equals(FormIdentifiers.AXOLOTL_SP)),
+                        == (!form.getNamespace().equals("ssc_addon") || form.equals(FormIdentifiers.AXOLOTL_SP)),
                         "SSC applies its native belt tier rules and SSCA activates it on SP");
             }
             net.jackcooper.shapeShifterCurseAddon.compat.AccessoriesCompatibilityChecks.report();

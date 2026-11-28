@@ -21,7 +21,7 @@ public final class SkillCooldownReloadIntegrationTest {
             var method = io.github.apace100.apoli.power.PowerTypes.class.getDeclaredMethod("apply", java.util.Map.class,
                     net.minecraft.resource.ResourceManager.class, net.minecraft.util.profiler.Profiler.class);
             method.setAccessible(true);
-            var invalid = com.google.gson.JsonParser.parseString("{\"type\":\"my_addon:fail_aware_active_self\",\"cooldown\":-1}");
+            var invalid = com.google.gson.JsonParser.parseString("{\"type\":\"ssc_addon:fail_aware_active_self\",\"cooldown\":-1}");
             try {
                 method.invoke(new io.github.apace100.apoli.power.PowerTypes(), java.util.Map.of(id, java.util.List.of(invalid)), null, null);
                 throw new AssertionError("Invalid reload did not fail");

@@ -39,11 +39,11 @@ public final class SheepFormClientHooks {
 
 	private SheepFormClientHooks() {}
 
-	// ===== 资源常量（my_addon 命名空间）=====
-	private static final Identifier GEO_BODY = new Identifier("my_addon", "geo/form_sheep_spell_form.geo.json");
-	private static final Identifier GEO_WOOL = new Identifier("my_addon", "geo/form_sheep_spell_form_wool.geo.json");
-	private static final Identifier TEX_BODY = new Identifier("my_addon", "textures/form_sheep_spell_form/form_sheep_spell_form.png");
-	private static final Identifier TEX_WOOL = new Identifier("my_addon", "textures/form_sheep_spell_form/form_sheep_spell_form_wool.png");
+	// ===== 资源常量（ssc_addon 命名空间）=====
+	private static final Identifier GEO_BODY = new Identifier("ssc_addon", "geo/form_sheep_spell_form.geo.json");
+	private static final Identifier GEO_WOOL = new Identifier("ssc_addon", "geo/form_sheep_spell_form_wool.geo.json");
+	private static final Identifier TEX_BODY = new Identifier("ssc_addon", "textures/form_sheep_spell_form/form_sheep_spell_form.png");
+	private static final Identifier TEX_WOOL = new Identifier("ssc_addon", "textures/form_sheep_spell_form/form_sheep_spell_form_wool.png");
 
 	/** 双层渲染器（初始化一次静态复用；渲染线程只读）。 */
 	private static FormRenderer bodyRenderer;

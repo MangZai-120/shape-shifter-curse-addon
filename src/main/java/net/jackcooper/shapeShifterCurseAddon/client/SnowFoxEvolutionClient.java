@@ -150,7 +150,7 @@ public final class SnowFoxEvolutionClient {
         draw.fill(x-1,y-1,x+105,y+6,0xdf132338);
         draw.fill(x,y,x+104,y+5,0xff345169);
         draw.fill(x,y,x+Math.round(104*mass/50),y+5,0xff92eaff);
-        draw.drawCenteredTextWithShadow(mc.textRenderer,Text.translatable("hud.my_addon.snow_fox.mass",
+        draw.drawCenteredTextWithShadow(mc.textRenderer,Text.translatable("hud.ssc_addon.snow_fox.mass",
                 MathHelper.floor(mass)),x+52,y-11,0xffe4f9ff);
     }
 

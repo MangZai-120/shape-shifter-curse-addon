@@ -61,7 +61,7 @@ public final class MixinSelection {
         //    requireMod("client.SomeOptionalModMixin", "some_optional_mod");
         // ② 某 mixin 撞到某已知冲突 mod 时自动让路（放弃自己这条注入，交给对方）：
         //    yieldOnConflict("player.SscPlayerMixin", "some_conflicting_combat_mod");
-        // 简短类名 = my_addon.mixins.json 里 "mixins"/"client" 数组的条目原样填入。
+        // 简短类名 = ssc_addon.mixins.json 里 "mixins"/"client" 数组的条目原样填入。
     }
 
     /** 登记「必需 mod」条件加载规则。（已被 static 块调用，无需 unused 抑制） */
@@ -77,7 +77,9 @@ public final class MixinSelection {
     public static boolean select(String mixinClassName, java.util.function.Predicate<String> modLoaded,
                                java.util.function.Supplier<String> highestBackend) {
         boolean connector = modLoaded.test("connectormod") || modLoaded.test("connector");
-        if ((MIXIN_PREFIX + "client.ConnectorMoistureHudVisibilityMixin").equals(mixinClassName)) {
+        if ((MIXIN_PREFIX + "compat.ForgeSavedRegistryNamespaceMixin").equals(mixinClassName)
+                || (MIXIN_PREFIX + "compat.ForgeSavedEffectNamespaceMixin").equals(mixinClassName)
+                || (MIXIN_PREFIX + "client.ConnectorMoistureHudVisibilityMixin").equals(mixinClassName)) {
             return connector;
         }
         if ((MIXIN_PREFIX + "client.MoistureHudVisibilityMixin").equals(mixinClassName)) {

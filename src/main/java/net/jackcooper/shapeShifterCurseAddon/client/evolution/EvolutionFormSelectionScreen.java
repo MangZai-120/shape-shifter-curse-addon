@@ -42,7 +42,7 @@ public abstract class EvolutionFormSelectionScreen extends Screen {
             centered(ctx, title, width / 2, py + 12, PANEL_W - 64);
             EvolutionInk.divider(ctx, px + 48, py + 36, PANEL_W - 96);
             if (form != null) {
-                centered(ctx, Text.translatable("evolution.my_addon.start.select.page", page + 1, count),
+                centered(ctx, Text.translatable("evolution.ssc_addon.start.select.page", page + 1, count),
                         width / 2, py + 25, 64);
                 int iconTop = py + 44;
                 EvolutionInk.frame(ctx, width / 2 - ICON_SIZE / 2 - 4, iconTop - 3, ICON_SIZE + 8, ICON_SIZE + 6);

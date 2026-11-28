@@ -39,7 +39,7 @@ public final class EvolutionArtwork {
 
     public static void init() {
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-            @Override public Identifier getFabricId() { return new Identifier("my_addon", "evolution_artwork"); }
+            @Override public Identifier getFabricId() { return new Identifier("ssc_addon", "evolution_artwork"); }
             @Override public void reload(ResourceManager manager) { MinecraftClient.getInstance().execute(EvolutionArtwork::clear); }
         });
     }
@@ -101,7 +101,7 @@ public final class EvolutionArtwork {
     }
     static Identifier resource(String id) {
         String folder = ICONS.contains(id) ? "icons/" : SKIN.contains(id) ? "skin/" : "";
-        return new Identifier("my_addon", "textures/gui/evolution/" + folder + id + ".png");
+        return new Identifier("ssc_addon", "textures/gui/evolution/" + folder + id + ".png");
     }
     static void draw(DrawContext context, String id, int x, int y, int size) {
         image(context, hasSprite(id) || SKIN.contains(id) ? id : "mana_system", x, y, size, size);

@@ -1,0 +1,14 @@
+{
+    "type": "apoli:entity_glow",
+    "bientity_condition": {
+        "type": "apoli:and",
+        "conditions": [
+            { "type": "ssc_addon:mancianima_mark_color", "color": "orange" },
+            { "type": "ssc_addon:mancianima_crosshair_target", "inverted": true }
+        ]
+    },
+    "use_teams": false,
+    "red": 1.0,
+    "green": 0.5,
+    "blue": 0.05
+}

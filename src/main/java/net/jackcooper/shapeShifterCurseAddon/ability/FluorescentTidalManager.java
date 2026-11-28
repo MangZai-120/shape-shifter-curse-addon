@@ -34,7 +34,7 @@ public final class FluorescentTidalManager {
 
     /** 客户端同步状态：0=空闲，1=蓄力中，2=球飞行中。 */
     public static final net.minecraft.util.Identifier TIDAL_STATE =
-            new net.minecraft.util.Identifier("my_addon", "form_axolotl_fluorescent_tidal_state");
+            new net.minecraft.util.Identifier("ssc_addon", "form_axolotl_fluorescent_tidal_state");
 
     private static final int CHARGE_TICKS = 25;       // 1.25 秒蓄力
     // CD（8 秒，球消失后起算）已由统一冷却服务 + power JSON 配置管理，原 CD_TICKS 常量已删
@@ -43,7 +43,7 @@ public final class FluorescentTidalManager {
     // 阶段 5：运行时快照读取（abilities.fluorescent_tidal；快照未初始化回退默认常量）
     private static final BalanceReader BAL = new BalanceReader("abilities.fluorescent_tidal");
     /** 统一冷却服务的稳定技能 ID（网络包触发型，用形态+技能语义 ID）。 */
-    private static final String SKILL_ID = "my_addon:form_axolotl_fluorescent_tidal";
+    private static final String SKILL_ID = "ssc_addon:form_axolotl_fluorescent_tidal";
 
     private static final UUID CHARGE_SPEED_UUID = UUID.fromString("9d2b3c4d-5e6f-7081-92a3-b4c5d6e7f819");
 

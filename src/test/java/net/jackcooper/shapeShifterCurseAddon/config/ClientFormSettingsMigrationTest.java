@@ -81,7 +81,7 @@ public final class ClientFormSettingsMigrationTest {
 
     private static void oldColorSaves() {
         for (String[] alias : RENAMED) {
-            String oldId = "my_addon:" + alias[0], newId = "my_addon:" + alias[1];
+            String oldId = "my_addon:" + alias[0], newId = "ssc_addon:" + alias[1];
             NbtCompound source = new NbtCompound();
             source.putBoolean("enableDefaultFormColor", false);
             source.put("formDefaultSetting", entry(oldId, color(0x12345678)));
@@ -109,7 +109,7 @@ public final class ClientFormSettingsMigrationTest {
     }
 
     private static void mixedColorSaves() {
-        String oldId = "my_addon:allay_sp", newId = "my_addon:allay_crystal_sound";
+        String oldId = "my_addon:allay_sp", newId = "ssc_addon:allay_crystal_sound";
         NbtCompound source = new NbtCompound();
         NbtCompound defaults = entry(oldId, color(1));
         defaults.put(newId, color(2));
@@ -164,7 +164,7 @@ public final class ClientFormSettingsMigrationTest {
 
     /** Run through Fabric/Knot to verify the production injection, rather than just its helper. */
     private static void actualColorLoad() {
-        String oldId = "my_addon:allay_sp", newId = "my_addon:allay_crystal_sound";
+        String oldId = "my_addon:allay_sp", newId = "ssc_addon:allay_crystal_sound";
         NbtCompound source = new NbtCompound();
         source.putBoolean("enableDefaultFormColor", false);
         source.put("formDefaultSetting", entry(oldId, color(0x12345678)));

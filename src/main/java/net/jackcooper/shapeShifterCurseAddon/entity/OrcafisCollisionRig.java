@@ -27,7 +27,7 @@ final class OrcafisCollisionRig {
     enum Section { TORSO, HEAD, LOWER_NECK, UPPER_NECK, TAIL_BASE, TAIL_MIDDLE, TAIL_TIP, FLUKE }
 
     private record Bone(int parent, String name, Vector3f pivot, Vector3f rotation, Section section, List<Vector3f> corners) {}
-    private static final String ASSETS = "/assets/my_addon/";
+    private static final String ASSETS = "/assets/ssc_addon/";
     private static final String CLIP_PREFIX = "animation.orcafis.";
     private static final List<Bone> BONES = bones();
     private static final Map<String,Map<String,BoneAnimation>> CLIPS = clips();

@@ -90,8 +90,8 @@ final class EvolutionTalentsIntegrationProbe {
             EvolutionTestRoutes.loadServer(raw);
             player.evolution.setRouteStartForm(axolotl.startForm.toString());
             check(!EvolutionTalents.isActive(player, "alchemy"), "repurposed route identity does not activate unrelated history");
-            player.evolution.setRouteStartForm("my_addon:upgrade_familiar_fox");
-            player.form.nowForm = new NormalForm(new Identifier("my_addon", "upgrade_familiar_fox"));
+            player.evolution.setRouteStartForm("ssc_addon:upgrade_familiar_fox");
+            player.form.nowForm = new NormalForm(new Identifier("ssc_addon", "upgrade_familiar_fox"));
             check(EvolutionTalents.isActive(player, "alchemy"), "legacy form aliases retain eligibility");
             player.form.nowForm = null;
             check(!EvolutionTalents.isActive(player, "alchemy"), "missing actual form pauses talents");

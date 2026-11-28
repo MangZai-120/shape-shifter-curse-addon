@@ -157,7 +157,7 @@ public final class SeedEnergyEatingHandler {
         Long last = LAST_OVER_QUOTA_HINT_TICK.get(sp.getUuid());
         if (last != null && now - last < OVER_QUOTA_HINT_COOLDOWN_TICKS) return;
         LAST_OVER_QUOTA_HINT_TICK.put(sp.getUuid(), now);
-        sp.sendMessage(Text.translatable("msg.my_addon.seed_eat_too_much")
+        sp.sendMessage(Text.translatable("msg.ssc_addon.seed_eat_too_much")
                 .formatted(Formatting.RED), true);
     }
 

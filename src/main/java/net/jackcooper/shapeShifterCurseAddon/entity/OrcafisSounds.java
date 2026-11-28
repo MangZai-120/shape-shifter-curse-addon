@@ -46,7 +46,7 @@ public final class OrcafisSounds {
     }
 
     private static SoundEvent event(String key) {
-        Identifier id = new Identifier("my_addon","orcafis." + key);
+        Identifier id = new Identifier("ssc_addon","orcafis." + key);
         return Registry.register(Registries.SOUND_EVENT,id,SoundEvent.of(id));
     }
 

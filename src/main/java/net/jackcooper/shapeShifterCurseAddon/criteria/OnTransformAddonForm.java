@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 // 通用：附属形态切换成就触发器。条件可选指定 form_id，匹配则触发
 public class OnTransformAddonForm extends AbstractCriterion<OnTransformAddonForm.Condition> {
-    public static final Identifier ID = new Identifier("my_addon", "on_transform_addon_form");
+    public static final Identifier ID = new Identifier("ssc_addon", "on_transform_addon_form");
 
     @Override
     public Identifier getId() {

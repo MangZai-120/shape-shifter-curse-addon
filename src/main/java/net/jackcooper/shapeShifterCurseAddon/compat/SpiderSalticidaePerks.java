@@ -121,5 +121,5 @@ public final class SpiderSalticidaePerks {
     }
 
     private static int scaleTicks(int base, double multiplier) { return Math.max(0, (int) Math.ceil(base * multiplier)); }
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
 }

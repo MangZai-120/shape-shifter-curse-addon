@@ -39,8 +39,8 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 /** Isolated packaged client: real dash packets, synchronized resources and rendered HUD frames. */
 public final class AxolotlDashHudClientProbe implements ClientModInitializer {
-    private static final Identifier LAND = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
-    private static final Identifier WATER = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
+    private static final Identifier LAND = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_land");
+    private static final Identifier WATER = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_water");
     private static final long START = System.nanoTime();
     private static final List<String> screenshots = new ArrayList<>();
     private static final List<Map<String, Object>> scenes = new ArrayList<>();

@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.effect.SheepFormRestoreHandler;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
+import net.jackcooper.shapeShifterCurseAddon.util.NamespaceMigration;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.MinecraftServer;
@@ -31,7 +32,7 @@ import java.util.UUID;
 /**
  * 变羊形态切换管理器（羊了个羊配套，服务端权威，jackcooper，2026-09-29 用户三轮定稿）。
  *
- * <p><b>架构换代</b>：变羊从「效果压制」改为「切换空壳羊形态」——羊形态（my_addon:sheep_spell_form，
+ * <p><b>架构换代</b>：变羊从「效果压制」改为「切换空壳羊形态」——羊形态（ssc_addon:sheep_spell_form，
  * 空壳无 power）不挂任何技能/被动/魔法，天然全失效；渲染继续由 SheepFormRenderMixin 画原版羊模型，
  * SHEEP_FORM 效果继续承载时长/AI 停机/换血（这套已验证）。无黑屏动画（immediatelyTransform 瞬变，
  * 用户定稿）；到期切回原形态；牛奶不可净化。</p>
@@ -181,7 +182,7 @@ public final class BeepSheepFormManager {
 		NbtCompound tag = nbt.getCompound("SSCA.SheepForm");
 		Map<String, Integer> cds = new HashMap<>();
 		NbtCompound cdTag = tag.getCompound("Cooldowns");
-		for (String key : cdTag.getKeys()) cds.put(key, cdTag.getInt(key));
+		for (String key : cdTag.getKeys()) cds.merge(NamespaceMigration.powerId(key), cdTag.getInt(key), Math::max);
 		SNAPSHOTS.put(player.getUuid(), new SheepSnapshot(
 				net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.canonical(tag.getString("OriginalForm")),
 				cds, tag.getLong("SheepStart")));

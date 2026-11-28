@@ -27,6 +27,7 @@ public final class ParasiticFruitLayers {
     private static final Map<ServerWorld, WorldState> WORLDS = new IdentityHashMap<>();
     private ParasiticFruitLayers() { }
     public static void init() {
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> GlowMarker.clearLegacyTeams(server.getScoreboard()));
         ServerTickEvents.END_WORLD_TICK.register(ParasiticFruitLayers::tick);
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (var state : WORLDS.values()) for (var host : state.hosts.values()) cleanup(host.entity);

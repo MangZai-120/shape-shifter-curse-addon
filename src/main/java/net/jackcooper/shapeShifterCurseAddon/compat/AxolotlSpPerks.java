@@ -12,9 +12,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 /** Per-form effects over the original tree's saved unlocks. SSC's registry stays intact. */
 public final class AxolotlSpPerks {
-    public static final Identifier WATER_MAGIC = new Identifier("my_addon", "perk_axolotl_sp_water_magic_efficiency");
-    public static final Identifier WATER_MAGIC_ATTACK = new Identifier("my_addon", "perk_axolotl_sp_water_magic_efficiency_attack");
-    public static final Identifier TIDAL_PULL = new Identifier("my_addon", "perk_axolotl_sp_tidal_pull");
+    public static final Identifier WATER_MAGIC = new Identifier("ssc_addon", "perk_axolotl_sp_water_magic_efficiency");
+    public static final Identifier WATER_MAGIC_ATTACK = new Identifier("ssc_addon", "perk_axolotl_sp_water_magic_efficiency_attack");
+    public static final Identifier TIDAL_PULL = new Identifier("ssc_addon", "perk_axolotl_sp_tidal_pull");
     private static final Identifier ORIGINAL_WATER_MAGIC = new Identifier("shape-shifter-curse", "perks/axolotl_water_magic_efficiency");
     private static final Identifier ORIGINAL_TIDAL_PULL = new Identifier("shape-shifter-curse", "perks/axolotl_tidal_pull");
 

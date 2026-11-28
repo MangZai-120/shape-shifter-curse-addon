@@ -7,9 +7,9 @@ import net.minecraft.util.Identifier;
 /** SP 悦灵魔力条（80×5，空/满双层贴图按百分比裁剪）。 */
 @Environment(EnvType.CLIENT)
 public class AllaySPManaBar extends SimpleResourceBarRenderer {
-	private static final Identifier TEX_FULL = new Identifier("my_addon", "textures/gui/allay_sp_mana_bar_full.png");
-	private static final Identifier TEX_EMPTY = new Identifier("my_addon", "textures/gui/allay_sp_mana_bar_empty.png");
-	private static final Identifier RESOURCE_ID = new Identifier("my_addon", "form_allay_sp_mana_resource");
+	private static final Identifier TEX_FULL = new Identifier("ssc_addon", "textures/gui/allay_sp_mana_bar_full.png");
+	private static final Identifier TEX_EMPTY = new Identifier("ssc_addon", "textures/gui/allay_sp_mana_bar_empty.png");
+	private static final Identifier RESOURCE_ID = new Identifier("ssc_addon", "form_allay_sp_mana_resource");
 
 	@Override
 	protected Identifier resourceId() {

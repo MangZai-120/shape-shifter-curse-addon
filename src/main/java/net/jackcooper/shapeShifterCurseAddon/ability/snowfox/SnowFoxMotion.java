@@ -13,10 +13,10 @@ import net.minecraft.util.Identifier;
 public final class SnowFoxMotion implements EntityComponentInitializer {
     public static final ComponentKey<SnowFoxState> STATE = ComponentRegistry.getOrCreate(
             new Identifier("ssc_addon", "snow_fox_motion"), SnowFoxState.class);
-    public static final Identifier DIVE = new Identifier("my_addon", "snow_fox_super_dive");
-    public static final Identifier ROLL = new Identifier("my_addon", "snow_fox_rolling_charge");
-    public static final Identifier STEER = new Identifier("my_addon", "snow_fox_steer");
-    public static final Identifier SPIKES = new Identifier("my_addon", "snow_fox_spike_front");
+    public static final Identifier DIVE = new Identifier("ssc_addon", "snow_fox_super_dive");
+    public static final Identifier ROLL = new Identifier("ssc_addon", "snow_fox_rolling_charge");
+    public static final Identifier STEER = new Identifier("ssc_addon", "snow_fox_steer");
+    public static final Identifier SPIKES = new Identifier("ssc_addon", "snow_fox_spike_front");
 
     @Override public void registerEntityComponentFactories(EntityComponentFactoryRegistry registry) {
         registry.registerForPlayers(STATE, SnowFoxState::new, RespawnCopyStrategy.NEVER_COPY);

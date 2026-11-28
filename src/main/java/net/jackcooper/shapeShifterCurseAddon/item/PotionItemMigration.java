@@ -1,5 +1,6 @@
 package net.jackcooper.shapeShifterCurseAddon.item;
 
+import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.minecraft.nbt.NbtCompound;
 
 /**
@@ -35,10 +36,13 @@ public final class PotionItemMigration {
         boolean genericMoon = targetId.equals(FILLED_TUBE)
                 && (oldPotion.equals(OLD_MOON_POTION) || oldPotion.equals(MOON_POTION));
         boolean renamePotion = oldPotion.equals(OLD_MOON_POTION);
-        if (!renamed && !genericMoon && !renamePotion) return source;
+        String oldForm = oldTag.getString("targetForm");
+        String form = FILLED_TUBE.equals(targetId) ? FormIdMigration.canonical(oldForm) : oldForm;
+        if (!renamed && !genericMoon && !renamePotion && form.equals(oldForm)) return source;
 
         NbtCompound result = source.copy();
         result.putString("id", genericMoon ? VIAL : targetId);
+        if (!form.equals(oldForm)) result.getCompound("tag").putString("targetForm", form);
         if (genericMoon) {
             // 月尘已用专属物品结算二十点剂量，清掉旧通用载体，防止同名双份或重复施效。
             NbtCompound tag = result.getCompound("tag");

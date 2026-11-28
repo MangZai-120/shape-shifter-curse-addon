@@ -15,7 +15,7 @@ public final class FormColorDataMigration {
             "formDefaultSetting", "customSettingByForm",
             "FCS_form_local_setting_names", "FCS_form_default_setting_names"
     };
-    private static final Set<String> RENAMED_IDS = FormIdMigration.aliases().values().stream()
+    private static final Set<String> RENAMED_IDS = FormIdMigration.savedAliases().values().stream()
             .map(Object::toString).collect(Collectors.toUnmodifiableSet());
 
     private FormColorDataMigration() { }
@@ -26,7 +26,7 @@ public final class FormColorDataMigration {
         for (String field : FORM_MAPS) {
             if (!source.contains(field, NbtElement.COMPOUND_TYPE)) continue;
             NbtCompound forms = source.getCompound(field);
-            for (var alias : FormIdMigration.aliases().entrySet()) {
+            for (var alias : FormIdMigration.savedAliases().entrySet()) {
                 String oldId = alias.getKey().toString(), newId = alias.getValue().toString();
                 if (!forms.contains(oldId)) continue;
                 if (result == source) result = source.copy();

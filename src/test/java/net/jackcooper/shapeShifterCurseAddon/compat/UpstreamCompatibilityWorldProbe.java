@@ -31,7 +31,7 @@ public final class UpstreamCompatibilityWorldProbe {
         FormUtils._setForm(p,RegPlayerForms.getPlayerForm(id));return p;
     }
     private static JsonObject json(String name)throws Exception{
-        try(var stream=UpstreamCompatibilityWorldProbe.class.getClassLoader().getResourceAsStream("data/my_addon/powers/"+name+".json")){
+        try(var stream=UpstreamCompatibilityWorldProbe.class.getClassLoader().getResourceAsStream("data/ssc_addon/powers/"+name+".json")){
             return JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }

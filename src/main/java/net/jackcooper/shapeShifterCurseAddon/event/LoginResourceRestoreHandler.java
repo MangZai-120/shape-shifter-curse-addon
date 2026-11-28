@@ -2,6 +2,7 @@ package net.jackcooper.shapeShifterCurseAddon.event;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.jackcooper.shapeShifterCurseAddon.resource.BarKeys;
+import net.jackcooper.shapeShifterCurseAddon.util.NamespaceMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.PowerUtils;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -21,9 +22,9 @@ public final class LoginResourceRestoreHandler {
     private record Pending(Map<Identifier, Integer> resources, double mana, String manaType) { }
     private static final Map<UUID, Pending> PENDING = new HashMap<>();
     private static final java.util.Set<Identifier> OTHER_PERSISTENT = java.util.Set.of(
-            new Identifier("my_addon", "form_mancianima_resistance"),
-            new Identifier("my_addon", "form_ocelot_nova_nine_lives"),
-            new Identifier("my_addon", "form_snow_fox_sp_switch_state"));
+            new Identifier("ssc_addon", "form_mancianima_resistance"),
+            new Identifier("ssc_addon", "form_ocelot_nova_nine_lives"),
+            new Identifier("ssc_addon", "form_snow_fox_sp_switch_state"));
 
     /** Only actual persistent resource bars participate; timers, charge and toggle states do not. */
     public static boolean isPersistentResource(Identifier id) {
@@ -39,9 +40,11 @@ public final class LoginResourceRestoreHandler {
         NbtList powers = components.getCompound("apoli:powers").getList("Powers", NbtElement.COMPOUND_TYPE);
         for (int i = 0; i < powers.size(); i++) {
             NbtCompound power = powers.getCompound(i);
-            Identifier id = Identifier.tryParse(power.getString("Type"));
+            String savedId = power.getString("Type");
+            Identifier id = Identifier.tryParse(NamespaceMigration.powerId(savedId));
             if (id != null && isPersistentResource(id) && power.contains("Data", NbtElement.INT_TYPE)) {
-                resources.put(id, power.getInt("Data"));
+                if (id.toString().equals(savedId)) resources.put(id, power.getInt("Data"));
+                else resources.putIfAbsent(id, power.getInt("Data"));
             }
         }
         NbtCompound mana = components.getCompound("shape-shifter-curse:mana");

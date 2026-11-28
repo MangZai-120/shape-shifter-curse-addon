@@ -87,7 +87,7 @@ public final class NeoMoistureHealingProbe {
             var other=NeoFormCastingProbe.player(t,form,0);check(style(other).healing==null,"No unapproved healing trait on "+form);
         }
         // 用真实Apoli水呼吸power验证浅水恢复，触水标志仅由本隔离测试模拟。
-        var source=new Identifier("ssca_neomagic","moisture_test");
+        var source=new Identifier("ssc_addon","moisture_test");
         var powers=io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(caster);
         powers.addPower(io.github.apace100.apoli.power.PowerTypeRegistry.get(new Identifier("shape-shifter-curse","form_axolotl_3_water_breathing")),source);
         var touching=net.minecraft.entity.Entity.class.getDeclaredField("touchingWater");touching.setAccessible(true);touching.setBoolean(caster,true);

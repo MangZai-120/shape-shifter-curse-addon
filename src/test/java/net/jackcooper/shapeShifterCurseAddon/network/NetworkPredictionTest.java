@@ -146,7 +146,7 @@ public final class NetworkPredictionTest {
 
     private static void protocolAndSnapshots() {
         var id = java.util.UUID.fromString("729091c4-d5eb-46b1-86d0-3bdc28dff115");
-        var key = new CountdownSync.Key(id, new net.minecraft.util.Identifier("my_addon", "form_sp_primary_cd"));
+        var key = new CountdownSync.Key(id, new net.minecraft.util.Identifier("ssc_addon", "form_sp_primary_cd"));
         var state = new CountdownSync.State(key, 391, new CountdownValue(600, 5000000, 0, true));
         var buf = new net.minecraft.network.PacketByteBuf(io.netty.buffer.Unpooled.buffer());
         try {

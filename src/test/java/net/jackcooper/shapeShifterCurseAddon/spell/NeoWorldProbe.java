@@ -48,35 +48,35 @@ public final class NeoWorldProbe {
         String name=stability&&resume?Files.readString(marker).trim():"neo-"+System.currentTimeMillis();
         if(stability&&!resume)Files.writeString(marker,name);
         var storage=LevelStorage.create(Path.of("saves"));var save=storage.createSession(name);
-        var directory=save.getDirectory(WorldSavePath.GENERATED).resolve("ssca_neomagic/structures");Files.createDirectories(directory);
+        var directory=save.getDirectory(WorldSavePath.GENERATED).resolve("ssc_addon/structures");Files.createDirectories(directory);
         NbtCompound empty=new NbtCompound();empty.putInt("DataVersion",3465);NbtList size=new NbtList();for(int i=0;i<3;i++)size.add(NbtInt.of(12));empty.put("size",size);
         empty.put("entities",new NbtList());empty.put("blocks",new NbtList());NbtList palette=new NbtList();NbtCompound air=new NbtCompound();air.putString("Name","minecraft:air");palette.add(air);empty.put("palette",palette);
         NbtIo.writeCompressed(empty,directory.resolve("empty.nbt").toFile());
-        var test=stability?new TestFunction("neomagic","stability_soak","ssca_neomagic:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
-                :new TestFunction("neomagic","world_lifecycle","ssca_neomagic:empty",300,0,true,NeoWorldProbe::test);
-        if(Boolean.getBoolean("neomagic.bookCutover"))test=new TestFunction("neomagic","book_cutover","ssca_neomagic:empty",300,0,true,NeoBookWorldProbe::start);
-        if(Boolean.getBoolean("neomagic.collapsePenalties"))test=new TestFunction("neomagic","collapse_penalties","ssca_neomagic:empty",300,0,true,NeoCollapsePenaltyProbe::start);
-        if(Boolean.getBoolean("neomagic.safetyBalanceAudit"))test=new TestFunction("neomagic","safety_balance_audit","ssca_neomagic:empty",300,0,true,NeoSafetyBalanceAudit::start);
-        if(Boolean.getBoolean("neomagic.instinctAnchor"))test=new TestFunction("neomagic","instinct_anchor","ssca_neomagic:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.InstinctAnchorWorldProbe::start);
-        if(Boolean.getBoolean("neomagic.moonDustPotions"))test=new TestFunction("neomagic","moon_dust_potions","ssca_neomagic:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.MoonDustPotionWorldProbe::start);
-        if(Boolean.getBoolean("neomagic.formScale"))test=new TestFunction("neomagic","form_scale","ssca_neomagic:empty",300,0,true,NeoFormScaleProbe::start);
-        if(Boolean.getBoolean("neomagic.upstreamCompatibility"))test=new TestFunction("neomagic","upstream_compatibility","ssca_neomagic:empty",400,0,true,net.jackcooper.shapeShifterCurseAddon.compat.UpstreamCompatibilityWorldProbe::start);
-        if(Boolean.getBoolean("neomagic.formCasting"))test=new TestFunction("neomagic","form_casting","ssca_neomagic:empty",900,0,true,NeoFormCastingProbe::start);
-        if(Boolean.getBoolean("neomagic.domainSuppression"))test=new TestFunction("neomagic","domain_suppression","ssca_neomagic:empty",160,0,true,NeoDomainSuppressionProbe::start);
-        if(Boolean.getBoolean("neomagic.frostLink"))test=new TestFunction("neomagic","frost_link","ssca_neomagic:empty",250,0,true,NeoFrostSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.legacyAffinity"))test=new TestFunction("neomagic","legacy_affinity","ssca_neomagic:empty",220,0,true,NeoLegacyAffinityProbe::start);
-        if(Boolean.getBoolean("neomagic.ocelotLink"))test=new TestFunction("neomagic","ocelot_link","ssca_neomagic:empty",400,0,true,NeoOcelotSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.rangeGuard"))test=new TestFunction("neomagic","range_guard","ssca_neomagic:empty",220,0,true,NeoCastRangeProbe::start);
-        if(Boolean.getBoolean("neomagic.spiderLink"))test=new TestFunction("neomagic","spider_link","ssca_neomagic:empty",260,0,true,NeoSpiderSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.allayLink"))test=new TestFunction("neomagic","allay_link","ssca_neomagic:empty",300,0,true,NeoAllaySpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.batLink"))test=new TestFunction("neomagic","bat_link","ssca_neomagic:empty",400,0,true,NeoBatSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.wildCatLink"))test=new TestFunction("neomagic","wild_cat_link","ssca_neomagic:empty",400,0,true,NeoWildCatSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.nightmareLink"))test=new TestFunction("neomagic","nightmare_link","ssca_neomagic:empty",400,0,true,NeoNightmareSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.courtLink"))test=new TestFunction("neomagic","court_link","ssca_neomagic:empty",750,0,true,NeoCourtSpellLinkProbe::start);
-        if(Boolean.getBoolean("neomagic.batStress"))test=new TestFunction("neomagic","bat_stress","ssca_neomagic:empty",500,0,true,NeoBatStressProbe::start);
-        if(Boolean.getBoolean("neomagic.interactionRecovery"))test=new TestFunction("neomagic","interaction_recovery","ssca_neomagic:empty",300,0,true,InteractionRecoveryWorldProbe::start);
+        var test=stability?new TestFunction("neomagic","stability_soak","ssc_addon:empty",Integer.getInteger("neomagic.soakTicks",2400)*3+3000,0,true,NeoStabilityWorldProbe::start)
+                :new TestFunction("neomagic","world_lifecycle","ssc_addon:empty",300,0,true,NeoWorldProbe::test);
+        if(Boolean.getBoolean("neomagic.bookCutover"))test=new TestFunction("neomagic","book_cutover","ssc_addon:empty",300,0,true,NeoBookWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.collapsePenalties"))test=new TestFunction("neomagic","collapse_penalties","ssc_addon:empty",300,0,true,NeoCollapsePenaltyProbe::start);
+        if(Boolean.getBoolean("neomagic.safetyBalanceAudit"))test=new TestFunction("neomagic","safety_balance_audit","ssc_addon:empty",300,0,true,NeoSafetyBalanceAudit::start);
+        if(Boolean.getBoolean("neomagic.instinctAnchor"))test=new TestFunction("neomagic","instinct_anchor","ssc_addon:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.InstinctAnchorWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.moonDustPotions"))test=new TestFunction("neomagic","moon_dust_potions","ssc_addon:empty",300,0,true,net.jackcooper.shapeShifterCurseAddon.item.MoonDustPotionWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.formScale"))test=new TestFunction("neomagic","form_scale","ssc_addon:empty",300,0,true,NeoFormScaleProbe::start);
+        if(Boolean.getBoolean("neomagic.upstreamCompatibility"))test=new TestFunction("neomagic","upstream_compatibility","ssc_addon:empty",400,0,true,net.jackcooper.shapeShifterCurseAddon.compat.UpstreamCompatibilityWorldProbe::start);
+        if(Boolean.getBoolean("neomagic.formCasting"))test=new TestFunction("neomagic","form_casting","ssc_addon:empty",900,0,true,NeoFormCastingProbe::start);
+        if(Boolean.getBoolean("neomagic.domainSuppression"))test=new TestFunction("neomagic","domain_suppression","ssc_addon:empty",160,0,true,NeoDomainSuppressionProbe::start);
+        if(Boolean.getBoolean("neomagic.frostLink"))test=new TestFunction("neomagic","frost_link","ssc_addon:empty",250,0,true,NeoFrostSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.legacyAffinity"))test=new TestFunction("neomagic","legacy_affinity","ssc_addon:empty",220,0,true,NeoLegacyAffinityProbe::start);
+        if(Boolean.getBoolean("neomagic.ocelotLink"))test=new TestFunction("neomagic","ocelot_link","ssc_addon:empty",400,0,true,NeoOcelotSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.rangeGuard"))test=new TestFunction("neomagic","range_guard","ssc_addon:empty",220,0,true,NeoCastRangeProbe::start);
+        if(Boolean.getBoolean("neomagic.spiderLink"))test=new TestFunction("neomagic","spider_link","ssc_addon:empty",260,0,true,NeoSpiderSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.allayLink"))test=new TestFunction("neomagic","allay_link","ssc_addon:empty",300,0,true,NeoAllaySpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.batLink"))test=new TestFunction("neomagic","bat_link","ssc_addon:empty",400,0,true,NeoBatSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.wildCatLink"))test=new TestFunction("neomagic","wild_cat_link","ssc_addon:empty",400,0,true,NeoWildCatSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.nightmareLink"))test=new TestFunction("neomagic","nightmare_link","ssc_addon:empty",400,0,true,NeoNightmareSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.courtLink"))test=new TestFunction("neomagic","court_link","ssc_addon:empty",750,0,true,NeoCourtSpellLinkProbe::start);
+        if(Boolean.getBoolean("neomagic.batStress"))test=new TestFunction("neomagic","bat_stress","ssc_addon:empty",500,0,true,NeoBatStressProbe::start);
+        if(Boolean.getBoolean("neomagic.interactionRecovery"))test=new TestFunction("neomagic","interaction_recovery","ssc_addon:empty",300,0,true,InteractionRecoveryWorldProbe::start);
         String worldProbe=System.getProperty("neomagic.worldProbe","");
-        if(!worldProbe.isBlank())test=new TestFunction("neomagic","custom_world_probe","ssca_neomagic:empty",1200,0,true,context->{
+        if(!worldProbe.isBlank())test=new TestFunction("neomagic","custom_world_probe","ssc_addon:empty",1200,0,true,context->{
             try { Class.forName(worldProbe).getMethod("start",TestContext.class).invoke(null,context); }
             catch(ReflectiveOperationException error) { throw new IllegalStateException("Cannot start world probe "+worldProbe,error); }
         });

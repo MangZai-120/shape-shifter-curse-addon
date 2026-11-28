@@ -89,10 +89,10 @@ public final class EvolutionManaIntegrationProbe {
         near(player.mana.getMaxMana(), 103, "restored route re-enables bonuses without repurchasing");
 
         var stored = player.mana.MaxManaModifierPlayerSide.getModifiers().get(
-                new Identifier("my_addon", "upgrade_familiar_fox_spark_mana_boost"));
+                new Identifier("ssc_addon", "upgrade_familiar_fox_spark_mana_boost"));
         tick(powers);
         check(stored == player.mana.MaxManaModifierPlayerSide.getModifiers().get(
-                new Identifier("my_addon", "upgrade_familiar_fox_spark_mana_boost")), "stable ticks do not rewrite identical modifiers");
+                new Identifier("ssc_addon", "upgrade_familiar_fox_spark_mana_boost")), "stable ticks do not rewrite identical modifiers");
 
         player.evolution.reset();
         tick(powers);
@@ -157,7 +157,7 @@ public final class EvolutionManaIntegrationProbe {
         near(damage(shieldPlayer, shield, 10), 8.5, "shield reduces damage by15percent at exact threshold");
         shieldPlayer.mana.setMana(33);
         near(damage(shieldPlayer, shield, 20), 17, "shield stays15percent at full mana");
-        shieldPlayer.form.nowForm = new NormalForm(new Identifier("my_addon", "axolotl_upgrade"));
+        shieldPlayer.form.nowForm = new NormalForm(new Identifier("ssc_addon", "axolotl_upgrade"));
         near(damage(shieldPlayer, shield, 20), 20, "JSON damage condition follows the actual form immediately");
         shieldPlayer.form.nowForm = new NormalForm(EvolutionRegistry.INSTANCE.getRoute("familiar_fox").startForm);
         near(damage(shieldPlayer, shield, 20), 17, "JSON damage condition resumes when eligibility returns");
@@ -189,12 +189,12 @@ public final class EvolutionManaIntegrationProbe {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static Power power(PowerFactory factory, JsonObject json, TestPlayer player, String id) {
         var instance = factory.read(json);
-        var type = new PowerType(new Identifier("my_addon", "evolution_mana_test_" + id), instance);
+        var type = new PowerType(new Identifier("ssc_addon", "evolution_mana_test_" + id), instance);
         return (Power) instance.apply(type, player);
     }
 
     private static JsonObject json(String name) {
-        String path = "/data/my_addon/powers/form_upgrade_familiar_fox_" + name + ".json";
+        String path = "/data/ssc_addon/powers/form_upgrade_familiar_fox_" + name + ".json";
         try (var stream = EvolutionManaIntegrationProbe.class.getResourceAsStream(path)) {
             if (stream == null) throw new AssertionError("Missing resource " + path);
             return JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();

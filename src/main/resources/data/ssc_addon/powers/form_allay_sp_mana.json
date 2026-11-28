@@ -1,0 +1,82 @@
+{
+    "type": "apoli:multiple",
+    "resource": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 200,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cooldown_resource": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 100,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "cooldown_tick": {
+        "type": "apoli:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "ssc_addon:tick_countdown",
+            "resource": "ssc_addon:form_allay_sp_mana_cooldown_resource"
+        },
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "ssc_addon:form_allay_sp_mana_cooldown_resource",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "regen": {
+        "type": "apoli:action_over_time",
+        "interval": 8,
+        "entity_action": {
+            "type": "apoli:change_resource",
+            "resource": "ssc_addon:form_allay_sp_mana_resource",
+            "change": 3,
+            "operation": "add"
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "ssc_addon:skill_disabled",
+                    "form": "allay",
+                    "skill": "mana_regen"
+                },
+                {
+                    "type": "apoli:resource",
+                    "resource": "ssc_addon:form_allay_sp_beacon_active",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "apoli:resource",
+                    "resource": "ssc_addon:form_allay_sp_mana_resource",
+                    "comparison": "<",
+                    "compare_to": 200
+                },
+                {
+                    "type": "apoli:resource",
+                    "resource": "ssc_addon:form_allay_sp_mana_cooldown_resource",
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "ssc_addon:not_universal_formation_charging"
+                }
+            ]
+        }
+    },
+    "beacon_consume": {
+        "type": "apoli:simple",
+        "hidden": true
+    },
+    "name": "Mana",
+    "description": "Custom mana resource for Allay SP form."
+}

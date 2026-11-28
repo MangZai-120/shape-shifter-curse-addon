@@ -6,7 +6,7 @@
       "remove": []
     },
     "forms": {
-      "my_addon:bat_desmodus": {
+      "ssc_addon:bat_desmodus": {
         "add": [
           "shape-shifter-curse:form_bat_charm_of_hollow_fang_trinket_plus"
         ],
@@ -15,7 +15,7 @@
           "shape-shifter-curse:form_vegetarian_food_up"
         ]
       },
-      "my_addon:bat_parasitic_fruit": {
+      "ssc_addon:bat_parasitic_fruit": {
         "add": [
           "shape-shifter-curse:form_bat_charm_of_hollow_fang_trinket_plus"
         ],

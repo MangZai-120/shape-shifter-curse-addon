@@ -48,12 +48,12 @@ public final class FluorescentLaserManager {
 	private static final int WINDOW_TICKS = 100;           // 5 秒发射窗口
 	private static final int SHOT_TICKS = 8;               // 每道激光 8t
 	private static final net.minecraft.util.Identifier SHOT_HUD =
-			new net.minecraft.util.Identifier("my_addon", "form_axolotl_fluorescent_shot_cd");
+			new net.minecraft.util.Identifier("ssc_addon", "form_axolotl_fluorescent_shot_cd");
 	private static final int SHOT_DAMAGE_INTERVAL = 2;     // 每 2t 判定一次（共 4 次）
 	private static final float SHOT_DAMAGE = 15.0f;        // 佩坠三连发的每发基础物理伤害
 	private static final float ALING_SHOT_DAMAGE = 20.0f;
 	/** 技能 ID（= 荷光幼灵/阿漪挂载的激光 power）；增强版每发累加 extra_cooldowns.per_shot。 */
-	public static final String SKILL_ID = "my_addon:form_axolotl_fluorescent_laser";
+	public static final String SKILL_ID = "ssc_addon:form_axolotl_fluorescent_laser";
 	private static final double SPEED_PENALTY = -0.5;      // 整段移速 -50%
 	// 缩型激光几何（原 32/2.5 的 30%）
 	private static final double ENH_BEAM_LENGTH = 24.0;        // 攻击距离最大 24 格（与渲染光柱一致）

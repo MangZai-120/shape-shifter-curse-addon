@@ -277,7 +277,7 @@ public final class DualAccessoryEquipment {
             SSCEvent.ACCESSORY_EQUIP.invoker().onEvent(player,id,"ssca");
         }
         if(!conflicts.isEmpty()&&!conflicts.equals(state.conflicts)) {
-            player.sendMessage(Text.translatable("msg.my_addon.accessory_duplicate_detail")
+            player.sendMessage(Text.translatable("msg.ssc_addon.accessory_duplicate_detail")
                     .formatted(Formatting.RED), true);
         }
         state.conflicts=conflicts;

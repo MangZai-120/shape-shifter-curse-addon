@@ -35,7 +35,7 @@ public final class OrcafisRenderer extends GeoEntityRenderer<OrcafisEntity> {
     static final Identifier WALL = texture("tidal_wall");
 
     private static Identifier texture(String file) {
-        return new Identifier("my_addon", "textures/entity/orcafis/" + file + ".png");
+        return new Identifier("ssc_addon", "textures/entity/orcafis/" + file + ".png");
     }
 
     public OrcafisRenderer(EntityRendererFactory.Context context) {

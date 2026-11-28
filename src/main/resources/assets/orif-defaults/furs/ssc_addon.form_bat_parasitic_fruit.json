@@ -1,0 +1,26 @@
+{
+  "model": "ssc_addon:geo/form_bat_desmodus.geo.json",
+  "texture": "ssc_addon:textures/form_bat_parasitic_fruit/form_bat_parasitic_fruit.png",
+  "texture_mask": "ssc_addon:textures/form_bat_parasitic_fruit/form_bat_parasitic_fruit_colormask.png",
+  "hidden": [
+    "leftArm",
+    "rightArm",
+    "leftLeg",
+    "rightLeg",
+    "leftSleeve",
+    "rightSleeve",
+    "rightPants",
+    "leftPants",
+    "body",
+    "jacket",
+    "head",
+    "hat"
+  ],
+  "tail_chain": {
+    "tail": [0, 1, 2, 3]
+  },
+  "tail_chain_head": {
+    "ear_l": [0],
+    "ear_r": [0]
+  }
+}

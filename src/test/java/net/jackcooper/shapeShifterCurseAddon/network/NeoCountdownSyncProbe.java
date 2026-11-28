@@ -28,10 +28,10 @@ public final class NeoCountdownSyncProbe {
     }
     public static void run(TestContext t)throws Exception {
         var p=NeoFormCastingProbe.player(t,FormIdentifiers.ALLAY_SP,100);
-        var source=new Identifier("ssca_neomagic","sync_probe");int[] minActions={0},referenceActions={0};
-        var counterId=new Identifier("ssca_neomagic","probe_counter");
-        var nativeId=new Identifier("ssca_neomagic","probe_levitate");
-        var customId=new Identifier("ssca_neomagic","probe_custom_levitate");
+        var source=new Identifier("ssc_addon","sync_probe");int[] minActions={0},referenceActions={0};
+        var counterId=new Identifier("ssc_addon","probe_counter");
+        var nativeId=new Identifier("ssc_addon","probe_levitate");
+        var customId=new Identifier("ssc_addon","probe_custom_levitate");
         var counter=new PowerType<ResourcePower>(counterId,null){
             @Override public ResourcePower create(LivingEntity e){return new ResourcePower(this,e,HudRender.DONT_RENDER,0,0,10,x->minActions[0]++,null);}
         };

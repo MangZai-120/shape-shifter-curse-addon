@@ -197,7 +197,7 @@ public final class ParticleAvoidanceTest {
                     "Internal constants must not become editable AutoConfig fields: " + field.getName());
         var gson = new com.google.gson.Gson();
         for (String language : new String[]{"zh_cn", "en_us"}) {
-            try (var stream = ParticleAvoidanceTest.class.getResourceAsStream("/assets/my_addon/lang/" + language + ".json")) {
+            try (var stream = ParticleAvoidanceTest.class.getResourceAsStream("/assets/ssc_addon/lang/" + language + ".json")) {
                 var translations = com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(
                         java.util.Objects.requireNonNull(stream), java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
                 for (Strength strength : Strength.values()) {

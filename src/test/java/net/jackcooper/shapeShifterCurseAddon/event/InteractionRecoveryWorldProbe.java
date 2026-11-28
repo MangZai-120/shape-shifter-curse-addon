@@ -70,7 +70,7 @@ public final class InteractionRecoveryWorldProbe {
         var player = player(test, form);
         player.setStackInHand(Hand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
         for (String power : List.of("form_allay_sp_digging_speed_down", "form_allay_sp_prevent_digging_when_fly")) {
-            check(PowerHolderComponent.KEY.get(player).hasPower(PowerTypeRegistry.get(new Identifier("my_addon", power))),
+            check(PowerHolderComponent.KEY.get(player).hasPower(PowerTypeRegistry.get(new Identifier("ssc_addon", power))),
                     form + " grants the actual mining power " + power);
         }
         BlockPos pos = player.getBlockPos().add(1, 0, 0);

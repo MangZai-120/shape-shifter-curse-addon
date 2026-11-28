@@ -101,7 +101,7 @@ public class SscAddonConditions {
 					return comparison.compare(current / max, requiredPercent);
 				}));
 
-		registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "not_actor_whitelisted"),
+		registerBiEntity(new ConditionFactory<>(new Identifier("ssc_addon", "not_actor_whitelisted"),
 				new SerializableData(),
 				(data, pair) -> {
 					Entity actor = pair.getLeft();
@@ -113,7 +113,7 @@ public class SscAddonConditions {
 
 		// 食梦魔「入梦」门控（Apoli JSON 侧用）：actor（施加者）被 target（食梦魔）入梦 → false（效果不施加）。
 		// 用于 apply_effect 等无法带 source 的 JSON 动作，与服务端 addStatusEffect 拦截器同语义。
-		registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "not_dream_blocked"),
+		registerBiEntity(new ConditionFactory<>(new Identifier("ssc_addon", "not_dream_blocked"),
 				new SerializableData(),
 				(data, pair) -> {
 					Entity actor = pair.getLeft();
@@ -148,7 +148,7 @@ public class SscAddonConditions {
 
 		// 契灵标记颜色条件 - 用于 entity_glow（黄/橙/红三档）
 		// 服务端：从 MancianimaMarkManager 查询；客户端：从 MancianimaMarkClientState 查询
-		registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "mancianima_mark_color"),
+		registerBiEntity(new ConditionFactory<>(new Identifier("ssc_addon", "mancianima_mark_color"),
 				new SerializableData()
 						.add("color", SerializableDataTypes.STRING),
 				(data, pair) -> {
@@ -166,7 +166,7 @@ public class SscAddonConditions {
 				}));
 
 		// 契灵准星目标条件（仅客户端有效）：用于绿色高亮覆盖
-		registerBiEntity(new ConditionFactory<>(new Identifier("my_addon", "mancianima_crosshair_target"),
+		registerBiEntity(new ConditionFactory<>(new Identifier("ssc_addon", "mancianima_crosshair_target"),
 				new SerializableData(),
 				(data, pair) -> {
 					Entity actor = pair.getLeft();
@@ -228,7 +228,7 @@ public class SscAddonConditions {
 				}));
 
 		// 技能就绪（未在施放且不在冷却）：仅服务端权威，客户端恒为 true
-		register(new ConditionFactory<>(new Identifier("my_addon", "skill_ready"),
+		register(new ConditionFactory<>(new Identifier("ssc_addon", "skill_ready"),
 				new SerializableData()
 						.add("power", SerializableDataTypes.IDENTIFIER),
 				(data, entity) -> !(entity instanceof ServerPlayerEntity player)

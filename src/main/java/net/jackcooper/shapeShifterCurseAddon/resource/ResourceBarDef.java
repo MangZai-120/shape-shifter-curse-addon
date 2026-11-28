@@ -19,7 +19,7 @@ import net.minecraft.util.Identifier;
  */
 public final class ResourceBarDef {
 
-	/** apoli resource 注册 id（如 my_addon:form_allay_sp_mana_resource）。 */
+	/** apoli resource 注册 id（如 ssc_addon:form_allay_sp_mana_resource）。 */
 	public final Identifier id;
 	/** 语义分类：mana / blood / energy / seed（供通用物品与判定按类过滤）。 */
 	public final String kind;

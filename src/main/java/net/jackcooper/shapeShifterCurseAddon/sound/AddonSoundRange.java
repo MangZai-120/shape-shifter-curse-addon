@@ -51,7 +51,7 @@ public final class AddonSoundRange {
     public static boolean isAddonActionTarget(Object target) {
         if (target instanceof LivingEntity living) {
             var form = FormUtils.getCurrentForm(living);
-            return form != null && form.getFormID() != null && form.getFormID().getNamespace().equals("my_addon");
+            return form != null && form.getFormID() != null && form.getFormID().getNamespace().equals("ssc_addon");
         }
         return target instanceof Pair<?, ?> pair
                 && (isAddonActionTarget(pair.getLeft()) || isAddonActionTarget(pair.getRight()));

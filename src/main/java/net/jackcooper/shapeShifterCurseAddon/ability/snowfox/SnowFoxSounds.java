@@ -18,7 +18,7 @@ public final class SnowFoxSounds {
     static void init() {}
 
     private static SoundEvent event(String name) {
-        var id = new Identifier("my_addon", "snow_fox." + name);
+        var id = new Identifier("ssc_addon", "snow_fox." + name);
         return Registry.register(Registries.SOUND_EVENT, id, SoundEvent.of(id));
     }
 

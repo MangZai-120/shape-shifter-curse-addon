@@ -13,12 +13,12 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 /** Fluorescent/Aling effects over the same purchased SSC axolotl Perks. */
 public final class FluorescentAxolotlPerks {
-    public static final Identifier WATER_MAGIC = new Identifier("my_addon", "perk_axolotl_fluorescent_water_magic_efficiency");
-    public static final Identifier WATER_MAGIC_ATTACK = new Identifier("my_addon", "perk_axolotl_fluorescent_water_magic_efficiency_attack");
-    public static final Identifier DRY_TOLERANCE = new Identifier("my_addon", "perk_axolotl_fluorescent_dry_tolerance");
-    public static final Identifier MOISTURE_RETURN = new Identifier("my_addon", "perk_axolotl_fluorescent_moisture_return");
-    public static final Identifier LASER_REFUND = new Identifier("my_addon", "perk_axolotl_fluorescent_moisture_return_laser");
-    public static final Identifier TIDAL_REFUND = new Identifier("my_addon", "perk_axolotl_fluorescent_moisture_return_tidal");
+    public static final Identifier WATER_MAGIC = new Identifier("ssc_addon", "perk_axolotl_fluorescent_water_magic_efficiency");
+    public static final Identifier WATER_MAGIC_ATTACK = new Identifier("ssc_addon", "perk_axolotl_fluorescent_water_magic_efficiency_attack");
+    public static final Identifier DRY_TOLERANCE = new Identifier("ssc_addon", "perk_axolotl_fluorescent_dry_tolerance");
+    public static final Identifier MOISTURE_RETURN = new Identifier("ssc_addon", "perk_axolotl_fluorescent_moisture_return");
+    public static final Identifier LASER_REFUND = new Identifier("ssc_addon", "perk_axolotl_fluorescent_moisture_return_laser");
+    public static final Identifier TIDAL_REFUND = new Identifier("ssc_addon", "perk_axolotl_fluorescent_moisture_return_tidal");
     private static final Identifier ORIGINAL_WATER_MAGIC = new Identifier("shape-shifter-curse", "perks/axolotl_water_magic_efficiency");
     private static final Identifier ORIGINAL_TIDAL_PULL = new Identifier("shape-shifter-curse", "perks/axolotl_tidal_pull");
     private static final Identifier ORIGINAL_DRY_TOLERANCE = new Identifier("shape-shifter-curse", "perks/axolotl_dry_tolerance");

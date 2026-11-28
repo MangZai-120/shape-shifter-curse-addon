@@ -22,11 +22,11 @@ import java.util.function.Consumer;
 
 /** Empty gesture packets; elapsed time, costs and selection are owned by the server. */
 public final class ParasiticFruitAbility {
-    public static final Identifier START = new Identifier("my_addon", "fruit_charge_start");
-    public static final Identifier RELEASE = new Identifier("my_addon", "fruit_charge_release");
-    public static final Identifier CANCEL = new Identifier("my_addon", "fruit_charge_cancel");
-    public static final Identifier CYCLE = new Identifier("my_addon", "fruit_cycle");
-    public static final String SKILL_ID = "my_addon:form_bat_parasitic_fruit_parasitic_seed";
+    public static final Identifier START = new Identifier("ssc_addon", "fruit_charge_start");
+    public static final Identifier RELEASE = new Identifier("ssc_addon", "fruit_charge_release");
+    public static final Identifier CANCEL = new Identifier("ssc_addon", "fruit_charge_cancel");
+    public static final Identifier CYCLE = new Identifier("ssc_addon", "fruit_cycle");
+    public static final String SKILL_ID = "ssc_addon:form_bat_parasitic_fruit_parasitic_seed";
     private record Charge(ServerPlayerEntity player, ServerWorld world, long start) { }
     private static final Map<UUID, Charge> CHARGES = new HashMap<>();
     private static final Map<UUID, Integer> LAST_CYCLE = new HashMap<>();
@@ -93,8 +93,8 @@ public final class ParasiticFruitAbility {
         LAST_CYCLE.put(player.getUuid(), now);
         var state = RegParasiticFruitStateComponent.STATE.get(player);
         state.selection(state.selection().next()); RegParasiticFruitStateComponent.STATE.sync(player);
-        player.sendMessage(Text.translatable("message.my_addon.fruit_selection",
-                Text.translatable("fruit.my_addon." + state.selection().key())), true);
+        player.sendMessage(Text.translatable("message.ssc_addon.fruit_selection",
+                Text.translatable("fruit.ssc_addon." + state.selection().key())), true);
     }
     private static void tick(ServerPlayerEntity player) {
         var state = RegParasiticFruitStateComponent.STATE.get(player);

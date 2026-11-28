@@ -68,7 +68,7 @@ public final class NightmareFearManager {
 	/** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
 	private static final BalanceReader BAL = new BalanceReader("abilities.nightmare_fear");
 	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
-	private static final String SKILL_ID = "my_addon:form_wild_cat_nightmare_fear";
+	private static final String SKILL_ID = "ssc_addon:form_wild_cat_nightmare_fear";
 	/** 范围外完全隐匿的包刷新间隔（tick）。 */
 	private static final int OUT_OF_RANGE_HIDE_REFRESH = 40;
 	/** 心跳基础音量（范围外/无梦魔时的极小固定音量）。 */

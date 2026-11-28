@@ -1,0 +1,22 @@
+{
+    "type": "ssc_addon:fail_aware_active_self",
+    "name": "power.ssc_addon.form_golden_sandstorm_sp_wither_sand.name",
+    "description": "power.ssc_addon.form_golden_sandstorm_sp_wither_sand.description",
+    "entity_action": {
+        "type": "ssc_addon:golden_sandstorm_wither_sand"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "condition": {
+        "type": "apoli:sneaking",
+        "inverted": true
+    },
+    "cooldown": 520,
+    "fail_cooldown": 140,
+    "cooldown_start": "on_release",
+    "defer_release": true,
+    "hud_render": {
+        "should_render": false
+    }
+}

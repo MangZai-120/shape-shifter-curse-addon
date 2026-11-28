@@ -70,8 +70,8 @@ public final class SpiderJumpAnimationTest {
             check(!originalJump.isInfinite, "SSC resource remains a single-shot animation");
 
             for (Form_Spider3 form : new Form_Spider3[]{
-                    new Form_SpiderSalticidae(new Identifier("my_addon", "spider_salticidae")),
-                    new Form_SpiderMoonWeaver(new Identifier("my_addon", "spider_moon_weaver"))}) {
+                    new Form_SpiderSalticidae(new Identifier("ssc_addon", "spider_salticidae")),
+                    new Form_SpiderMoonWeaver(new Identifier("ssc_addon", "spider_moon_weaver"))}) {
                 testForm(form, originalJump);
             }
             check(!originalJump.isInfinite, "no mutation of the shared SSC jump asset");

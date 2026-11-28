@@ -19,8 +19,8 @@ import net.minecraft.util.Formatting;
  * 寄生果蝠主要技能满层（stack==3）目标的 outline 高光辅助类。
  * 实现策略：
  *   1. 服务端创建两个 Scoreboard team：
- *      - my_addon_pfb_friend → 绿色边框（友军/自己）
- *      - my_addon_pfb_enemy → 红色边框（敌方）
+ *      - ssc_addon_pfb_friend → 绿色边框（友军/自己）
+ *      - ssc_addon_pfb_enemy → 红色边框（敌方）
  *   2. 通过给目标加短时长（不可见粒子）GLOWING status effect 让客户端持续描边；
  *      团队颜色决定描边颜色。
  *   3. 取消高光时仅移除 team（不主动 remove GLOWING，留给 status effect 自然过期），
@@ -30,8 +30,8 @@ import net.minecraft.util.Formatting;
  */
 public final class GlowMarker {
 
-    public static final String TEAM_FRIEND = "my_addon_pfb_friend";
-    public static final String TEAM_ENEMY = "my_addon_pfb_enemy";
+    public static final String TEAM_FRIEND = "ssc_addon_pfb_friend";
+    public static final String TEAM_ENEMY = "ssc_addon_pfb_enemy";
     /** GLOWING 状态效果刷新时长（tick），略大于刷新间隔以保持连续。 */
     private static final int GLOWING_DURATION = 30;
 
@@ -83,6 +83,14 @@ public final class GlowMarker {
         // 持续刷新 GLOWING 状态以保证客户端描边；带 caster source 供入梦拦截归因
         target.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING,
                 GLOWING_DURATION, 0, false, false, false), caster);
+    }
+
+    /** Fruit layers only live for one server session. Discard the previous names and their stale memberships. */
+    public static void clearLegacyTeams(Scoreboard scoreboard) {
+        for (String name : java.util.List.of("my_addon_pfb_friend", "my_addon_pfb_enemy")) {
+            Team legacy = scoreboard.getTeam(name);
+            if (legacy != null) scoreboard.removeTeam(legacy);
+        }
     }
 
     private static Team ensureTeam(Scoreboard scoreboard, String name, Formatting color) {

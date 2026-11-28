@@ -71,5 +71,5 @@ public final class UpgradeAxolotlPerks {
         return enabled(player, WAVE) ? Math.max(0, (int) Math.ceil(base * BAL.d("land_air_multiplier", LAND_AIR_MULTIPLIER))) : Math.max(0, base);
     }
 
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
 }

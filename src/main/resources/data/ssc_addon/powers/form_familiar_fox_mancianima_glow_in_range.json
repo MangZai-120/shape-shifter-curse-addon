@@ -1,0 +1,18 @@
+{
+    "type": "apoli:entity_glow",
+    "bientity_condition": {
+        "type": "apoli:and",
+        "conditions": [
+            { "type": "apoli:distance", "comparison": "<=", "compare_to": 32 },
+            { "type": "apoli:target_condition", "condition": { "type": "apoli:living" } },
+            { "type": "ssc_addon:mancianima_crosshair_target", "inverted": true },
+            { "type": "ssc_addon:mancianima_mark_color", "color": "yellow", "inverted": true },
+            { "type": "ssc_addon:mancianima_mark_color", "color": "orange", "inverted": true },
+            { "type": "ssc_addon:mancianima_mark_color", "color": "red", "inverted": true }
+        ]
+    },
+    "use_teams": false,
+    "red": 0.192,
+    "green": 0.784,
+    "blue": 0.8
+}

@@ -24,7 +24,7 @@ import net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns;
  *
  * <pre>
  * {
- *   "type": "my_addon:fail_aware_active_self",
+ *   "type": "ssc_addon:fail_aware_active_self",
  *   "cooldown": 120,               // 成功 CD（tick）
  *   "fail_cooldown": 72,           // 失败 CD（0 = 失败不进 CD）
  *   "cooldown_start": "on_cast",   // on_cast / on_release / on_end
@@ -122,7 +122,7 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower implements Ski
 	/** 本 power 的稳定技能 ID（= power 注册 ID，SkillCastManager 存储键）。 */
 	public String powerIdentifier() {
 		return type != null && type.getIdentifier() != null
-				? type.getIdentifier().toString() : "my_addon:unknown";
+				? type.getIdentifier().toString() : "ssc_addon:unknown";
 	}
 
 	/** 本类与子类共用的 JSON 字段。 */
@@ -141,7 +141,7 @@ public class FailAwareActiveSelfPower extends ActiveCooldownPower implements Ski
 	}
 
 	public static PowerFactory<Power> createFactory() {
-		return new PowerFactory<>(new Identifier("my_addon", "fail_aware_active_self"), fields(),
+		return new PowerFactory<>(new Identifier("ssc_addon", "fail_aware_active_self"), fields(),
 				data -> {
 					SkillCooldownSpec spec = SkillCooldownSpec.read(data);
 					return (type, player) -> new FailAwareActiveSelfPower(type, player, spec,

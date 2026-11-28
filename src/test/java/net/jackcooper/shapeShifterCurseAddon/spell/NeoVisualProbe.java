@@ -26,7 +26,7 @@ public final class NeoVisualProbe {
                 if(tick++%15!=0)return;
                 if(step==0) {
                     NeoClient.data=new NeoState.PlayerData();NeoClient.data.known.addAll(net.jackcooper.shapeShifterCurseAddon.spell.NeoTestFixtures.SAMPLES.keySet());NeoClient.table=true;
-                    NeoClient.profile=new Profile(80,1.15,.85,1,1,false);NeoClient.data.form="my_addon:axolotl_fluorescent";
+                    NeoClient.profile=new Profile(80,1.15,.85,1,1,false);NeoClient.data.form="ssc_addon:axolotl_fluorescent";
                     NeoClient.data.burden=95;NeoClient.data.hypothesis="分流分配已有作用量；保持其他条件不变。";
                     for(int i=0;i<2;i++) {
                         var b=new Blueprint("视觉检查样本",Core.THERMAL,Carrier.PROJECTILE,i==0?List.of():List.of(Control.SPLIT),Core.FROST,1,40,32);

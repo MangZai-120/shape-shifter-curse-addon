@@ -87,7 +87,7 @@ public class SpawnRotatingCircleAction {
 
     public static ActionFactory<Entity> getFactory() {
         return new ActionFactory<>(
-                new Identifier("my_addon", "spawn_rotating_circle"),
+                new Identifier("ssc_addon", "spawn_rotating_circle"),
                 new SerializableData()
                         .add("particle", SerializableDataTypes.PARTICLE_EFFECT_OR_TYPE)
                         .add("bientity_condition", ApoliDataTypes.BIENTITY_CONDITION, null)

@@ -106,9 +106,9 @@ public final class SpectatorSkillWorldProbe {
                 new Skill("wild-cat stun", () -> invoke(dash, "performStunEffect"), t -> t.hasStatusEffect(SscAddon.STUN)),
                 new Skill("sonic wave", () -> invoke(sonic, "fire"), t -> t.hasStatusEffect(StatusEffects.NAUSEA)),
                 new Skill("mist burst", () -> invoke(mist, "detonate"), t -> t.getVelocity().lengthSquared() > 1e-6),
-                new Skill("fallen scream", () -> action("{\"type\":\"my_addon:fallen_allay_scream\"}", caster),
+                new Skill("fallen scream", () -> action("{\"type\":\"ssc_addon:fallen_allay_scream\"}", caster),
                         t -> t.hasStatusEffect(StatusEffects.GLOWING)),
-                new Skill("fox fire breath", () -> action("{\"type\":\"my_addon:fire_breath\",\"distance\":8,\"damage\":4,\"duration\":100}", caster),
+                new Skill("fox fire breath", () -> action("{\"type\":\"ssc_addon:fire_breath\",\"distance\":8,\"damage\":4,\"duration\":100}", caster),
                         t -> t.hasStatusEffect(SscAddon.FOX_FIRE_BURN)));
         for (Skill skill : skills) {
             for (int mode = 0; mode < 3; mode++) {

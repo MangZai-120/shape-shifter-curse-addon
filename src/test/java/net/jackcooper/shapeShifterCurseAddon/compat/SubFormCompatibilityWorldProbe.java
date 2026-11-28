@@ -246,7 +246,7 @@ public final class SubFormCompatibilityWorldProbe {
                 verify(context, avali, RegPerks.P_AvaliEnvironmentalProtection_1, false);
                 verify(context, (ISubForm) RegPlayerForms.SNOW_FOX_3_SUB_MARBLED_POLECAT, RegPerks.P_MarbledPolecatPreciseMomentum, false);
                 // Reverse boundary: an SSCA form borrowing SSC's Origin keeps SSCA compatibility.
-                var addon = new NormalSubForm(new Identifier("my_addon", "compat_test_shared_origin"), avali.getMasterForm());
+                var addon = new NormalSubForm(new Identifier("ssc_addon", "compat_test_shared_origin"), avali.getMasterForm());
                 addon.addPower(avali.getLayerModifier().getLeft().toArray(Identifier[]::new));
                 addon.removePower(avali.getLayerModifier().getRight().toArray(Identifier[]::new));
                 addon.perkTree(avali.getPerkTreeID());

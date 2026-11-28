@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * 同一时间每个契灵玩家只能持有 1 个标记；上一个目标的副作用立刻清除。
  *
- * 颜色高亮：通过 S2C 同步包 + my_addon:mancianima_mark_color 条件 + 三个 entity_glow power 实现，
+ * 颜色高亮：通过 S2C 同步包 + ssc_addon:mancianima_mark_color 条件 + 三个 entity_glow power 实现，
  * 仅契灵本人客户端可见，不污染原版 GLOWING / scoreboard team。
  *
  * 红色标记锁定 15 秒：每个被红色标记过的目标，15 秒内不能被同一玩家再次红色标记。
@@ -104,7 +104,7 @@ public final class MancianimaMarkManager {
 	public static final double UPGRADE_FOX_MANA_REGEN_AMOUNT = 1.0;
 	/** 进化使魔 mana 回复暂停计时器资源 id（常量复用，避免每 tick 现场构造 Identifier） */
 	private static final Identifier UPGRADE_FOX_MANA_REGEN_PAUSE_TIMER =
-			new Identifier("my_addon", "form_upgrade_familiar_fox_mana_regen_pause_pause_timer");
+			new Identifier("ssc_addon", "form_upgrade_familiar_fox_mana_regen_pause_pause_timer");
 
 	// 阶段 5：运行时快照读取（abilities.mancianima_mark；快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_mark");

@@ -74,6 +74,6 @@ public final class WindSpiritPerks {
     public static double landingRadius(double base, boolean enhanced) { return enhanced ? base * 4.0 / 3.0 : base; }
     public static float landingDamage(float base, boolean enhanced) { return enhanced ? base * 4.0f / 3.0f : base; }
 
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
     private static Identifier original(String path) { return new Identifier("shape-shifter-curse", path); }
 }

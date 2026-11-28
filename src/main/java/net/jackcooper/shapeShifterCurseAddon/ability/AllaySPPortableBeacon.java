@@ -36,8 +36,8 @@ import java.util.UUID;
 
 /** Server-owned portable beacon: one payment clock and a whitelisted Haste II aura per owner. */
 public final class AllaySPPortableBeacon {
-    private static final Identifier ACTIVE = new Identifier("my_addon", "form_allay_sp_beacon_active");
-    private static final Identifier MANA = new Identifier("my_addon", "form_allay_sp_mana_resource");
+    private static final Identifier ACTIVE = new Identifier("ssc_addon", "form_allay_sp_beacon_active");
+    private static final Identifier MANA = new Identifier("ssc_addon", "form_allay_sp_mana_resource");
     private static final String SESSION_TAG = "ssca_beacon_session";
     private static final String OWNER_TAG = "ssca_beacon_owner";
     private static final int DRAIN_INTERVAL = 60;

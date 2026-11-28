@@ -34,13 +34,13 @@ import java.util.Map;
 public class SkillCooldownBarRenderer implements HudRenderCallback {
 	private static final MinecraftClient mc = MinecraftClient.getInstance();
 
-	private static final Identifier TEX_PANEL = new Identifier("my_addon", "textures/gui/skill_cd_panel.png");
-	private static final Identifier TEX_PANEL_RIGHT = new Identifier("my_addon", "textures/gui/skill_cd_panel_right.png");
+	private static final Identifier TEX_PANEL = new Identifier("ssc_addon", "textures/gui/skill_cd_panel.png");
+	private static final Identifier TEX_PANEL_RIGHT = new Identifier("ssc_addon", "textures/gui/skill_cd_panel_right.png");
 	// Complete authored variants include the small frames and the user's background edge edits.
 	private static final Identifier[] PANELS = {panelTexture("skill_cd_panel_2"), panelTexture("skill_cd_panel_3"), panelTexture("skill_cd_panel_4")};
 	private static final Identifier[] PANELS_RIGHT = {panelTexture("skill_cd_panel_2_right"), panelTexture("skill_cd_panel_3_right"), panelTexture("skill_cd_panel_4_right")};
-	private static Identifier panelTexture(String name) { return new Identifier("my_addon", "textures/gui/" + name + ".png"); }
-	private static final String SSCA_FORM_NAMESPACE = "my_addon";
+	private static Identifier panelTexture(String name) { return new Identifier("ssc_addon", "textures/gui/" + name + ".png"); }
+	private static final String SSCA_FORM_NAMESPACE = "ssc_addon";
 	public static final int ICON_SIZE = 20;
 	public static final int SLOT_WIDTH = 33;
 	public static final int SLOT_HEIGHT = 34;

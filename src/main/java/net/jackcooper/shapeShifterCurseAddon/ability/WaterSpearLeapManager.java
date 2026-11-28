@@ -44,7 +44,7 @@ public final class WaterSpearLeapManager {
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.water_spear_leap");
 	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
-	private static final String SKILL_ID = "my_addon:form_upgrade_axolotl_water_spear";
+	private static final String SKILL_ID = "ssc_addon:form_upgrade_axolotl_water_spear";
 
 	/** HUD 门槛同源：水矛空气消耗（balance 可调；HUD 展示用）。 */
 	public static int airCostForHud() { return BAL.i("air_cost", AIR_COST); }

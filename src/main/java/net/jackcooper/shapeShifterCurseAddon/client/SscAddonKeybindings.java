@@ -116,7 +116,7 @@ public class SscAddonKeybindings {
 				return null;
 			}
 			// These path-keyed settings belong to SSCA; another addon may reuse the same path.
-			if (!"my_addon".equals(form.getFormID().getNamespace())) return null;
+			if (!"ssc_addon".equals(form.getFormID().getNamespace())) return null;
 			return FormIdMigration.canonical(form.getFormID()).getPath();
 		} catch (Throwable t) {
 			return null;

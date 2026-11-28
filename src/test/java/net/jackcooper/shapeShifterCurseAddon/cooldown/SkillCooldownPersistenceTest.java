@@ -64,11 +64,11 @@ final class SkillCooldownPersistenceTest {
                 "cast sequence survives NBT");
 
         m = new SkillCastManager();
-        long spark = m.begin(owner, "my_addon:form_upgrade_familiar_fox_spark", new SkillCastManager.ResolvedConfig(40, 0, "on_cast"), 1000);
+        long spark = m.begin(owner, "ssc_addon:form_upgrade_familiar_fox_spark", new SkillCastManager.ResolvedConfig(40, 0, "on_cast"), 1000);
         m.finish(spark, 1000);
-        check(m.begin(owner, "my_addon:form_upgrade_familiar_fox_fire_ring", new SkillCastManager.ResolvedConfig(40, 0, "on_cast"), 1010) < 0,
+        check(m.begin(owner, "ssc_addon:form_upgrade_familiar_fox_fire_ring", new SkillCastManager.ResolvedConfig(40, 0, "on_cast"), 1010) < 0,
                 "spark and ring share one gate");
-        check(roundTrip(m).cooldown(owner, "my_addon:form_upgrade_familiar_fox_spark").remaining(5000) == 40, "shared domain persists");
+        check(roundTrip(m).cooldown(owner, "ssc_addon:form_upgrade_familiar_fox_spark").remaining(5000) == 40, "shared domain persists");
 
         var views = List.of(new SkillCastManager.View("test:active", 2, 0, 0),
                 new SkillCastManager.View("test:failed", 0, 300, 300),
@@ -88,7 +88,7 @@ final class SkillCooldownPersistenceTest {
     private static void pruneExpired() throws Exception {
         var manager = new SkillCastManager();
         UUID owner = UUID.randomUUID(), offline = UUID.randomUUID();
-        String spark = "my_addon:form_upgrade_familiar_fox_spark";
+        String spark = "ssc_addon:form_upgrade_familiar_fox_spark";
         String ring = SkillCastManager.domain(spark);
         var config = new SkillCastManager.ResolvedConfig(10, 0, "on_cast");
         long cast = manager.begin(owner, spark, config, 100);
@@ -241,12 +241,12 @@ final class SkillCooldownPersistenceTest {
         for (String bad : new String[]{"-1", "1.5", "2147483648", "\"100\"", "null", "true"}) {
             var json = valid.deepCopy(); json.add("cooldown", JsonParser.parseString(bad));
             rejects(() -> SkillCooldownSpec.read(fields.read(json)));
-            json.addProperty("type", "my_addon:fail_aware_active_self");
+            json.addProperty("type", "ssc_addon:fail_aware_active_self");
             rejects(() -> SkillCooldownSpec.validatePower(json));
         }
         var badStart = valid.deepCopy(); badStart.addProperty("cooldown_start", "typo");
         rejects(() -> SkillCooldownSpec.read(fields.read(badStart)));
-        var nested = JsonParser.parseString("{\"type\":\"apoli:multiple\",\"key_activation\":{\"type\":\"my_addon:fail_aware_active_self\",\"extra_cooldowns\":{\"link\":-1}}}");
+        var nested = JsonParser.parseString("{\"type\":\"apoli:multiple\",\"key_activation\":{\"type\":\"ssc_addon:fail_aware_active_self\",\"extra_cooldowns\":{\"link\":-1}}}");
         rejects(() -> SkillCooldownSpec.validatePower(nested));
     }
 

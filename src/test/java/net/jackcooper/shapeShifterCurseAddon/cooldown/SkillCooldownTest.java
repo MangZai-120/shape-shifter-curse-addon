@@ -106,10 +106,10 @@ public final class SkillCooldownTest {
         for (String name : new String[]{"form_familiar_fox_sp_blue_fire_ring", "form_familiar_fox_red_blue_fire_ring",
                 "form_familiar_fox_sp_blue_fire_ring_amulet", "form_familiar_fox_red_blue_fire_ring_amulet"}) {
             var json = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(
-                    java.nio.file.Path.of("src/main/resources/data/my_addon/powers", name + ".json"))).getAsJsonObject();
+                    java.nio.file.Path.of("src/main/resources/data/ssc_addon/powers", name + ".json"))).getAsJsonObject();
             var key = json.getAsJsonObject("key_activation");
             check(key.get("defer_release").getAsBoolean(), "ring owns lifecycle");
-            check(checkRingActions(key.get("entity_action"), "my_addon:" + name + "_key_activation") == 1,
+            check(checkRingActions(key.get("entity_action"), "ssc_addon:" + name + "_key_activation") == 1,
                     "exactly one opening sequence in " + name);
         }
     }
@@ -124,9 +124,9 @@ public final class SkillCooldownTest {
                 if (!entry.isJsonObject() || !entry.getAsJsonObject().has("type")) continue;
                 var action = entry.getAsJsonObject();
                 String type = action.get("type").getAsString();
-                if (type.equals("my_addon:skill_begin")) begin = i;
+                if (type.equals("ssc_addon:skill_begin")) begin = i;
                 if (type.equals("apoli:apply_effect")) effect = i;
-                if (type.equals("my_addon:skill_released")) {
+                if (type.equals("ssc_addon:skill_released")) {
                     release = i;
                     check(action.get("power").getAsString().equals(skill), "release uses correct cooldown domain");
                 }

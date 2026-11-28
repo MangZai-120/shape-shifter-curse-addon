@@ -21,7 +21,7 @@ public class Form_Allay extends NormalForm {
         return net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.originLayer(getFormID());
     }
 
-	private static final String ANIM_NS = "my_addon";
+	private static final String ANIM_NS = "ssc_addon";
 	public static final AbstractAnimStateController WALK_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_moving")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking_walk")));
 	public static final AbstractAnimStateController SPRINT_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_run")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking_walk")));
 	public static final AbstractAnimStateController IDLE_CONTROLLER = new WithSneakAnimController(new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_idle")), new AnimUtils.AnimationHolderData(new Identifier(ANIM_NS, "allay_sp_sneaking")));

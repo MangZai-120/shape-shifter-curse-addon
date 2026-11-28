@@ -18,7 +18,7 @@ public final class RegAddonEntities {
 	private RegAddonEntities() {}
 
 	public static final TagKey<EntityType<?>> PULL_IMMUNE =
-			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("my_addon", "pull_immune"));
+			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("ssc_addon", "pull_immune"));
 
 	public static final EntityType<OrcafisEntity> ORCAFIS = Registry.register(
 			Registries.ENTITY_TYPE, new Identifier("ssc_addon", "orcafis"),

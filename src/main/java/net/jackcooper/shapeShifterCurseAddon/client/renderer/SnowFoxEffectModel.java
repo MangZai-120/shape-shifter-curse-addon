@@ -39,7 +39,7 @@ final class SnowFoxEffectModel {
     private List<Section> sections = List.of();
 
     SnowFoxEffectModel(String name, boolean ice) {
-        resource = new Identifier("my_addon", "geo/effect/snow_fox/" + name + ".geo.json");
+        resource = new Identifier("ssc_addon", "geo/effect/snow_fox/" + name + ".geo.json");
         this.ice = ice;
     }
 

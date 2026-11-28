@@ -1,6 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.util;
 
 import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -12,6 +14,7 @@ import net.minecraft.util.Pair;
 /** Form names may change; the existing Origins, powers and their saved state must not. */
 public final class FormIdMigration {
     private static final Map<Identifier, Identifier> ALIASES;
+    private static final Map<Identifier, Identifier> SAVED_ALIASES;
     private static final Map<Identifier, Identifier> LEGACY;
     private static final Map<String, String> STRINGS;
     private static final Map<String, String> PATHS;
@@ -39,9 +42,24 @@ public final class FormIdMigration {
         Map<String, String> paths = new LinkedHashMap<>();
         aliases.forEach((oldId, newId) -> {
             legacy.put(newId, oldId);
-            strings.put(oldId.toString(), newId.toString());
             paths.put(oldId.getPath(), newId.getPath());
         });
+        // Prefer the newest representation when a partially migrated color save contains both.
+        Map<Identifier, Identifier> saved = new LinkedHashMap<>(aliases);
+        for (Identifier id : List.of(FormIdentifiers.SHEEP_FORM, FormIdentifiers.AXOLOTL_SP,
+                FormIdentifiers.UPGRADE_AXOLOTL, FormIdentifiers.AXOLOTL_FLUORESCENT, FormIdentifiers.AXOLOTL_ALING,
+                FormIdentifiers.FAMILIAR_FOX_SP, FormIdentifiers.UPGRADE_FAMILIAR_FOX, FormIdentifiers.FAMILIAR_FOX_RED,
+                FormIdentifiers.FAMILIAR_FOX_MANCIANIMA, FormIdentifiers.SNOW_FOX_SP, FormIdentifiers.UPGRADE_SNOW_FOX,
+                FormIdentifiers.SNOW_FOX_FROSTSPINE, FormIdentifiers.ALLAY_SP, FormIdentifiers.FALLEN_ALLAY_SP,
+                FormIdentifiers.WILD_CAT_SP, FormIdentifiers.WILD_CAT_NIGHTMARE, FormIdentifiers.OCELOT_SP,
+                FormIdentifiers.OCELOT_NOVA, FormIdentifiers.ANUBIS_WOLF_SP, FormIdentifiers.GOLDEN_SANDSTORM_SP,
+                FormIdentifiers.BAT_DESMODUS, FormIdentifiers.BAT_PARASITIC_FRUIT, FormIdentifiers.SPIDER_MOON_WEAVER,
+                FormIdentifiers.SPIDER_SALTICIDAE)) {
+            saved.put(new Identifier("my_addon", id.getPath()), id);
+        }
+        aliases.forEach((oldId, newId) -> saved.put(new Identifier("my_addon", oldId.getPath()), newId));
+        SAVED_ALIASES = Collections.unmodifiableMap(saved);
+        saved.forEach((oldId, newId) -> strings.put(oldId.toString(), newId.toString()));
         LEGACY = Map.copyOf(legacy);
         STRINGS = Map.copyOf(strings);
         PATHS = Map.copyOf(paths);
@@ -50,15 +68,19 @@ public final class FormIdMigration {
     private FormIdMigration() { }
 
     private static void alias(Map<Identifier, Identifier> aliases, String oldPath, String newPath) {
-        aliases.put(new Identifier("my_addon", oldPath), new Identifier("my_addon", newPath));
+        aliases.put(new Identifier("ssc_addon", oldPath), new Identifier("ssc_addon", newPath));
     }
 
     public static Map<Identifier, Identifier> aliases() {
         return ALIASES;
     }
 
+    public static Map<Identifier, Identifier> savedAliases() {
+        return SAVED_ALIASES;
+    }
+
     public static Identifier canonical(Identifier id) {
-        return id == null ? null : ALIASES.getOrDefault(id, id);
+        return id == null ? null : SAVED_ALIASES.getOrDefault(id, id);
     }
 
     /** Only complete, exact old IDs are rewritten; unrelated or malformed strings pass through. */
@@ -73,7 +95,8 @@ public final class FormIdMigration {
 
     /** Stable resource identity: existing Origins/powers, models and cooldowns retain their IDs. */
     public static Identifier legacy(Identifier id) {
-        return id == null ? null : LEGACY.getOrDefault(id, id);
+        Identifier current = canonical(id);
+        return current == null ? null : LEGACY.getOrDefault(current, current);
     }
 
     /** SSCA-owned forms keep their existing Origin even when their display/registry ID changes. */

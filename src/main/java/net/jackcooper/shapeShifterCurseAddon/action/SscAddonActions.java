@@ -78,11 +78,11 @@ public class SscAddonActions {
 		registerSkillLifecycle("skill_ended", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::ended);
 		registerSkillLifecycle("skill_failed", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::failed);
 		registerSkillLifecycle("skill_cancelled", net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns::cancelled);
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "self_decoration"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "self_decoration"),
 				new SerializableData().add("entity_action", io.github.apace100.apoli.data.ApoliDataTypes.ENTITY_ACTION),
 				(data, entity) -> net.jackcooper.shapeShifterCurseAddon.network.DecorationParticleScope.run(entity,
 						() -> data.<java.util.function.Consumer<Entity>>get("entity_action").accept(entity))));
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fallen_allay_scream"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "fallen_allay_scream"),
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
@@ -123,7 +123,7 @@ public class SscAddonActions {
 				}
 		));
 
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "summon_fallen_allay_vex"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "summon_fallen_allay_vex"),
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
@@ -157,7 +157,7 @@ public class SscAddonActions {
 					}
 				}
 		));
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fallen_allay_vex_watchdog"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "fallen_allay_vex_watchdog"),
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) {
@@ -186,7 +186,7 @@ public class SscAddonActions {
 					}
 				}));
 
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fire_breath"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "fire_breath"),
 				new SerializableData()
 						.add("distance", SerializableDataTypes.FLOAT)
 						.add("damage", SerializableDataTypes.FLOAT)
@@ -266,13 +266,13 @@ public class SscAddonActions {
 							net.minecraft.sound.SoundCategory.PLAYERS, 0.4f, 1.6f);
 				}));
 
-		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "npc_purification_debuffs"),
+		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "npc_purification_debuffs"),
 				new SerializableData(), (data, pair) -> {
 					if (pair.getRight() instanceof LivingEntity target)
 						net.jackcooper.shapeShifterCurseAddon.ability.NpcCombatEnhancements.applyPurification(pair.getLeft(), target);
 				}));
 
-		registerBiEntity(new ActionFactory<>(new Identifier("my_addon", "damage_target_from_actor"),
+		registerBiEntity(new ActionFactory<>(new Identifier("ssc_addon", "damage_target_from_actor"),
 				new SerializableData()
 						.add("amount", SerializableDataTypes.FLOAT)
 						.add("damage_type", SerializableDataTypes.IDENTIFIER)
@@ -441,7 +441,7 @@ public class SscAddonActions {
 					}
 				}));
 
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "swim_jump_out"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "swim_jump_out"),
 				new SerializableData().add("multiplier", SerializableDataTypes.FLOAT, 2.0F),
 				(data, entity) -> {
 					// Must be in swimming pose (sprinting in water) to trigger
@@ -573,10 +573,10 @@ public class SscAddonActions {
 		// ==== 旋转圆环粒子（附属专用，仅 red 火环外圈使用，不影响主模组 spawn_particles_in_circle） ====
 		registerEntity(SpawnRotatingCircleAction.getFactory());
 		registerEntity(SpawnCircleVisualAction.getFactory());
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "tick_countdown"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "tick_countdown"),
 				new SerializableData().add("resource", io.github.apace100.apoli.data.ApoliDataTypes.POWER_TYPE),
 				(data, entity) -> net.jackcooper.shapeShifterCurseAddon.network.CountdownSync.decrement(entity, data.get("resource"))));
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "red_fire_ring_visual"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "red_fire_ring_visual"),
 				new SerializableData().add("amulet", SerializableDataTypes.BOOLEAN, false)
 						.add("empowered", SerializableDataTypes.BOOLEAN, false)
 						.add("radius", SerializableDataTypes.DOUBLE, 6.0), (data, entity) -> {
@@ -590,7 +590,7 @@ public class SscAddonActions {
 		}));
 
 		// ==== red 狐火火球：发射火球投射物 + 近身 60°×4格 锥形霰击（5 魔法伤害，附属专用，只作用 red） ====
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", "fox_fireball"),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", "fox_fireball"),
 				new SerializableData(),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) launchFoxFireball(player, false);
@@ -632,9 +632,9 @@ public class SscAddonActions {
 		}
 	}
 
-	/** 纯 JSON 技能的通用冷却生命周期 action：{"type":"my_addon:skill_xxx","power":"<技能 power id>"}。 */
+	/** 纯 JSON 技能的通用冷却生命周期 action：{"type":"ssc_addon:skill_xxx","power":"<技能 power id>"}。 */
 	private static void registerSkillLifecycle(String name, java.util.function.BiConsumer<ServerPlayerEntity, String> step) {
-		registerEntity(new ActionFactory<>(new Identifier("my_addon", name),
+		registerEntity(new ActionFactory<>(new Identifier("ssc_addon", name),
 				new SerializableData().add("power", SerializableDataTypes.IDENTIFIER),
 				(data, entity) -> {
 					if (entity instanceof ServerPlayerEntity player) step.accept(player, data.getId("power").toString());
@@ -691,12 +691,12 @@ public class SscAddonActions {
 
 	/** 装死 CD 读取器（与 PlayDeadAbsorptionManager 共用同 scope 读取器，单一事实源，避免双份维护）。 */
 	/** 装死的技能 ID（= 按键子 power 注册 ID）。 */
-	public static final String PLAY_DEAD_SKILL_ID = "my_addon:form_axolotl_sp_play_dead_activate";
+	public static final String PLAY_DEAD_SKILL_ID = "ssc_addon:form_axolotl_sp_play_dead_activate";
 
     /** Restore missing declared subpowers, never duplicate modifiers or add powers from another form. */
     private static void repairPlayDeadPowers(LivingEntity entity) {
         if (!(entity instanceof ServerPlayerEntity player)) return;
-        var parentId = new Identifier("my_addon", "form_axolotl_sp_play_dead");
+        var parentId = new Identifier("ssc_addon", "form_axolotl_sp_play_dead");
         if (!io.github.apace100.apoli.power.PowerTypeRegistry.contains(parentId)) return;
         var parent = io.github.apace100.apoli.power.PowerTypeRegistry.get(parentId);
         if (!(parent instanceof io.github.apace100.apoli.power.MultiplePowerType<?> multiple)) return;

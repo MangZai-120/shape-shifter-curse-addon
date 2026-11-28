@@ -113,7 +113,7 @@ public class AnubisWolfSpSummonWolves {
 	// ==================== 状态追踪 ====================
 	private static final ConcurrentHashMap<UUID, SummonData> ACTIVE_SUMMONS = new ConcurrentHashMap<>();
 	/** 统一冷却服务的稳定技能 ID（= power 注册路径）。 */
-	public static final String SKILL_ID = "my_addon:form_anubis_wolf_sp_summon_wolves";
+	public static final String SKILL_ID = "ssc_addon:form_anubis_wolf_sp_summon_wolves";
 
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.anubis_summon_wolves");

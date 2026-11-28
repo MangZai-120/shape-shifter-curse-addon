@@ -86,7 +86,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
     }
 
     public static PowerFactory<Power> createFactory() {
-        return new PowerFactory<>(new Identifier("my_addon", "parasitic_fruit_seed"),
+        return new PowerFactory<>(new Identifier("ssc_addon", "parasitic_fruit_seed"),
                 net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
                         .add("duration", SerializableDataTypes.INT, DEFAULT_LIFE_TICKS)
                         .add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
@@ -159,7 +159,7 @@ public class ParasiticFruitSeedPower extends ActiveCooldownPower implements net.
     /** 本 power 的稳定技能 ID（= power 注册路径）。 */
     public String powerIdentifier() {
         return type != null && type.getIdentifier() != null
-                ? type.getIdentifier().toString() : "my_addon:parasitic_fruit_seed";
+                ? type.getIdentifier().toString() : "ssc_addon:parasitic_fruit_seed";
     }
 
     public int fruitInterval() { return Math.max(1, BAL.i("fruit_interval_ticks", FRUIT_INTERVAL_TICKS)); }

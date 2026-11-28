@@ -37,7 +37,7 @@ public class FruitBatPlantGrowthPower extends Power {
 
     public static PowerFactory<Power> createFactory() {
         return new PowerFactory<>(
-                new Identifier("my_addon", "fruit_bat_plant_growth"),
+                new Identifier("ssc_addon", "fruit_bat_plant_growth"),
                 new SerializableData()
                         .add("tick_interval", SerializableDataTypes.INT, 20)
                         .add("radius", SerializableDataTypes.INT, 5)

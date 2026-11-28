@@ -130,7 +130,7 @@ public final class NeoStabilityWorldProbe {
         component.nowForm=net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.AXOLOTL_3;NeoRuntime.refreshForm(p);
         String expectedForm=net.onixary.shapeShifterCurseFabric.player_form.RegPlayerForms.AXOLOTL_3.getFormID().toString();
         double expectedSafety;
-        try(var input=NeoStabilityWorldProbe.class.getResourceAsStream("/data/ssca_neomagic/rules/defaults.json")){
+        try(var input=NeoStabilityWorldProbe.class.getResourceAsStream("/data/ssc_addon/rules/defaults.json")){
             if(input==null)throw new AssertionError("The default form configuration is present");
             var defaults=com.google.gson.JsonParser.parseReader(new java.io.InputStreamReader(input,java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
             expectedSafety=defaults.getAsJsonObject("forms").getAsJsonObject(expectedForm).get("safety").getAsDouble();

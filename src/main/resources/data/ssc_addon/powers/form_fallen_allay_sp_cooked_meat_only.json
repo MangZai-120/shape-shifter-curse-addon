@@ -1,0 +1,28 @@
+{
+    "type": "apoli:prevent_item_use",
+    "condition": {
+        "type": "ssc_addon:food_habit_enabled"
+    },
+    "item_condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:food"
+            },
+            {
+                "type": "apoli:ingredient",
+                "ingredient": {
+                    "tag": "ssc_addon:cooked_meats"
+                },
+                "inverted": true
+            },
+            {
+                "type": "apoli:ingredient",
+                "ingredient": {
+                    "tag": "shape-shifter-curse:ignore_diet"
+                },
+                "inverted": true
+            }
+        ]
+    }
+}

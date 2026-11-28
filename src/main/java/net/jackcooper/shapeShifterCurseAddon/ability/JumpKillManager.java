@@ -60,7 +60,7 @@ public final class JumpKillManager {
 	private static final int POISON_DURATION = 160;  // 中毒 II 8 秒
 	private static final int POISON_AMPLIFIER = 1;   // 中毒 II
 	private static final int STUN_DURATION = 7;      // 定身 0.35 秒
-	private static final String SKILL_ID = "my_addon:form_spider_salticidae_jump_kill";
+	private static final String SKILL_ID = "ssc_addon:form_spider_salticidae_jump_kill";
 	private static final double CHARGE_SLOW = -0.5;  // 蓄力移速 ×0.5
 	private static final double LEASH_K = 0.4;       // 脱锁容差系数（半径 = LEASH_K × 跳跃距离）
 	private static final int LEAD_TICKS = 6;         // 提前量：扑向 目标位置 + 速度 × LEAD_TICKS

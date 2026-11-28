@@ -53,7 +53,7 @@ public final class MancianimaPrimary {
 
 	public static final int MARK_MANA_COST = 15;
 	public static final int FIZZLE_MANA_COST = 5;
-	public static final String SKILL_ID = "my_addon:form_familiar_fox_mancianima_contract_mark";
+	public static final String SKILL_ID = "ssc_addon:form_familiar_fox_mancianima_contract_mark";
 	public static final int RED_TRIGGER_INTERVAL = 20;       // 1s 触发间隔（防连点升红）
 	public static final double MARK_RANGE = 32.0;
 	public static final double RED_LOCK_RANGE = 24.0;
@@ -63,7 +63,7 @@ public final class MancianimaPrimary {
 	public static final float DAMAGE_CAP = 37.0f;
 	public static final int MANA_REGEN_PAUSE_TICKS = 100;    // 5s
 	private static final net.minecraft.util.Identifier MANA_REGEN_PAUSE_RES =
-			new net.minecraft.util.Identifier("my_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
+			new net.minecraft.util.Identifier("ssc_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
 	// 阶段 5：运行时快照读取（abilities.mancianima_primary；快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_primary");
 	/** 客户端按键调用的入口。 */

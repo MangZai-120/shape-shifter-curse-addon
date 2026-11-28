@@ -36,8 +36,8 @@ import java.util.Map;
 
 public class SpUpgradeItem extends Item {
 
-	public static final RegistryKey<DamageType> CURSED_EROSION = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_erosion"));
-	public static final RegistryKey<DamageType> CURSED_BURST = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_burst"));
+	public static final RegistryKey<DamageType> CURSED_EROSION = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("ssc_addon", "cursed_erosion"));
+	public static final RegistryKey<DamageType> CURSED_BURST = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("ssc_addon", "cursed_burst"));
 	/**
 	 * Map storing the mapping from Base Form ID to Target SP Form ID
 	 * Key: Current Origin ID (Identifier), Value: Target Origin ID (Identifier)
@@ -47,26 +47,26 @@ public class SpUpgradeItem extends Item {
 	static {
 		// Registers the SP evolution for Familiar Fox
 		// From: shape-shifter-curse:form_familiar_fox_3
-		// To:   my_addon:form_familiar_fox_sp
-		registerUpgrade("shape-shifter-curse", "familiar_fox_3", "my_addon", "familiar_fox_sp");
-		registerUpgrade("shape-shifter-curse", "axolotl_3", "my_addon", "axolotl_sp");
-		registerUpgrade("shape-shifter-curse", "allay_sp", "my_addon", "fallen_allay_sp");
-		registerUpgrade("shape-shifter-curse", "anubis_wolf_3", "my_addon", "anubis_wolf_sp");
+		// To:   ssc_addon:form_familiar_fox_sp
+		registerUpgrade("shape-shifter-curse", "familiar_fox_3", "ssc_addon", "familiar_fox_sp");
+		registerUpgrade("shape-shifter-curse", "axolotl_3", "ssc_addon", "axolotl_sp");
+		registerUpgrade("shape-shifter-curse", "allay_sp", "ssc_addon", "fallen_allay_sp");
+		registerUpgrade("shape-shifter-curse", "anubis_wolf_3", "ssc_addon", "anubis_wolf_sp");
 		// 吸血蝙蝠：原版蝙蝠三阶段永久态 → desmodus（月髓环 + 诅咒之月夜进化）
-		registerUpgrade("shape-shifter-curse", "bat_3", "my_addon", "bat_desmodus");
+		registerUpgrade("shape-shifter-curse", "bat_3", "ssc_addon", "bat_desmodus");
 		// 风灵：原版豹猫永久形态 ocelot_3 → 风灵（月髓环 + 诅咒之月夜进化）
-		registerUpgrade("shape-shifter-curse", "ocelot_3", "my_addon", "ocelot_wind_spirit");
+		registerUpgrade("shape-shifter-curse", "ocelot_3", "ssc_addon", "ocelot_wind_spirit");
 		// 月织蛛：原版蜘蛛三阶段永久态 → 月织蛛（月髓环 + 诅咒之月夜进化）
-		registerUpgrade("shape-shifter-curse", "spider_3", "my_addon", "spider_moon_weaver");
+		registerUpgrade("shape-shifter-curse", "spider_3", "ssc_addon", "spider_moon_weaver");
 		// 食梦魔：原版野猫 SP 形态 → 食梦魔（月髓环 + 诅咒之月夜进化）
-		registerUpgrade("shape-shifter-curse", "feral_cat_sp", "my_addon", "wild_cat_nightmare");
+		registerUpgrade("shape-shifter-curse", "feral_cat_sp", "ssc_addon", "wild_cat_nightmare");
 		// 三阶雪狐先进入进化树，点满后在诅咒之月夜进化为寒棘狐。
-		registerUpgrade("shape-shifter-curse", "snow_fox_3", "my_addon", "snow_fox_upgrade");
-		registerUpgrade("my_addon", "snow_fox_upgrade", "my_addon", "snow_fox_frostspine");
+		registerUpgrade("shape-shifter-curse", "snow_fox_3", "ssc_addon", "snow_fox_upgrade");
+		registerUpgrade("ssc_addon", "snow_fox_upgrade", "ssc_addon", "snow_fox_frostspine");
 		// 进化使魔选择灵界之主后可用月髓环。
-		registerUpgrade("my_addon", "upgrade_familiar_fox", "my_addon", "familiar_fox_sp");
+		registerUpgrade("ssc_addon", "upgrade_familiar_fox", "ssc_addon", "familiar_fox_sp");
 		// 进化美西螈选择深渊霸主后可用月髓环。
-		registerUpgrade("my_addon", "upgrade_axolotl", "my_addon", "axolotl_sp");
+		registerUpgrade("ssc_addon", "upgrade_axolotl", "ssc_addon", "axolotl_sp");
 	}
 
 	public SpUpgradeItem(Settings settings) {

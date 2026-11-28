@@ -1,0 +1,11 @@
+{
+    "type": "apoli:effect_immunity",
+    "name": "power.ssc_addon.form_golden_sandstorm_sp_immunity.name",
+    "description": "power.ssc_addon.form_golden_sandstorm_sp_immunity.description",
+    "effects": [
+        "minecraft:wither",
+        "minecraft:blindness",
+        "minecraft:regeneration",
+        "ssc_addon:sand_blind"
+    ]
+}

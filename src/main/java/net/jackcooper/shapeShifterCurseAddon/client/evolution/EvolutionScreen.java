@@ -51,7 +51,7 @@ public class EvolutionScreen extends Screen {
     }
 
     public EvolutionScreen(Screen parent) {
-        super(Text.translatable("evolution.my_addon.screen.title"));
+        super(Text.translatable("evolution.ssc_addon.screen.title"));
         this.parent = parent;
     }
     private record Box(int x, int y, int w, int h) {
@@ -76,7 +76,7 @@ public class EvolutionScreen extends Screen {
         var config = AutoConfig.getConfigHolder(SSCAddonClientConfig.class).getConfig();
         String previous = amount == null ? config.evolutionCustomExperience : amount.getText();
         amount = addSelectableChild(new TextFieldWidget(textRenderer, custom.x, custom.y, custom.w, custom.h,
-                Text.translatable("evolution.my_addon.invest.custom")));
+                Text.translatable("evolution.ssc_addon.invest.custom")));
         amount.setDrawsBackground(false);
         amount.setEditableColor(INK);
         amount.setMaxLength(5);
@@ -106,7 +106,7 @@ public class EvolutionScreen extends Screen {
         back = new Box(tree.right() - 50, hy, 47, 16);
         boolean compact = header.w < 217;
         int rowY = hy + 25, barX = hx + (compact ? 19 : 77);
-        int fieldWidth = 39, maxWidth = Math.max(24, textRenderer.getWidth(tr("evolution.my_addon.invest.max")) + 7);
+        int fieldWidth = 39, maxWidth = Math.max(24, textRenderer.getWidth(tr("evolution.ssc_addon.invest.max")) + 7);
         int barWidth = Math.max(8, Math.min(126, tree.right() - barX - fieldWidth - maxWidth - 28));
         experienceBar = new Box(barX, rowY, barWidth, 9);
         plus = new Box(experienceBar.right() + 3, rowY - 3, 14, 15);
@@ -236,7 +236,7 @@ public class EvolutionScreen extends Screen {
         if (saveAmountAt > 0 && now >= saveAmountAt) rememberAmount();
         if (paymentAmount > 0 && now - paymentSince >= 5000) {
             paymentAmount = 0;
-            feedback(Text.translatable("evolution.my_addon.invest.timeout"));
+            feedback(Text.translatable("evolution.ssc_addon.invest.timeout"));
         }
         EvolutionComponent comp = component();
         if (waitingId == null || comp == null) return;
@@ -249,9 +249,9 @@ public class EvolutionScreen extends Screen {
     public void onPurchaseResult(int request, int status) {
         if (paymentAmount > 0 && request == paymentRequest) {
             if (status == 0) {
-                feedback(Text.translatable("evolution.my_addon.invest.paid", paymentAmount));
+                feedback(Text.translatable("evolution.ssc_addon.invest.paid", paymentAmount));
                 if (client.player != null) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
-            } else feedback(Text.translatable(status == 1 ? "evolution.my_addon.purchase.throttled" : "evolution.my_addon.invest.rejected"));
+            } else feedback(Text.translatable(status == 1 ? "evolution.ssc_addon.purchase.throttled" : "evolution.ssc_addon.invest.rejected"));
             paymentAmount = 0;
             return;
         }
@@ -260,8 +260,8 @@ public class EvolutionScreen extends Screen {
         if (client == null || client.player == null) return;
         if (status == 0) client.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
         else client.player.sendMessage(Text.translatable(status == 1
-                ? "evolution.my_addon.purchase.throttled" : status == 2
-                ? "evolution.my_addon.purchase.route_changed" : "evolution.my_addon.purchase.rejected"), true);
+                ? "evolution.ssc_addon.purchase.throttled" : status == 2
+                ? "evolution.ssc_addon.purchase.route_changed" : "evolution.ssc_addon.purchase.rejected"), true);
     }
     @Override public void render(DrawContext ctx, int mx, int my, float delta) {
         layout();
@@ -287,12 +287,12 @@ public class EvolutionScreen extends Screen {
             drawDetails(ctx, comp, mx, my);
             button(ctx, back, tr("gui.back"), true, back.contains(mx, my));
             int hintY = paper.bottom() - Math.max(8, paper.h * 3 / 100) - 12;
-            String hint = Util.getMeasuringTimeMs() < feedbackUntil ? paymentFeedback.getString() : tr("evolution.my_addon.paper.scroll");
+            String hint = Util.getMeasuringTimeMs() < feedbackUntil ? paymentFeedback.getString() : tr("evolution.ssc_addon.paper.scroll");
             text(ctx, fit(hint, tree.w - 12), tree.x, hintY);
             if (custom.contains(mx, my) || plus.contains(mx, my) || maximum.contains(mx, my)) {
                 int limit = canInvest(comp) ? EvolutionExperience.available(client.player, comp) : 0;
-                ctx.drawTooltip(textRenderer, List.of(Text.translatable("evolution.my_addon.invest.rate"),
-                        Text.translatable("evolution.my_addon.invest.available", limit)), mx, my);
+                ctx.drawTooltip(textRenderer, List.of(Text.translatable("evolution.ssc_addon.invest.rate"),
+                        Text.translatable("evolution.ssc_addon.invest.available", limit)), mx, my);
             }
         } finally {
             ctx.draw();
@@ -315,7 +315,7 @@ public class EvolutionScreen extends Screen {
         text(ctx, fit(title, titleWidth), 0, 0);
         ctx.getMatrices().pop();
         int badgeX = tx + textRenderer.getWidth(fit(title, titleWidth)) * titleScale + 6;
-        String badge = tr("evolution.my_addon.paper.experimental_badge");
+        String badge = tr("evolution.ssc_addon.paper.experimental_badge");
         badge = fit(badge, Math.max(1, back.x - badgeX - 14));
         EvolutionInk.plaque(ctx, badgeX, y + 2, textRenderer.getWidth(badge) + 8, 12);
         text(ctx, badge, badgeX + 4, y + 4);
@@ -338,21 +338,21 @@ public class EvolutionScreen extends Screen {
         int typed = typedAmount();
         button(ctx, plus, "+", typed > 0 && typed <= limit, plus.contains(mx, my));
         if (amount.getText().isEmpty() && !amount.isFocused()) {
-            text(ctx, tr("evolution.my_addon.invest.custom"), custom.x, custom.y);
+            text(ctx, tr("evolution.ssc_addon.invest.custom"), custom.x, custom.y);
         } else {
             ctx.getMatrices().push();
             ctx.getMatrices().translate(custom.x, custom.y - 8, 0);
             ctx.getMatrices().scale(.75f, .75f, 1);
-            text(ctx, tr("evolution.my_addon.invest.custom"), 0, 0);
+            text(ctx, tr("evolution.ssc_addon.invest.custom"), 0, 0);
             ctx.getMatrices().pop();
         }
         amount.render(ctx, mx, my, delta);
         ctx.fill(custom.x, custom.bottom() - 2, custom.right(), custom.bottom() - 1, INK);
-        button(ctx, maximum, tr("evolution.my_addon.invest.max"), limit > 0, maximum.contains(mx, my));
-        String progressText = tr("evolution.my_addon.paper.points_complete");
-        if (next >= 0) progressText = tr("evolution.my_addon.paper.next_point", Math.max(0, goal - exp));
+        button(ctx, maximum, tr("evolution.ssc_addon.invest.max"), limit > 0, maximum.contains(mx, my));
+        String progressText = tr("evolution.ssc_addon.paper.points_complete");
+        if (next >= 0) progressText = tr("evolution.ssc_addon.paper.next_point", Math.max(0, goal - exp));
         else if (displayedRoute != null && displayedRoute.branchChoiceLevel > 0 && comp != null) {
-            progressText = tr(comp.getBranch().isEmpty() ? "evolution.my_addon.paper.choose_final" : "evolution.my_addon.paper.final_chosen");
+            progressText = tr(comp.getBranch().isEmpty() ? "evolution.ssc_addon.paper.choose_final" : "evolution.ssc_addon.paper.final_chosen");
         }
         drawWrapped(ctx, progressText, bx, custom.bottom() + 2, tree.right() - bx, 2);
         EvolutionInk.line(ctx, tree.x, tree.y - 4, tree.right(), tree.y - 4);
@@ -360,7 +360,7 @@ public class EvolutionScreen extends Screen {
     private void drawTree(DrawContext ctx, EvolutionComponent comp) {
         ctx.enableScissor(tree.x, tree.y, tree.right(), tree.bottom());
         if (comp == null || displayedRoute == null) {
-            drawWrapped(ctx, tr("evolution.my_addon.paper.no_route"), tree.x + 10, tree.y + 12, tree.w - 20, 5);
+            drawWrapped(ctx, tr("evolution.ssc_addon.paper.no_route"), tree.x + 10, tree.y + 12, tree.w - 20, 5);
         } else {
             for (EvolutionNode node : ordered) for (String prerequisite : node.prereqs) {
                 EvolutionNode pre = displayedRoute.getNode(prerequisite);
@@ -426,22 +426,22 @@ public class EvolutionScreen extends Screen {
         EvolutionInk.line(ctx, details.x, detailBody.y - 5, details.right(), detailBody.y - 5);
         List<OrderedText> lines = new ArrayList<>();
         if (displayedRoute.isBranchChoice(node) && comp.getEvoLevel() < displayedRoute.branchChoiceLevel) {
-            Text warning = Text.translatable("evolution.my_addon.paper.level_shortfall", comp.getEvoLevel(), displayedRoute.branchChoiceLevel)
+            Text warning = Text.translatable("evolution.ssc_addon.paper.level_shortfall", comp.getEvoLevel(), displayedRoute.branchChoiceLevel)
                     .formatted(Formatting.DARK_RED);
             lines.addAll(textRenderer.wrapLines(warning, Math.max(1, details.w - 7)));
         }
         addLines(lines, tr(node.descKey));
         lines.add(Text.empty().asOrderedText());
-        addLines(lines, tr("evolution.my_addon.paper.requirements"));
-        if (node.prereqs.isEmpty()) addLines(lines, tr("evolution.my_addon.paper.no_prerequisites"));
+        addLines(lines, tr("evolution.ssc_addon.paper.requirements"));
+        if (node.prereqs.isEmpty()) addLines(lines, tr("evolution.ssc_addon.paper.no_prerequisites"));
         for (String id : node.prereqs) {
             EvolutionNode pre = displayedRoute.getNode(id);
             if (pre != null) addLines(lines, (comp.isUnlocked(id) ? "+ " : "- ") + shortName(pre));
         }
-        if (node.autoUnlock && !node.branch.isEmpty()) addLines(lines, tr("evolution.my_addon.paper.auto_level", displayedRoute.autoBranchLevel));
-        if (displayedRoute.isBranchChoice(node)) addLines(lines, tr("evolution.my_addon.paper.branch_choice", displayedRoute.branchChoiceLevel));
-        if (!preMet(comp, node)) addLines(lines, tr("evolution.my_addon.paper.all_prerequisites"));
-        if (comp.isJobChanging()) addLines(lines, tr("evolution.my_addon.paper.job_changing"));
+        if (node.autoUnlock && !node.branch.isEmpty()) addLines(lines, tr("evolution.ssc_addon.paper.auto_level", displayedRoute.autoBranchLevel));
+        if (displayedRoute.isBranchChoice(node)) addLines(lines, tr("evolution.ssc_addon.paper.branch_choice", displayedRoute.branchChoiceLevel));
+        if (!preMet(comp, node)) addLines(lines, tr("evolution.ssc_addon.paper.all_prerequisites"));
+        if (comp.isJobChanging()) addLines(lines, tr("evolution.ssc_addon.paper.job_changing"));
         detailContentHeight = lines.size() * 11;
         clampScroll();
         ctx.enableScissor(detailBody.x, detailBody.y, detailBody.right(), detailBody.bottom());
@@ -454,20 +454,20 @@ public class EvolutionScreen extends Screen {
         scrollbar(ctx, detailBody, detailScroll, detailContentHeight);
         EvolutionInk.line(ctx, details.x, confirm.y - 42, details.right(), confirm.y - 42);
         int costWidth = Math.max(1, Math.min(details.w, (confirm.x + confirm.w / 2 - details.x) * 2));
-        List<OrderedText> costLabel = textRenderer.wrapLines(Text.literal(tr("evolution.my_addon.paper.point_cost")), costWidth);
+        List<OrderedText> costLabel = textRenderer.wrapLines(Text.literal(tr("evolution.ssc_addon.paper.point_cost")), costWidth);
         for (int i = 0; i < Math.min(2, costLabel.size()); i++) {
             OrderedText line = costLabel.get(i);
             ctx.drawText(textRenderer, line, confirm.x + (confirm.w - textRenderer.getWidth(line)) / 2, confirm.y - 35 + i * 10, INK, false);
         }
         centerText(ctx, comp.getPoints() + " / " + node.cost, confirm.x + confirm.w / 2, confirm.y - 13);
-        String label = displayedRoute.isUnlocked(comp, node) ? tr("evolution.my_addon.paper.unlocked")
-                : waitingId != null ? tr("evolution.my_addon.paper.waiting")
-                : selectingRoute(comp, node) ? tr("evolution.my_addon.paper.start_route")
-                : node.autoUnlock ? tr("evolution.my_addon.paper.automatic")
+        String label = displayedRoute.isUnlocked(comp, node) ? tr("evolution.ssc_addon.paper.unlocked")
+                : waitingId != null ? tr("evolution.ssc_addon.paper.waiting")
+                : selectingRoute(comp, node) ? tr("evolution.ssc_addon.paper.start_route")
+                : node.autoUnlock ? tr("evolution.ssc_addon.paper.automatic")
                 : displayedRoute.isBranchChoice(node) && !displayedRoute.canChoose(comp, node)
-                ? (comp.getBranch().isEmpty() ? tr("evolution.my_addon.paper.need_level", displayedRoute.branchChoiceLevel) : tr("evolution.my_addon.paper.other_branch"))
-                : !preMet(comp, node) ? tr("evolution.my_addon.paper.need_prerequisites")
-                : comp.getPoints() < node.cost ? tr("evolution.my_addon.paper.need_points") : tr("evolution.my_addon.screen.confirm");
+                ? (comp.getBranch().isEmpty() ? tr("evolution.ssc_addon.paper.need_level", displayedRoute.branchChoiceLevel) : tr("evolution.ssc_addon.paper.other_branch"))
+                : !preMet(comp, node) ? tr("evolution.ssc_addon.paper.need_prerequisites")
+                : comp.getPoints() < node.cost ? tr("evolution.ssc_addon.paper.need_points") : tr("evolution.ssc_addon.screen.confirm");
         button(ctx, confirm, label, canBuy(comp, node), confirm.contains(mx, my));
     }
     private void addLines(List<OrderedText> lines, String value) { lines.addAll(textRenderer.wrapLines(Text.literal(value), Math.max(1, details.w - 7))); }

@@ -43,8 +43,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 检查构建辅助工具
-        run: python -m unittest discover -s .github/ci -p 'test_*.py' -v
+      - name: 检查资源包迁移工具
+        run: python -m unittest discover -s tools -p 'test_migrate_namespace_pack.py' -v
 
       - name: 初始化 Gradle 缓存
         uses: gradle/actions/setup-gradle@v4
@@ -91,6 +91,13 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --console=plain build "-Pssc_jar_path=$SSC_JAR_PATH"
+
+      - name: 校验资源路径与正式 JAR
+        env:
+          ADDON_JAR: build/libs/${{ steps.addon_props.outputs.archives_base_name }}-${{ steps.addon_props.outputs.mod_version }}.jar
+        run: |
+          python tools/check_resources.py all --addon-jar "$ADDON_JAR"
+          python -m unittest discover -s .github/ci -p 'test_*.py' -v
 
       - name: 整理分别下载的产物与构建记录
         env:

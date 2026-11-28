@@ -6,7 +6,7 @@
             "remove": []
         },
         "forms": {
-            "my_addon:bat_desmodus": {
+            "ssc_addon:bat_desmodus": {
                 "add": [],
                 "remove": [
                     "shape-shifter-curse:form_bat_2_sun_health"

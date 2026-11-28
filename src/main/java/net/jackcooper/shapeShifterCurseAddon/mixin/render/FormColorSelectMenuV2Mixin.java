@@ -29,7 +29,7 @@ public abstract class FormColorSelectMenuV2Mixin implements FormColorPreviewStat
                                        CallbackInfoReturnable<FormTextureUtils.ColorSetting> cir) {
         if (!isABGR) return;
         IForm form = getForm();
-        if (form == null || !form.getFormID().getNamespace().equals("my_addon")
+        if (form == null || !form.getFormID().getNamespace().equals("ssc_addon")
                 || form.getFormID().equals(FormIdentifiers.AXOLOTL_ALING)
                 || form.getFormID().equals(FormIdentifiers.FAMILIAR_FOX_RED)
                 || form.getFormID().equals(FormIdentifiers.SHEEP_FORM)) return;

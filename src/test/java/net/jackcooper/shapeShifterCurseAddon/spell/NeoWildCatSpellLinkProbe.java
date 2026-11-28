@@ -22,7 +22,7 @@ public final class NeoWildCatSpellLinkProbe {
     private static void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
     private static ServerPlayerEntity player(TestContext t)throws Exception {
         var p=NeoFormCastingProbe.player(t,FormIdentifiers.WILD_CAT_SP,0);NeoRuntime.data(p).spellbookMasteryExpTen=120000;
-        var type=PowerTypeRegistry.get(new Identifier("my_addon","true_invisibility"));check(type!=null,"Real primary power registered");
+        var type=PowerTypeRegistry.get(new Identifier("ssc_addon","true_invisibility"));check(type!=null,"Real primary power registered");
         PowerHolderComponent.KEY.get(p).addPower(type,new Identifier("ssc_addon","wild_cat_test"));return p;
     }
     private static TrueInvisibilityAbilityPower power(ServerPlayerEntity p){return PowerHolderComponent.getPowers(p,TrueInvisibilityAbilityPower.class).get(0);}

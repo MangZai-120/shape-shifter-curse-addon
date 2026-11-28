@@ -23,7 +23,7 @@ public class IronsSpellbooksAnimationMixin {
 		try {
 			IForm currentForm = FormUtils.getCurrentForm(player);
 			if (currentForm != null && currentForm.getFormID() != null
-					&& currentForm.getFormID().getNamespace().equals("my_addon")) {
+					&& currentForm.getFormID().getNamespace().equals("ssc_addon")) {
 				// Keep the original animation exclusions when a form receives its new registry ID.
 				String path = net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration.legacy(currentForm.getFormID()).getPath();
 				if ((path.contains("_sp") || path.contains("red")) && !path.contains("axolotl_sp")) {

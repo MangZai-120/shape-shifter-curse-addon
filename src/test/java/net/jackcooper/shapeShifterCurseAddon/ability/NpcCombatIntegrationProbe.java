@@ -332,7 +332,7 @@ public final class NpcCombatIntegrationProbe {
     }
 
     private static void checkSkillCooldownSnapshots() throws Exception {
-        String leapId = "my_addon:form_ocelot_nova_leap";
+        String leapId = "ssc_addon:form_ocelot_nova_leap";
         var leapClass = Class.forName(NovaSkillManager.class.getName() + "$LeapSession");
         Method beginLeap = method(NovaSkillManager.class, "beginLeap", ServerPlayerEntity.class, long.class);
         Method finishLeap = method(NovaSkillManager.class, "finishSingleLeap", ServerPlayerEntity.class, leapClass);
@@ -380,7 +380,7 @@ public final class NpcCombatIntegrationProbe {
                     "enhanced domain distinguishes missing summon config, explicit zero and captured positive CD");
         }
         TestPlayer interrupted = player(FormIdentifiers.ANUBIS_WOLF_SP);
-        String domainId = "my_addon:form_anubis_wolf_sp_death_domain";
+        String domainId = "ssc_addon:form_anubis_wolf_sp_death_domain";
         attach(interrupted, domainId, new SkillCooldownSpec(400, 70, "on_end", Map.of()));
         check(SkillCooldowns.begin(interrupted, domainId), "domain charge accepted");
         Object data = domainCtor.newInstance(world, net.minecraft.util.math.BlockPos.ORIGIN, 0);
@@ -398,7 +398,7 @@ public final class NpcCombatIntegrationProbe {
         check(SkillCooldowns.currentCastId(interrupted, domainId) < 0, "interrupted domain frees cast gate");
         putMap(AnubisWolfSpDeathDomain.class, "ACTIVE_DOMAINS", interrupted.id, null);
 
-        String webId = "my_addon:form_spider_moon_weaver_web";
+        String webId = "ssc_addon:form_spider_moon_weaver_web";
         var chargeClass = Class.forName(SpiderMoonWeaverWebManager.class.getName() + "$ChargeState");
         Method complete = method(SpiderMoonWeaverWebManager.class, "completeCharge", ServerPlayerEntity.class, chargeClass, int.class);
         for (int full : new int[]{0, 601}) for (int tier = 1; tier <= 3; tier++) {

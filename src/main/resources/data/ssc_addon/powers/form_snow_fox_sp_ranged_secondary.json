@@ -1,0 +1,33 @@
+{
+    "type": "ssc_addon:fail_aware_active_self",
+    "entity_action": {
+        "type": "ssc_addon:snow_fox_sp_frost_storm"
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_primary"
+    },
+    "condition": {
+        "type": "apoli:and",
+        "conditions": [
+            {
+                "type": "apoli:resource",
+                "resource": "ssc_addon:form_snow_fox_sp_switch_state",
+                "comparison": "==",
+                "compare_to": 1
+            },
+            {
+                "type": "apoli:sneaking",
+                "inverted": true
+            }
+        ]
+    },
+    "cooldown": 600,
+    "fail_cooldown": 360,
+    "cooldown_start": "on_end",
+    "defer_release": true,
+    "hud_render": {
+        "should_render": false
+    },
+    "name": "冰风暴",
+    "description": "1.5秒蓄力后在准星位置释放冰风暴，持续10秒，每秒2点魔法伤害，吸附6格内敌人。消耗30点霜寒值，冷却30秒。"
+}

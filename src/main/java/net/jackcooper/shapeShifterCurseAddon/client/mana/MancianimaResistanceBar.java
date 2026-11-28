@@ -17,8 +17,8 @@ import net.jackcooper.shapeShifterCurseAddon.util.ManaBarPos;
  */
 @Environment(EnvType.CLIENT)
 public class MancianimaResistanceBar extends SimpleResourceBarRenderer {
-	private static final Identifier BAR_FULL = new Identifier("my_addon", "textures/gui/mancianima_resistance_full.png");
-	private static final Identifier BAR_EMPTY = new Identifier("my_addon", "textures/gui/mancianima_resistance_empty.png");
+	private static final Identifier BAR_FULL = new Identifier("ssc_addon", "textures/gui/mancianima_resistance_full.png");
+	private static final Identifier BAR_EMPTY = new Identifier("ssc_addon", "textures/gui/mancianima_resistance_empty.png");
 	private static final int MANA_WIDTH = 80;
 	private static final int FULL_WIDTH = 92;
 	private static final int CENTER_OFFSET_X = -(FULL_WIDTH - MANA_WIDTH) / 2; // -6，在 mana 条上居中

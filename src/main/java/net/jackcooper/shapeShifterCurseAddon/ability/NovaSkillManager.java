@@ -79,8 +79,8 @@ public final class NovaSkillManager {
     /** 服务端权威 balance 快照读取（快照未初始化时回退上方默认常量）。 */
     private static final BalanceReader BAL = new BalanceReader("abilities.nova");
     /** 统一冷却服务技能 ID（网络包触发型）。 */
-    private static final String LEAP_SKILL_ID = "my_addon:form_ocelot_nova_leap";
-    private static final String EXPLODE_SKILL_ID = "my_addon:form_ocelot_nova_charge";
+    private static final String LEAP_SKILL_ID = "ssc_addon:form_ocelot_nova_leap";
+    private static final String EXPLODE_SKILL_ID = "ssc_addon:form_ocelot_nova_charge";
 
     // 服务端线程维护。离开朔望仍保留到 tick 末，让旧窗口和蓄力按原顺序收尾。
     private static final Set<UUID> TRACKED_PLAYERS = new HashSet<>();

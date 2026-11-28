@@ -30,7 +30,7 @@ import java.util.Set;
 
 public final class SnowFoxState implements AutoSyncedComponent, ServerTickingComponent {
     public enum Phase { IDLE, CHARGE, DIVE, SHELL, RECOVERY }
-    private static final Identifier POWERS = new Identifier("my_addon", "snow_fox_talents");
+    private static final Identifier POWERS = new Identifier("ssc_addon", "snow_fox_talents");
     private final PlayerEntity owner;
     private Phase phase = Phase.IDLE;
     private long since;

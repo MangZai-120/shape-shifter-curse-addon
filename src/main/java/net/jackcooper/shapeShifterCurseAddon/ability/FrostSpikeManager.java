@@ -38,7 +38,7 @@ public final class FrostSpikeManager {
 	// 以下常量均为默认值；运行时从 balance 快照读取（scope：abilities.frost_spike_manager）
 	private static final int CHARGE_INTERVAL = 24; // 默认 1.2 秒凝聚一根
 	private static final int MAX_THORNS = 5;       // 默认环绕冰锥上限
-	private static final String SKILL_ID = "my_addon:form_snow_fox_frostspine_frost_spike";
+	private static final String SKILL_ID = "ssc_addon:form_snow_fox_frostspine_frost_spike";
 	// ===== 凝棘（次技能）蓄力 =====
 	private static final int SECONDARY_CONSUME_INTERVAL = 20;   // 默认每 1 秒消耗一个环绕冰锥强化
 	private static final double SECONDARY_SLOW_AMOUNT = -0.90;  // 默认蓄力时移速降为 10%（MULTIPLY_TOTAL -0.9）

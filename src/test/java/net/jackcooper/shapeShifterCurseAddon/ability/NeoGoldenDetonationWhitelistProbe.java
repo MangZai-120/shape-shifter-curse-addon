@@ -50,7 +50,7 @@ public final class NeoGoldenDetonationWhitelistProbe {
         t.waitAndRun(70,()->{try{
             var p=NeoFormCastingProbe.player(t,FormIdentifiers.GOLDEN_SANDSTORM_SP,0);
             net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils.applyPower(p,
-                    new net.minecraft.util.Identifier("my_addon:form_golden_sandstorm_sp_erosion_brand_hit"),
+                    new net.minecraft.util.Identifier("ssc_addon:form_golden_sandstorm_sp_erosion_brand_hit"),
                     new net.minecraft.util.Identifier("ssc_addon:detonation_probe"));
             p.setHealth(10);var friendly=target(p,2);var hostile=target(p,4);
             GoldenSandstormErosionBrand.onPlayerAttack(p,friendly);

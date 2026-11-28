@@ -50,7 +50,7 @@ final class AnubisWolfSpPerkChecks {
             for (Identifier power : perk.powerRemove) if (!PowerTypeRegistry.contains(power)) register(power, null);
         }
         for (Identifier id : List.of(AnubisWolfSpPerks.SUMMONING_1, AnubisWolfSpPerks.SUMMONING_2,
-                AnubisWolfSpPerks.SOUL_EXCITATION, AnubisWolfSpPerks.SOUL_RECALL)) register(id, json("my_addon", id.getPath()));
+                AnubisWolfSpPerks.SOUL_EXCITATION, AnubisWolfSpPerks.SOUL_RECALL)) register(id, json("ssc_addon", id.getPath()));
         var player = player();
         player.totalExperience = 1234;
         player.form.formPerkMap.put(tree, new ArrayList<>(all));
@@ -89,9 +89,9 @@ final class AnubisWolfSpPerkChecks {
                 check(spec.count() == expected[rank][crystal][hit] && spec.maximum() == expected[rank][crystal][2] + extra
                         && spec.cooldown() == expected[rank][crystal][3], "passive summon matrix " + rank + "/" + crystal + "/" + extra + "/" + hit);
             }
-        var excitation = json("my_addon", AnubisWolfSpPerks.SOUL_EXCITATION.getPath());
+        var excitation = json("ssc_addon", AnubisWolfSpPerks.SOUL_EXCITATION.getPath());
         check(excitation.get("type").getAsString().equals("apoli:simple") && !excitation.has("key") && !excitation.has("entity_action"), "excitation is exclusively passive");
-        var recall = json("my_addon", AnubisWolfSpPerks.SOUL_RECALL.getPath());
+        var recall = json("ssc_addon", AnubisWolfSpPerks.SOUL_RECALL.getPath());
         check(recall.getAsJsonObject("key").get("key").getAsString().equals("key.shape-shifter-curse.active_skill_3")
                 && recall.get("cooldown").getAsInt() == 200 && !recall.has("condition"), "recall is key 3 in both sneak states, cooldown 10s");
 
@@ -106,8 +106,8 @@ final class AnubisWolfSpPerkChecks {
         TestMinion foreign = minion(other, world);
         player.minions.get(AnubisWolfMinionEntity.MinionID).add(foreign.id);
         player.minions.get(AnubisWolfMinionEntity.MinionID).add(UUID.randomUUID()); // unloaded entry
-        var attack = ApoliDataTypes.BIENTITY_ACTION.read(json("my_addon", "form_anubis_wolf_sp_summon_wolf_on_hit").getAsJsonObject("bientity_action"));
-        var struck = ApoliDataTypes.BIENTITY_ACTION.read(json("my_addon", "form_anubis_wolf_sp_summon_wolf_when_hit").getAsJsonObject("bientity_action"));
+        var attack = ApoliDataTypes.BIENTITY_ACTION.read(json("ssc_addon", "form_anubis_wolf_sp_summon_wolf_on_hit").getAsJsonObject("bientity_action"));
+        var struck = ApoliDataTypes.BIENTITY_ACTION.read(json("ssc_addon", "form_anubis_wolf_sp_summon_wolf_when_hit").getAsJsonObject("bientity_action"));
         attack.accept(new net.minecraft.util.Pair<>(player, wolf));
         struck.accept(new net.minecraft.util.Pair<>(wolf, player));
         check(player.minions.get(AnubisWolfMinionEntity.MinionID).size() == 4, "both real passive actions use the shared cap and normalize owner direction");
@@ -116,7 +116,7 @@ final class AnubisWolfSpPerkChecks {
         var spawn = AnubisWolfSpSummonWolves.class.getDeclaredMethod("spawnMinionWolf", net.minecraft.server.network.ServerPlayerEntity.class, pending.getClass());
         spawn.setAccessible(true); spawn.invoke(null, player, pending);
         check(player.minions.get(AnubisWolfMinionEntity.MinionID).size() == 7, "active spawn rechecks the exact seven-wolf cap before entity creation");
-        Identifier unrelated = new Identifier("my_addon", "test_other_minion");
+        Identifier unrelated = new Identifier("ssc_addon", "test_other_minion");
         player.minions.put(unrelated, new ArrayList<>(List.of(UUID.randomUUID())));
         player.effects.put(StatusEffects.WITHER, new StatusEffectInstance(StatusEffects.WITHER, 200));
         var active = activeSummons();

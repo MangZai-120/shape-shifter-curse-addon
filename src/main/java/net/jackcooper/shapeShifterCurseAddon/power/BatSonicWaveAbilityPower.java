@@ -63,7 +63,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower implements net
 	}
 
 	public static PowerFactory<Power> createFactory() {
-		return new PowerFactory<>(new Identifier("my_addon", "sonic_wave"),
+		return new PowerFactory<>(new Identifier("ssc_addon", "sonic_wave"),
 				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
 						.add("key", ApoliDataTypes.BACKWARDS_COMPATIBLE_KEY, new Active.Key()),
@@ -92,7 +92,7 @@ public class BatSonicWaveAbilityPower extends ActiveCooldownPower implements net
 	/** 本 power 的稳定技能 ID（= power 注册路径）。 */
 	public String powerIdentifier() {
 		return type != null && type.getIdentifier() != null
-				? type.getIdentifier().toString() : "my_addon:sonic_wave";
+				? type.getIdentifier().toString() : "ssc_addon:sonic_wave";
 	}
 
 	@Override

@@ -1,0 +1,8 @@
+{
+    "type": "apoli:action_over_time",
+    "interval": 1,
+    "entity_action": {
+        "type": "ssc_addon:tick_countdown",
+        "resource": "ssc_addon:form_snow_fox_sp_gain_cooldown"
+    }
+}

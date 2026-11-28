@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 public final class SpawnCircleVisualAction {
     public static io.github.apace100.apoli.power.factory.action.ActionFactory<Entity> getFactory() {
         return new io.github.apace100.apoli.power.factory.action.ActionFactory<>(
-                new net.minecraft.util.Identifier("my_addon", "spawn_particles_in_circle"),
+                new net.minecraft.util.Identifier("ssc_addon", "spawn_particles_in_circle"),
                 SpawnParticlesInCircleAction.getFactory().getSerializableData(), SpawnCircleVisualAction::action);
     }
     public static void action(SerializableData.Instance data, Entity actor) {

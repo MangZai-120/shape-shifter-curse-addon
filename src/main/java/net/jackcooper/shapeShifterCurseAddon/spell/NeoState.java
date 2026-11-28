@@ -8,8 +8,10 @@ import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import java.util.*;
 import static net.jackcooper.shapeShifterCurseAddon.spell.NeoModel.*;
 
-/** Saved only in overworld/data/ssca_neomagic.dat; never reads old spell components. */
+/** Overworld spell state. Older worlds are imported on first access without modifying the source file. */
 public final class NeoState extends PersistentState {
+    static final String SAVE_KEY = "ssc_addon_neomagic";
+    private static final String OLD_SAVE_KEY = "ssca_neomagic";
     public static final Gson JSON = new Gson();
     public final Map<UUID, PlayerData> players = new HashMap<>();
     public boolean tutorialPolicyInitialized, tutorialAutoEnabled;
@@ -79,11 +81,30 @@ public final class NeoState extends PersistentState {
     }
     public static NeoState get(MinecraftServer server) {
         var manager = server.getOverworld().getPersistentStateManager();
-        NeoState found = manager.get(NeoState::read,"ssca_neomagic");
+        return load(manager, () -> server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).resolve("data"));
+    }
+
+    static NeoState load(net.minecraft.world.PersistentStateManager manager,
+                         java.util.function.Supplier<java.nio.file.Path> directory) {
+        NeoState found = manager.get(NeoState::read, SAVE_KEY);
         if (found != null) return found;
-        var path = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).resolve("data/ssca_neomagic.dat");
-        if (java.nio.file.Files.exists(path)) throw new IllegalStateException("Unreadable neomagic data: "+path);
-        found = new NeoState(); manager.set("ssca_neomagic", found); found.markDirty(); return found;
+        var dataDir = directory.get();
+        var path = dataDir.resolve(SAVE_KEY + ".dat");
+        if (!java.nio.file.Files.notExists(path)) throw new IllegalStateException("Unreadable spell data: " + path);
+        var oldPath = dataDir.resolve(OLD_SAVE_KEY + ".dat");
+        if (java.nio.file.Files.notExists(oldPath)) {
+            found = new NeoState();
+        } else {
+            try {
+                int version = net.minecraft.SharedConstants.getGameVersion().getSaveVersion().getId();
+                found = read(manager.readNbt(OLD_SAVE_KEY, version).getCompound("data"));
+            } catch (java.io.IOException error) {
+                throw new IllegalStateException("Cannot import spell data from " + oldPath, error);
+            }
+        }
+        manager.set(SAVE_KEY, found);
+        found.markDirty();
+        return found;
     }
     private static NeoState read(NbtCompound n) {
         if(n.getInt("Version") != VERSION) throw new IllegalStateException("Unknown neomagic save version");

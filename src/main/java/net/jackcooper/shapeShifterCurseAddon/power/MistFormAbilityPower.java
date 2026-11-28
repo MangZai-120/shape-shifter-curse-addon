@@ -107,7 +107,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	}
 
 	public static PowerFactory<Power> createFactory() {
-		return new PowerFactory<>(new Identifier("my_addon", "mist_form"),
+		return new PowerFactory<>(new Identifier("ssc_addon", "mist_form"),
 				net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldownSpec.addFields(new SerializableData()
 						.add("duration", SerializableDataTypes.INT, 90)
 						.add("hud_render", ApoliDataTypes.HUD_RENDER, HudRender.DONT_RENDER)
@@ -195,7 +195,7 @@ public class MistFormAbilityPower extends ActiveCooldownPower implements net.jac
 	/** 本 power 的稳定技能 ID（= power 注册路径）。 */
 	public String powerIdentifier() {
 		return type != null && type.getIdentifier() != null
-				? type.getIdentifier().toString() : "my_addon:mist_form";
+				? type.getIdentifier().toString() : "ssc_addon:mist_form";
 	}
 
 	/** 进入雾化状态：标记效果 + 原版隐身（让形态模型消失）+ 起始粒子与音效 */

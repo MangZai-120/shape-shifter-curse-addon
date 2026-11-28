@@ -1,0 +1,14 @@
+{
+    "type": "ssc_addon:parasitic_spore_bomb",
+    "cooldown": 20,
+    "fail_cooldown": 0,
+    "cooldown_start": "on_cast",
+    "hud_render": {
+        "should_render": false
+    },
+    "key": {
+        "key": "key.ssc_addon.sp_secondary"
+    },
+    "name": "power.ssc_addon.form_bat_parasitic_fruit_spore_bomb.name",
+    "description": "power.ssc_addon.form_bat_parasitic_fruit_spore_bomb.description"
+}

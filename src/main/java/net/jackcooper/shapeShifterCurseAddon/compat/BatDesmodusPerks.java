@@ -11,9 +11,9 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.RegPlayerFormCompon
 
 /** Shared bat purchases with Desmodus-only sonar and key-3 wingbeat. */
 public final class BatDesmodusPerks {
-    public static final Identifier ECHOLOCATION = new Identifier("my_addon", "perk_bat_desmodus_echolocation");
-    public static final Identifier WINGBEAT = new Identifier("my_addon", "perk_bat_desmodus_wingbeat");
-    private static final Identifier BASE_ECHOLOCATION = new Identifier("my_addon", "form_bat_desmodus_echolocation");
+    public static final Identifier ECHOLOCATION = new Identifier("ssc_addon", "perk_bat_desmodus_echolocation");
+    public static final Identifier WINGBEAT = new Identifier("ssc_addon", "perk_bat_desmodus_wingbeat");
+    private static final Identifier BASE_ECHOLOCATION = new Identifier("ssc_addon", "form_bat_desmodus_echolocation");
     private static final Identifier ORIGINAL_ECHOLOCATION = original("bat_echolocation");
     private static final Identifier ORIGINAL_WINGBEAT = original("bat_wingbeat");
 

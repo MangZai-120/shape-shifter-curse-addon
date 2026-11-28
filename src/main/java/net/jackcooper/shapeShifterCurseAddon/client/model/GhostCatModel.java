@@ -6,19 +6,19 @@ import software.bernie.geckolib.model.GeoModel;
 
 /**
  * 幽灵野猫模型 - 复用食梦魔（form_wild_cat_sp）形态的 geo 模型与贴图
- * （资源本就在附属包 my_addon 命名空间下，直接引用，不复制文件）。
+ * （资源本就在附属包 ssc_addon 命名空间下，直接引用，不复制文件）。
  */
 public class GhostCatModel extends GeoModel<GhostCatEntity> {
 
 	@Override
 	public Identifier getModelResource(GhostCatEntity entity) {
 		// 野猫形态 geo（人形直立布局：bipedHead + bipedBody + tail_0~3 + 四肢 + 耳链）
-		return new Identifier("my_addon", "geo/form_wild_cat_sp.geo.json");
+		return new Identifier("ssc_addon", "geo/form_wild_cat_sp.geo.json");
 	}
 
 	@Override
 	public Identifier getTextureResource(GhostCatEntity entity) {
-		return new Identifier("my_addon", "textures/form_wild_cat_sp/form_wild_cat_sp.png");
+		return new Identifier("ssc_addon", "textures/form_wild_cat_sp/form_wild_cat_sp.png");
 	}
 
 	@Override

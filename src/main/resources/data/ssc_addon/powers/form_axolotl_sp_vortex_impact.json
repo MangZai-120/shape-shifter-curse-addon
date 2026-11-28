@@ -1,0 +1,143 @@
+{
+    "type": "apoli:multiple",
+    "vortex_state": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 80,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "hit_invuln_timer": {
+        "type": "apoli:resource",
+        "min": 0,
+        "max": 18,
+        "start_value": 0,
+        "hud_render": {
+            "should_render": false
+        }
+    },
+    "invuln_timer_tick": {
+        "type": "apoli:action_over_time",
+        "interval": 1,
+        "entity_action": {
+            "type": "ssc_addon:tick_countdown",
+            "resource": "*:*_hit_invuln_timer"
+        },
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "*:*_hit_invuln_timer",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "vortex_invuln_set": {
+        "type": "apoli:action_when_damage_taken",
+        "entity_action": {
+            "type": "apoli:change_resource",
+            "resource": "*:*_hit_invuln_timer",
+            "operation": "set",
+            "change": 18
+        },
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "vortex_invuln_block": {
+        "type": "apoli:modify_damage_taken",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -1.0
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:resource",
+                    "resource": "*:*_vortex_state",
+                    "comparison": ">",
+                    "compare_to": 0
+                },
+                {
+                    "type": "apoli:resource",
+                    "resource": "*:*_hit_invuln_timer",
+                    "comparison": ">",
+                    "compare_to": 0
+                }
+            ]
+        }
+    },
+    "damage_reduction_active": {
+        "type": "apoli:modify_damage_taken",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -0.5
+        },
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "knockback_immunity": {
+        "type": "apoli:action_when_damage_taken",
+        "entity_action": {
+            "type": "apoli:add_velocity",
+            "y": 0,
+            "set": true
+        },
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "speed_reduction_during_vortex": {
+        "type": "apoli:modify_attribute",
+        "attribute": "minecraft:generic.movement_speed",
+        "modifier": {
+            "operation": "multiply_total",
+            "value": -0.5,
+            "name": "Vortex speed reduction"
+        },
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        }
+    },
+    "pull_effect": {
+        "type": "apoli:action_over_time",
+        "interval": 2,
+        "condition": {
+            "type": "apoli:resource",
+            "resource": "*:*_vortex_state",
+            "comparison": ">",
+            "compare_to": 0
+        },
+        "entity_action": {
+            "type": "ssc_addon:self_decoration",
+            "entity_action": {
+                "type": "apoli:spawn_particles",
+                "particle": "minecraft:bubble",
+                "count": 40,
+                "speed": 0.6,
+                "force": true,
+                "spread": {
+                    "x": 6.0,
+                    "y": 2.5,
+                    "z": 6.0
+                }
+            }
+        }
+    },
+    "name": "power.ssc_addon.form_axolotl_sp_vortex_impact.name",
+    "description": "power.ssc_addon.form_axolotl_sp_vortex_impact.description"
+}

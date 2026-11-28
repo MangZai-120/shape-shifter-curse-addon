@@ -1,0 +1,40 @@
+{
+  "powers": [
+    "shape-shifter-curse:no_render_arm",
+    "shape-shifter-curse:form_sprint_speed_up",
+    "shape-shifter-curse:form_familiar_fox_3_water_speed_down",
+    "shape-shifter-curse:form_snow_fox_walk_on_powder_snow",
+    "shape-shifter-curse:form_snow_fox_3_sweet_berry_up",
+    "shape-shifter-curse:form_familiar_fox_3_digging_speed_down",
+    "shape-shifter-curse:form_snow_fox_3_keep_burn",
+    "shape-shifter-curse:form_snow_fox_3_burn_damage_up",
+    "shape-shifter-curse:form_snow_fox_3_water_bottle_put_out_fire",
+    "shape-shifter-curse:form_snow_fox_3_desert_health",
+    "shape-shifter-curse:form_snow_fox_3_plain_health",
+    "shape-shifter-curse:form_snow_fox_3_near_lava_damage",
+    "shape-shifter-curse:form_snow_fox_3_near_fire_damage",
+    "shape-shifter-curse:form_snow_fox_3_particle",
+    "shape-shifter-curse:form_snow_fox_3_fox_friendly",
+    "shape-shifter-curse:form_disable_leg_armor",
+    "shape-shifter-curse:form_disable_feet_armor",
+    "shape-shifter-curse:form_familiar_fox_sound_hurt",
+    "shape-shifter-curse:form_familiar_fox_sound",
+    "shape-shifter-curse:prevent_berry_effect",
+    "shape-shifter-curse:form_familiar_fox_sound_key",
+    "shape-shifter-curse:form_camera_bobbing_feral",
+    "shape-shifter-curse:feral_form_step_sound_speed_up",
+    "shape-shifter-curse:form_snow_fox_3_tan_temperature_remap",
+    "shape-shifter-curse:form_tan_prevent_dirty_water_thirst",
+    "ssc_addon:snow_fox_super_dive",
+    "ssc_addon:snow_fox_rolling_charge"
+  ],
+  "icon": {
+    "item": "minecraft:powder_snow_bucket"
+  },
+  "order": 0,
+  "unchoosable": true,
+  "impact": 0,
+  "loading_priority": 0,
+  "name": "origin.ssc_addon.form_snow_fox_upgrade.name",
+  "description": "origin.ssc_addon.form_snow_fox_upgrade.description"
+}

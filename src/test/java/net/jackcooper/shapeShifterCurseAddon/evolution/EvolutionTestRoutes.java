@@ -21,7 +21,7 @@ public final class EvolutionTestRoutes {
         Map<String, String> raw = new LinkedHashMap<>();
         for (String route : List.of("familiar_fox", "axolotl")) {
             try (var input = EvolutionTestRoutes.class.getResourceAsStream(
-                    "/data/my_addon/ssca_evolution/routes/" + route + ".json")) {
+                    "/data/ssc_addon/ssca_evolution/routes/" + route + ".json")) {
                 raw.put(route, new String(Objects.requireNonNull(input).readAllBytes(), StandardCharsets.UTF_8));
             }
         }
@@ -30,7 +30,7 @@ public final class EvolutionTestRoutes {
 
     public static void loadServer(Map<String, String> raw) {
         Map<Identifier, Resource> resources = new LinkedHashMap<>();
-        raw.forEach((id, json) -> resources.put(new Identifier("my_addon", "ssca_evolution/routes/" + id + ".json"),
+        raw.forEach((id, json) -> resources.put(new Identifier("ssc_addon", "ssca_evolution/routes/" + id + ".json"),
                 new Resource(null, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)))));
         ResourceManager manager = (ResourceManager) Proxy.newProxyInstance(ResourceManager.class.getClassLoader(),
                 new Class[]{ResourceManager.class}, (proxy, method, args) -> method.getName().equals("findResources") ? resources : null);

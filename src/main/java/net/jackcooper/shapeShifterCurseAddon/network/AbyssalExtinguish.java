@@ -15,9 +15,9 @@ import java.util.Map;
 public final class AbyssalExtinguish {
     public static final Identifier REQUEST = new Identifier("ssc_addon", "abyssal_extinguish");
     private static final Map<Identifier, Identifier> FORM_POWERS = Map.of(
-            FormIdentifiers.AXOLOTL_SP, new Identifier("my_addon", "form_axolotl_sp_fire_extinguish"),
-            FormIdentifiers.AXOLOTL_FLUORESCENT, new Identifier("my_addon", "form_axolotl_fluorescent_fire_extinguish"),
-            FormIdentifiers.AXOLOTL_ALING, new Identifier("my_addon", "form_axolotl_aling_fire_extinguish"));
+            FormIdentifiers.AXOLOTL_SP, new Identifier("ssc_addon", "form_axolotl_sp_fire_extinguish"),
+            FormIdentifiers.AXOLOTL_FLUORESCENT, new Identifier("ssc_addon", "form_axolotl_fluorescent_fire_extinguish"),
+            FormIdentifiers.AXOLOTL_ALING, new Identifier("ssc_addon", "form_axolotl_aling_fire_extinguish"));
     private static final int COST = 10;
 
     private AbyssalExtinguish() {}

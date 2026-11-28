@@ -45,9 +45,9 @@ public record SkillCooldownSpec(int cooldown, int failCooldown, String cooldownS
         var object = json.getAsJsonObject();
         if (object.has("type")) {
             String type = object.get("type").getAsString();
-            if (Set.of("my_addon:fail_aware_active_self", "ssc_addon:familiar_skill",
-                    "my_addon:mist_form", "my_addon:sonic_wave", "my_addon:parasitic_fruit_seed",
-                    "my_addon:parasitic_spore_bomb", "my_addon:true_invisibility").contains(type)) {
+            if (Set.of("ssc_addon:fail_aware_active_self", "ssc_addon:familiar_skill",
+                    "ssc_addon:mist_form", "ssc_addon:sonic_wave", "ssc_addon:parasitic_fruit_seed",
+                    "ssc_addon:parasitic_spore_bomb", "ssc_addon:true_invisibility").contains(type)) {
                 for (String field : new String[]{"cooldown", "fail_cooldown"})
                     if (object.has(field)) strictTicks(object.get(field));
                 if (object.has("cooldown_start")) {

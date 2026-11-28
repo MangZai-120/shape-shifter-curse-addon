@@ -62,7 +62,7 @@ public final class SpiderMoonWeaverWebManager {
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_web");
 	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
-	private static final String SKILL_ID = "my_addon:form_spider_moon_weaver_web";
+	private static final String SKILL_ID = "ssc_addon:form_spider_moon_weaver_web";
 
 	/** HUD 门槛同源：织网起手法力（balance 可调；HUD 展示用）。 */
 	public static double startManaForHud() { return BAL.d("start_mana", START_MANA); }
@@ -133,8 +133,8 @@ public final class SpiderMoonWeaverWebManager {
 		AddonSoundRange.play(sw, null, player.getX(), player.getY(), player.getZ(),
 				SoundEvents.BLOCK_WOOL_PLACE, SoundCategory.PLAYERS, 0.8f, next == MODE_ATTACK ? 1.4f : 0.9f);
 		player.sendMessage(Text.translatable(next == MODE_ATTACK
-				? "message.my_addon.spider_moon_weaver.mode.attack"
-				: "message.my_addon.spider_moon_weaver.mode.bridge"), true);
+				? "message.ssc_addon.spider_moon_weaver.mode.attack"
+				: "message.ssc_addon.spider_moon_weaver.mode.bridge"), true);
 	}
 
 	/** 主键按住开始蓄力（服务端重校验 form / CD / mana）。 */

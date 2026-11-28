@@ -20,7 +20,7 @@ public final class UpgradeFamiliarFoxPerks {
     public static final Identifier SIPHON_2 = mapped("familiar_fox_siphon_2");
     public static final Identifier FIELD_1 = mapped("familiar_fox_permeable_field_1");
     public static final Identifier FIELD_2 = mapped("familiar_fox_permeable_field_2");
-    public static final Identifier BASE_EFFECT_IMMUNITY = new Identifier("my_addon", "form_upgrade_familiar_fox_buff_immunity_effect_immunity");
+    public static final Identifier BASE_EFFECT_IMMUNITY = new Identifier("ssc_addon", "form_upgrade_familiar_fox_buff_immunity_effect_immunity");
 
     private UpgradeFamiliarFoxPerks() { }
 
@@ -67,7 +67,7 @@ public final class UpgradeFamiliarFoxPerks {
     }
 
     public static Identifier mapped(String nativePerkPath) {
-        return new Identifier("my_addon", "perk_upgrade_" + nativePerkPath);
+        return new Identifier("ssc_addon", "perk_upgrade_" + nativePerkPath);
     }
 
     private static Identifier effectivePower(Identifier nativePower) {

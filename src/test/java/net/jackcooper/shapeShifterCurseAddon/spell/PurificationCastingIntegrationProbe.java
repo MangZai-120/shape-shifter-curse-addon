@@ -105,10 +105,10 @@ public final class PurificationCastingIntegrationProbe {
         check(callIndex(vortexRelease, "onPurified") >= 0
                 && callIndex(vortexRelease, "onPurified") < callIndex(vortexRelease, "remove"),
                 "vortex release checks purification before consuming its charge or dealing damage");
-        JsonObject purifyJson = json("my_addon/powers/form_allay_sp_purify");
+        JsonObject purifyJson = json("ssc_addon/powers/form_allay_sp_purify");
         String release = purifyJson.get("charging_tick").toString();
         check(!release.contains("power resource set") && !purifyJson.has("interrupt_on_purified"), "other Allays' purification charge has no stop action");
-        JsonObject heal = json("my_addon/powers/form_allay_sp_group_heal");
+        JsonObject heal = json("ssc_addon/powers/form_allay_sp_group_heal");
         check(heal.getAsJsonObject("key_activation").get("condition").toString().contains("ssc_addon:purified")
                 && heal.getAsJsonObject("charging_tick").get("condition").toString().contains("ssc_addon:purified"), "group-heal input and charge advancement reject purification");
     }

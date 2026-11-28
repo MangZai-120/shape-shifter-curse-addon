@@ -36,7 +36,7 @@ public final class VortexGuideManager {
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.vortex_guide");
 	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
-	private static final String SKILL_ID = "my_addon:form_upgrade_axolotl_vortex_guide";
+	private static final String SKILL_ID = "ssc_addon:form_upgrade_axolotl_vortex_guide";
 
 	private static final Map<UUID, ChannelState> CHANNELING = new ConcurrentHashMap<>();
 

@@ -37,9 +37,9 @@ public final class NeoScaleWriteProbe {
         var step = ScaleTypes.STEP_HEIGHT.getScaleData(player);
         var eye = ScaleTypes.EYE_HEIGHT.getScaleData(player);
         var hitbox = ScaleTypes.HITBOX_HEIGHT.getScaleData(player);
-        var stepType = new PowerType<ModifyStepHeightPower>(new Identifier("ssca_neomagic", "probe_step_scale"), null);
-        var crawlType = new PowerType<CrawlingPower>(new Identifier("ssca_neomagic", "probe_crawl_scale"), null);
-        var condition = new ConditionFactory<LivingEntity>(new Identifier("ssca_neomagic", "probe_sneaking"),
+        var stepType = new PowerType<ModifyStepHeightPower>(new Identifier("ssc_addon", "probe_step_scale"), null);
+        var crawlType = new PowerType<CrawlingPower>(new Identifier("ssc_addon", "probe_crawl_scale"), null);
+        var condition = new ConditionFactory<LivingEntity>(new Identifier("ssc_addon", "probe_sneaking"),
                 new SerializableData(), (data, entity) -> entity.isSneaking()).read(new JsonObject());
         var stepPower = new ModifyStepHeightPower(stepType, player, 2, condition, false);
         var crawlPower = new CrawlingPower(crawlType, player, 1, 1, .6f, .35f);

@@ -97,7 +97,7 @@ public class SscaFormSelectScreen extends EvolutionFormSelectionScreen {
     private int page = 0;
 
     public SscaFormSelectScreen(Screen parent) {
-        super(Text.translatable("evolution.my_addon.start.select.title"));
+        super(Text.translatable("evolution.ssc_addon.start.select.title"));
         this.parent = parent;
     }
 
@@ -122,7 +122,7 @@ public class SscaFormSelectScreen extends EvolutionFormSelectionScreen {
 
         // 选择此形态
         ButtonWidget choose = paperButton(this.width / 2 - 80, py + PANEL_H - 54, 160, 20,
-                Text.translatable("evolution.my_addon.start.select.choose"), b -> chooseCurrentForm(), 0);
+                Text.translatable("evolution.ssc_addon.start.select.choose"), b -> chooseCurrentForm(), 0);
         choose.active = !forms.isEmpty();
         this.addDrawableChild(choose);
 

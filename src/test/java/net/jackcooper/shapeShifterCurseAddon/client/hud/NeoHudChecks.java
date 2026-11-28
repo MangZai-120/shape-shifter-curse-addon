@@ -87,5 +87,5 @@ public final class NeoHudChecks {
         }
         System.out.println("Neomagic HUD: "+checks+" geometry, config, payment and authored-resource checks passed.");return checks;
     }
-    private static BufferedImage image(String name) throws Exception {try(var in=NeoHudChecks.class.getClassLoader().getResourceAsStream("assets/ssca_neomagic/textures/gui/stability/"+name+".png")){if(in==null)throw new AssertionError("Missing "+name);return ImageIO.read(in);}}
+    private static BufferedImage image(String name) throws Exception {try(var in=NeoHudChecks.class.getClassLoader().getResourceAsStream("assets/ssc_addon/textures/gui/stability/"+name+".png")){if(in==null)throw new AssertionError("Missing "+name);return ImageIO.read(in);}}
 }

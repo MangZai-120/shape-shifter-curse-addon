@@ -1,0 +1,95 @@
+{
+    "type": "apoli:active_self",
+    "key": {
+        "key": "key.use",
+        "continuous": false
+    },
+    "condition": {
+        "type": "apoli:equipped_item",
+        "equipment_slot": "mainhand",
+        "item_condition": {
+            "type": "apoli:ingredient",
+            "ingredient": {
+                "item": "minecraft:ink_sac"
+            }
+        }
+    },
+    "entity_action": {
+        "type": "apoli:and",
+        "actions": [
+            {
+                "type": "apoli:swing_hand",
+                "hand": "MAIN_HAND"
+            },
+            {
+                "type": "apoli:execute_command",
+                "command": "clear @s minecraft:ink_sac 1"
+            },
+            {
+                "type": "apoli:area_of_effect",
+                "radius": 4.5,
+                "bientity_condition": {
+                    "type": "apoli:and",
+                    "conditions": [
+                        {
+                            "type": "apoli:target_condition",
+                            "condition": {
+                                "type": "apoli:living"
+                            }
+                        },
+                        {
+                            "type": "ssc_addon:not_actor_whitelisted"
+                        },
+                        {
+                            "type": "ssc_addon:not_dream_blocked"
+                        }
+                    ]
+                },
+                "bientity_action": {
+                    "type": "apoli:target_action",
+                    "action": {
+                        "type": "apoli:apply_effect",
+                        "effect": {
+                            "effect": "minecraft:blindness",
+                            "duration": 60,
+                            "amplifier": 0
+                        }
+                    }
+                }
+            },
+            {
+                "type": "apoli:play_sound",
+                "sound": "minecraft:entity.squid.squirt",
+                "volume": 1.0,
+                "pitch": 1.0
+            },
+            {
+                "type": "apoli:apply_effect",
+                "effect": {
+                    "effect": "ssc_addon:true_invisibility",
+                    "duration": 20,
+                    "amplifier": 1
+                }
+            },
+            {
+                "type": "apoli:spawn_particles",
+                "particle": "minecraft:squid_ink",
+                "count": 50,
+                "speed": 0.0,
+                "force": true,
+                "spread": {
+                    "x": 4.5,
+                    "y": 1.5,
+                    "z": 4.5
+                }
+            }
+        ]
+    },
+    "cooldown": 80,
+    "hud_render": {
+        "should_render": false,
+        "bar_index": 5
+    },
+    "name": "Ink Blindness",
+    "description": "Right click with Ink Sac (Main Hand) to blind nearby creatures."
+}

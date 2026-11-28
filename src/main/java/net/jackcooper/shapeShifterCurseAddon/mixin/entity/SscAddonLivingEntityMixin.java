@@ -168,7 +168,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 	/** 月织蛛拴友军分担伤害致拴主牺牲时的伤害源（死亡消息 death.attack.tether_sacrifice）。 */
 	@org.spongepowered.asm.mixin.Unique
 	private static final RegistryKey<DamageType> ssca$TETHER_SACRIFICE_KEY =
-			RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "tether_sacrifice"));
+			RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("ssc_addon", "tether_sacrifice"));
 
 	/**
 	 * 定身(STUN)的核心拦截：让 isImmobile() 在 STUN 期间返回 true。
@@ -686,7 +686,7 @@ public abstract class SscAddonLivingEntityMixin implements NpcCombatStateAccess,
 	 * 食梦魔 + 效果为 HARMFUL 或 GLOWING（GLOWING 是 NEUTRAL 类别、属透视高光，用户确认一并拦）→ 直接 cancel
 	 * （含 ssc_addon:stun 定身）。正面效果（自己/队友给的增益）不受影响；未入梦敌方的 debuff 正常生效。
 	 * 注意：项目内大部分敌方施加点已改为双参传施法者；Apoli JSON 的 apply_effect 无 source，
-	 * 由 power JSON 侧的 {@code my_addon:not_dream_blocked} BiEntity 条件门控。
+	 * 由 power JSON 侧的 {@code ssc_addon:not_dream_blocked} BiEntity 条件门控。
 	 */
 	@Inject(method = "addStatusEffect(Lnet/minecraft/entity/effect/StatusEffectInstance;Lnet/minecraft/entity/Entity;)Z", at = @At("HEAD"), cancellable = true)
 	private void ssc_addon$blockDreamingDebuff(StatusEffectInstance effect, Entity source, CallbackInfoReturnable<Boolean> cir) {

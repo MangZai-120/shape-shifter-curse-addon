@@ -53,7 +53,7 @@ public final class SpiderMoonWeaverSwingManager {
 	// 阶段 5：服务端权威快照读取（快照未初始化回退默认常量）
 	private static final BalanceReader BAL = new BalanceReader("abilities.moon_weaver_swing");
 	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
-	private static final String SKILL_ID = "my_addon:form_spider_moon_weaver_swing";
+	private static final String SKILL_ID = "ssc_addon:form_spider_moon_weaver_swing";
 
 	/** 服务端断丝阈值：max_rope_reach 快照值 + 3 格余量（与常量版 BREAK_OVERSTRETCH = MAX_ROPE_REACH + 3.0 等价）。 */
 	private static double breakOverstretch() {
@@ -172,7 +172,7 @@ public final class SpiderMoonWeaverSwingManager {
 		if (!net.jackcooper.shapeShifterCurseAddon.cooldown.SkillCooldowns.ready(player, SKILL_ID)) return;
 		if (BULLET_IN_FLIGHT.containsKey(player.getUuid())) return;
 		if (mana(player).getMana() < 1.0) {
-			player.sendMessage(Text.translatable("message.my_addon.spider_moon_weaver.swing.no_mana"), true);
+			player.sendMessage(Text.translatable("message.ssc_addon.spider_moon_weaver.swing.no_mana"), true);
 			return;
 		}
 		// 发射即登记；CD 在断丝/miss 时才起算（cooldown_start = on_end）

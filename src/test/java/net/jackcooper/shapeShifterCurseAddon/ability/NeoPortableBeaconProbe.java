@@ -13,8 +13,8 @@ public final class NeoPortableBeaconProbe {
     private static void check(boolean value,String why){checks++;if(!value)throw new AssertionError(why);}
     public static void run(TestContext t)throws Exception {
         var p=NeoFormCastingProbe.player(t,FormIdentifiers.ALLAY_SP,100);
-        var source=new Identifier("ssca_neomagic","beacon_scan_test");
-        var active=new Identifier("my_addon","form_allay_sp_beacon_active");
+        var source=new Identifier("ssc_addon","beacon_scan_test");
+        var active=new Identifier("ssc_addon","form_allay_sp_beacon_active");
         var mana=FormIdentifiers.ALLAY_MANA_RESOURCE;
         var powers=io.github.apace100.apoli.component.PowerHolderComponent.KEY.get(p);
         for(var id:java.util.List.of(active,mana))powers.addPower(io.github.apace100.apoli.power.PowerTypeRegistry.get(id),source);

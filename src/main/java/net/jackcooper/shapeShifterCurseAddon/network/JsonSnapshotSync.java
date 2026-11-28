@@ -12,10 +12,10 @@ import net.minecraft.util.Identifier;
 
 /** Main-thread content snapshots. Reliable play packets establish the baseline per connection. */
 public final class JsonSnapshotSync {
-    public static final Identifier CHUNKS = new Identifier("my_addon", "json_snapshot_v1");
-    public static final Identifier BEGIN = new Identifier("my_addon", "configuration_begin_v1");
-    public static final Identifier SCOPED_CHUNKS = new Identifier("my_addon", "json_snapshot_v2");
-    public static final Identifier BEGIN_SCOPED = new Identifier("my_addon", "configuration_begin_v2");
+    public static final Identifier CHUNKS = new Identifier("ssc_addon", "json_snapshot_v1");
+    public static final Identifier BEGIN = new Identifier("ssc_addon", "configuration_begin_v1");
+    public static final Identifier SCOPED_CHUNKS = new Identifier("ssc_addon", "json_snapshot_v2");
+    public static final Identifier BEGIN_SCOPED = new Identifier("ssc_addon", "configuration_begin_v2");
     private record Key(UUID player, Identifier channel) {}
     private record Payload(Map<String, String> content, byte[] bytes) {}
     private record Sent(Object player, Object connection, Payload payload) {}

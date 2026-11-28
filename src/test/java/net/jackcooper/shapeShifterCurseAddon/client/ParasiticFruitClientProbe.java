@@ -76,7 +76,7 @@ public final class ParasiticFruitClientProbe {
                 var cfg=SSCAddonConfig.client();var binding=cfg.getFormKeybind("bat_parasitic_fruit");if(binding!=null)binding.enabled=false;
                 cfg.showCdBar=true;cfg.cdBarPosOffsetX=24;cfg.cdBarPosOffsetY=40;
                 for(var fruit:FruitSelection.values()){
-                    var id=new Identifier("my_addon","textures/gui/skill_icons/fruit_"+fruit.key()+".png");
+                    var id=new Identifier("ssc_addon","textures/gui/skill_icons/fruit_"+fruit.key()+".png");
                     try(var stream=mc.getResourceManager().getResource(id).orElseThrow().getInputStream();var image=NativeImage.read(stream)){
                         check(image.getWidth()==32&&image.getHeight()==32,"32-pixel approved icon exists");
                         for(int y=0;y<32;y++)for(int x=0;x<32;x++)check((image.getColor(x,y)>>>24)==255,"Every fruit icon has an opaque background");
@@ -108,8 +108,8 @@ public final class ParasiticFruitClientProbe {
                     try{
                         var p=mc.getServer().getPlayerManager().getPlayer(mc.player.getUuid());
                         var component=PlayerFormComponent.COMPONENT.get(p);
-                        var type=PowerTypeRegistry.get(new Identifier("my_addon","perk_bat_parasitic_fruit_wingbeat"));
-                        var source=new Identifier("my_addon","fruit_probe");
+                        var type=PowerTypeRegistry.get(new Identifier("ssc_addon","perk_bat_parasitic_fruit_wingbeat"));
+                        var source=new Identifier("ssc_addon","fruit_probe");
                         if(perk){component.formPerkMap.put(RegPerks.T_Bat3PerkTree,List.of(RegPerks.P_BatWingbeat));PowerHolderComponent.KEY.get(p).addPower(type,source);}
                         component.sync();PowerHolderComponent.sync(p);
                         RegParasiticFruitStateComponent.STATE.get(p).selection(fruit);RegParasiticFruitStateComponent.STATE.sync(p);

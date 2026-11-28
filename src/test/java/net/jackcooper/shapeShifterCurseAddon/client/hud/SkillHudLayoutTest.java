@@ -60,7 +60,7 @@ public final class SkillHudLayoutTest {
         check(perkOnly.get(0).slot() == Slot.LOWER, "Perk never takes a missing main slot");
         BufferedImage original = image("skill_cd_panel"), oldRight = image("skill_cd_panel_right");
         check(original.getWidth() == 33 && original.getHeight() == 68 && oldRight.getWidth() == 33, "original texture dimensions retained");
-        try (var in = SkillHudLayoutTest.class.getClassLoader().getResourceAsStream("assets/my_addon/textures/gui/skill_cd_panel.png")) {
+        try (var in = SkillHudLayoutTest.class.getClassLoader().getResourceAsStream("assets/ssc_addon/textures/gui/skill_cd_panel.png")) {
             check(java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(in.readAllBytes()))
                     .equals("40191f7d7f8e9c14d2919d68306ebf71655ea3ef749065612ed6883e55d00cda"), "original panel texture remains untouched");
         }
@@ -69,7 +69,7 @@ public final class SkillHudLayoutTest {
                 "c22f9c568677881979e3f6173a66744cd75f977f4f805a10bebd8ab0f103c3b6"};
         for (int count : new int[]{2, 3, 4}) {
             String name = "skill_cd_panel_" + count;
-            try (var in = SkillHudLayoutTest.class.getClassLoader().getResourceAsStream("assets/my_addon/textures/gui/" + name + ".png")) {
+            try (var in = SkillHudLayoutTest.class.getClassLoader().getResourceAsStream("assets/ssc_addon/textures/gui/" + name + ".png")) {
                 check(java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(in.readAllBytes()))
                         .equals(approvedHashes[count - 2]), "game asset matches the approved layout with the new Desktop border: " + count);
             }
@@ -86,7 +86,7 @@ public final class SkillHudLayoutTest {
         System.out.println("Skill HUD layout: " + checks + " layout, viewport, scaling and texture checks passed.");
     }
     private static BufferedImage image(String name) throws Exception {
-        try (var in = SkillHudLayoutTest.class.getClassLoader().getResourceAsStream("assets/my_addon/textures/gui/" + name + ".png")) {
+        try (var in = SkillHudLayoutTest.class.getClassLoader().getResourceAsStream("assets/ssc_addon/textures/gui/" + name + ".png")) {
             if (in == null) throw new AssertionError("Missing HUD texture: " + name);
             return ImageIO.read(in);
         }

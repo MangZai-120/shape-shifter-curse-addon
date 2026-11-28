@@ -9,7 +9,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 /** 堕落悦灵召唤恼鬼：施放持续到最后一只恼鬼消失，之后按 power JSON 的 cooldown 起算（on_end）。 */
 public final class FallenAllayVexSkill {
 
-	public static final String SKILL_ID = "my_addon:form_fallen_allay_sp_active_vex_key_activation";
+	public static final String SKILL_ID = "ssc_addon:form_fallen_allay_sp_active_vex_key_activation";
 	/** 恼鬼自然寿命（与 SscAddonActions 召唤处的 setLifeTicks 保持一致，服务端权威推给 HUD 辅助栏）。 */
 	public static final int VEX_LIFE_TICKS = 700; // 35s * 20 ticks
 	private static final String CAST_TAG = "ssca_cast:";

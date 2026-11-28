@@ -102,7 +102,7 @@ public final class FoodHabitClientProbe {
 
     private static void audit(ServerPlayerEntity p) {
         var forms = RegPlayerForms.playerForms.keySet().stream()
-                .filter(id -> id.getNamespace().equals("my_addon"))
+                .filter(id -> id.getNamespace().equals("ssc_addon"))
                 .filter(id -> RegPlayerForms.playerForms.get(id).getFormID().equals(id)).sorted().toList();
         formCount = forms.size();
         check(formCount >= 23, "audit includes every addon form: " + forms);

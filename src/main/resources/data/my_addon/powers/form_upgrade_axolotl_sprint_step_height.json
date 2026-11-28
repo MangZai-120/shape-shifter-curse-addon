@@ -1,8 +1,0 @@
-{
-    "type": "shape-shifter-curse:modify_step_height",
-    "step_height_scale": 2.0,
-    "condition": {
-        "type": "apoli:power_active",
-        "power": "my_addon:form_upgrade_axolotl_sprint_speed"
-    }
-}

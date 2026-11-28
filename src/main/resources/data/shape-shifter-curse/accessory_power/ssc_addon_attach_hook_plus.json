@@ -6,7 +6,7 @@
       "remove": []
     },
     "forms": {
-      "my_addon:bat_parasitic_fruit": {
+      "ssc_addon:bat_parasitic_fruit": {
         "add": [
           "shape-shifter-curse:form_bat_attach_hook_trinket_plus"
         ],

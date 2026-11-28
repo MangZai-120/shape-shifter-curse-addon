@@ -19,7 +19,7 @@ import net.onixary.shapeShifterCurseFabric.player_form.utils.FormUtils;
 
 /** Exercises both sides of a journal failure in the disposable GameTest save. */
 public final class EnhancedDomainRecoveryWorldProbe {
-    private static final String DOMAIN = "my_addon:form_anubis_wolf_sp_death_domain";
+    private static final String DOMAIN = "ssc_addon:form_anubis_wolf_sp_death_domain";
     private static final String SUMMON = AnubisWolfSpSummonWolves.SKILL_ID;
 
     public static void start(TestContext test) {

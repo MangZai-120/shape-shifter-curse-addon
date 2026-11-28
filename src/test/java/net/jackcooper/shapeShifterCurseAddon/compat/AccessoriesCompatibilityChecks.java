@@ -63,7 +63,7 @@ public final class AccessoriesCompatibilityChecks {
         check(group.getAsJsonArray("slots").toString().equals("[\"trinket_group_moonlit-spellbook\"]"), "spellbook has its own visible group");
         check(Arrays.equals(bytes("assets/ssc_addon/textures/slot/spellbook.png"), bytes("assets/ssc_addon/textures/gui/slot/spellbook.png")), "native slot reuses the original icon without resampling");
         for (String locale : List.of("en_us", "zh_cn")) {
-            var lang = json("assets/my_addon/lang/" + locale + ".json");
+            var lang = json("assets/ssc_addon/lang/" + locale + ".json");
             String label = lang.get("trinkets.slot.moonlit.spellbook").getAsString();
             check(lang.get("accessories.slot.trinket_group_moonlit-spellbook").getAsString().equals(label), "slot translation: " + locale);
             check(lang.get("accessories.slot_group.ssc_addon").getAsString().equals(label), "group translation: " + locale);

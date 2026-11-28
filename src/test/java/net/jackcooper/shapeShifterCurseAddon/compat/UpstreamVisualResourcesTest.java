@@ -30,7 +30,7 @@ public final class UpstreamVisualResourcesTest {
         check(front.size()==4&&front.get(3).getAsJsonObject().get("mirror").getAsBoolean(),"Material migration matches the upstream mirrored positive-X front eye");
 
         for(String form:FORMS){
-            var config=json("/assets/my_addon/ssc_form_model/origins.origin.my_addon."+form+".json");
+            var config=json("/assets/ssc_addon/ssc_form_model/origins.origin.ssc_addon."+form+".json");
             check(config.get("model").getAsString().equals("shape-shifter-curse:geo/form/form_spider_3.geo.json"),"Spider uses the reviewed SSC model");
             var blink=config.getAsJsonObject("animation_system_config").getAsJsonObject("eye_blink");
             var controller=new FormEyeBlinkController(blink);
@@ -68,7 +68,7 @@ public final class UpstreamVisualResourcesTest {
                 check((emission.getRGB(28,23)>>>24)==127,"Salticidae original emission alpha remains 127");
             }
         }
-        var footsteps=json("/data/my_addon/powers/form_sprint_step_sound_1_5_run_0_9.json");
+        var footsteps=json("/data/ssc_addon/powers/form_sprint_step_sound_1_5_run_0_9.json");
         check(footsteps.get("speed_multiplier").getAsFloat()==1.5f,"Original walking cadence retained");
         check(footsteps.get("adjust_run_individually").getAsBoolean()&&footsteps.get("run_speed_multiplier").getAsFloat()==.9f,"Original individual running cadence retained");
         float offset=footsteps.get("step_sound_offset").getAsFloat();

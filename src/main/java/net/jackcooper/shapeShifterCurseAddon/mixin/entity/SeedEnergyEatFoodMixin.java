@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SeedEnergyEatFoodMixin {
 
     @Inject(method = "eatFood", at = @At("RETURN"))
-    private void my_addon$onEatFoodReturn(World world, ItemStack stack, CallbackInfoReturnable<ItemStack> cir) {
+    private void ssc_addon$onEatFoodReturn(World world, ItemStack stack, CallbackInfoReturnable<ItemStack> cir) {
         if (world.isClient) return;
         LivingEntity self = (LivingEntity) (Object) this;
         if (!(self instanceof ServerPlayerEntity sp)) return;

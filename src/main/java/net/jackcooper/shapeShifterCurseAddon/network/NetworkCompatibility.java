@@ -14,8 +14,8 @@ import net.minecraft.util.Identifier;
 /** A single login query protects the SSCA entity metadata layout before entering PLAY. */
 public final class NetworkCompatibility {
     public static final Identifier QUERY = new Identifier("ssc_addon", "entity_wire_revision");
-    public static final int ENTITY_WIRE_REVISION = 2;
-    public static final String FIRST_COMPATIBLE_VERSION = "8.0.0-neomagic.69";
+    public static final int ENTITY_WIRE_REVISION = 3;
+    public static final String FIRST_COMPATIBLE_VERSION = "8.0.1-dev.99";
     private static final ConcurrentMap<ServerLoginNetworkHandler, CompletableFuture<Void>> PENDING = new ConcurrentHashMap<>();
     private static boolean initialized;
 
@@ -75,6 +75,7 @@ public final class NetworkCompatibility {
         return serverHasSsca && !serverConfirmed;
     }
 
+    /** Older peers advertise the previous namespaces before the unified channels existed. */
     public static boolean isSscaNamespace(String namespace) {
         return namespace.equals("ssc_addon") || namespace.equals("my_addon") || namespace.equals("ssca_neomagic");
     }

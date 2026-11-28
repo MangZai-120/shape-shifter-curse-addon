@@ -6,12 +6,12 @@
       "remove": []
     },
     "forms": {
-      "my_addon:axolotl_abyssal_overlord": {
+      "ssc_addon:axolotl_abyssal_overlord": {
         "add": [
-          "my_addon:form_axolotl_sp_fountain_belt_trinket"
+          "ssc_addon:form_axolotl_sp_fountain_belt_trinket"
         ],
         "remove": [
-          "my_addon:form_axolotl_sp_water_ball",
+          "ssc_addon:form_axolotl_sp_water_ball",
           "shape-shifter-curse:form_axolotl_2_falling_protection"
         ]
       }

@@ -1,0 +1,106 @@
+{
+    "type": "apoli:multiple",
+    "craft_spear": {
+        "type": "ssc_addon:water_spear_craft",
+        "cooldown": 70,
+        "hud_render": {
+            "should_render": false
+        },
+        "entity_action": {
+            "type": "apoli:and",
+            "actions": [
+                {
+                    "type": "apoli:gain_air",
+                    "value": -15
+                },
+                {
+                    "type": "apoli:equipped_item_action",
+                    "equipment_slot": "offhand",
+                    "action": {
+                        "type": "apoli:consume",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "apoli:replace_inventory",
+                    "slot": "weapon.mainhand",
+                    "item_condition": {
+                        "type": "apoli:empty"
+                    },
+                    "stack": {
+                        "item": "ssc_addon:water_spear",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "apoli:play_sound",
+                    "sound": "minecraft:entity.axolotl.splash",
+                    "volume": 1.0,
+                    "pitch": 1.2
+                },
+                {
+                    "type": "apoli:play_sound",
+                    "sound": "minecraft:block.pointed_dripstone.drip_water",
+                    "volume": 1.5,
+                    "pitch": 0.8
+                },
+                {
+                    "type": "ssc_addon:self_decoration",
+                    "entity_action": {
+                        "type": "apoli:spawn_particles",
+                        "particle": "minecraft:splash",
+                        "count": 20,
+                        "speed": 0.2,
+                        "force": true,
+                        "spread": {
+                            "x": 0.5,
+                            "y": 0.5,
+                            "z": 0.5
+                        }
+                    }
+                }
+            ]
+        },
+        "condition": {
+            "type": "apoli:and",
+            "conditions": [
+                {
+                    "type": "apoli:air",
+                    "comparison": ">=",
+                    "compare_to": 15
+                },
+                {
+                    "type": "apoli:equipped_item",
+                    "equipment_slot": "offhand",
+                    "item_condition": {
+                        "type": "apoli:ingredient",
+                        "ingredient": {
+                            "item": "minecraft:arrow"
+                        }
+                    }
+                },
+                {
+                    "type": "apoli:inventory",
+                    "item_condition": {
+                        "type": "apoli:ingredient",
+                        "ingredient": {
+                            "item": "ssc_addon:water_spear"
+                        }
+                    },
+                    "comparison": "==",
+                    "compare_to": 0
+                },
+                {
+                    "type": "apoli:inventory",
+                    "slots": [
+                        "weapon.mainhand"
+                    ],
+                    "comparison": "==",
+                    "compare_to": 0
+                }
+            ]
+        }
+    },
+    "name": "Water Spear Crafting",
+    "description": "With an empty main hand and arrows in your offhand, press Use to craft a Water Spear for 15 Moisture and 1 arrow. Block and creature interactions take priority. The spear disappears on hit or landing, deals area damage and applies Slowness II for 5 seconds."
+}

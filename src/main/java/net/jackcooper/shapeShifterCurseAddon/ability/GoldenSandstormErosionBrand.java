@@ -90,9 +90,9 @@ public class GoldenSandstormErosionBrand {
 
 	// ==================== 自定义伤害类型 ====================
 	/** 被动爆发伤害类型（绕过近战攻击的伤害免疫帧） */
-	private static final RegistryKey<DamageType> CURSED_BURST_KEY = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_burst"));
+	private static final RegistryKey<DamageType> CURSED_BURST_KEY = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("ssc_addon", "cursed_burst"));
 	/** 引爆伤害类型（绕过被动爆发的伤害免疫帧） */
-	private static final RegistryKey<DamageType> CURSED_EROSION_KEY = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("my_addon", "cursed_erosion"));
+	private static final RegistryKey<DamageType> CURSED_EROSION_KEY = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("ssc_addon", "cursed_erosion"));
 
 	// ==================== 网络同步 ====================
 	/** S2C 包ID：同步烙印颜色数据到客户端 */

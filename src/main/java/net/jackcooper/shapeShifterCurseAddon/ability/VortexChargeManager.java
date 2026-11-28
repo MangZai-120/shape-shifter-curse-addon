@@ -34,21 +34,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * 最大 4 秒(80t / 8 次)、最大消耗 60 湿润值；中途再按 sp_primary 立即释放、满 4 秒自动释放。
  * 释放：半径 3 范围物理伤害 = 已扣次数 × 2 + 缓慢 III + 击退；CD 15 秒(300t) 释放后才起算。
  *
- * vortex_state 资源（my_addon:form_axolotl_sp_vortex_impact_vortex_state）用作"蓄力中"标记并同步客户端：
+ * vortex_state 资源（ssc_addon:form_axolotl_sp_vortex_impact_vortex_state）用作"蓄力中"标记并同步客户端：
  * 0 = 未蓄力，>0 = 蓄力中（值=已蓄力 tick 数）。客户端据此决定按键是"开始"还是"释放"。
  */
 public final class VortexChargeManager {
 	public static final Identifier VORTEX_STATE =
-			new Identifier("my_addon", "form_axolotl_sp_vortex_impact_vortex_state");
+			new Identifier("ssc_addon", "form_axolotl_sp_vortex_impact_vortex_state");
 
 	/**
 	 * 涡流「移动免疫」实体类型 tag：命中的实体不被涡流吸附 / 击退（仍正常受伤）。
-	 * <p>数据包路径 {@code data/my_addon/tags/entity_types/vortex_immune.json}，默认含原版 6 类
+	 * <p>数据包路径 {@code data/ssc_addon/tags/entity_types/vortex_immune.json}，默认含原版 6 类
 	 * boss / 重甲（铁傀儡·凋灵·末影龙·潜影贝·监守者·远古守卫者）；{@code "replace": false} 允许
 	 * 其它数据包 / 模组把自家 boss 追加进来，无需改代码即可扩展兼容。
 	 */
 	private static final TagKey<EntityType<?>> VORTEX_IMMUNE =
-			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("my_addon", "vortex_immune"));
+			TagKey.of(RegistryKeys.ENTITY_TYPE, new Identifier("ssc_addon", "vortex_immune"));
 
 	// 以下均为默认值；运行时从 balance 快照读取（abilities.vortex_charge）
 	private static final int AIR_PER_HIT = 8;
@@ -67,7 +67,7 @@ public final class VortexChargeManager {
 	/** balance 快照读取（快照未初始化回退默认常量） */
 	private static final BalanceReader BAL = new BalanceReader("abilities.vortex_charge");
 	/** 统一冷却服务的稳定技能 ID（网络包触发型）。 */
-	private static final String SKILL_ID = "my_addon:form_axolotl_sp_vortex_charge";
+	private static final String SKILL_ID = "ssc_addon:form_axolotl_sp_vortex_charge";
 
 	/** HUD 门槛同源：每次命中湿润度消耗（balance 可调；HUD 展示用）。 */
 	public static int airPerHitForHud(net.minecraft.entity.player.PlayerEntity player) {
@@ -282,7 +282,7 @@ public final class VortexChargeManager {
 	 * <p>双重判定：
 	 * <ol>
 	 *   <li><b>击退抗性 ≥ 0.99</b>：自动命中铁傀儡·监守者·以及设了高抗性的模组 boss，无需登记。</li>
-	 *   <li><b>实体类型 tag {@code my_addon:vortex_immune}</b>：补住原版击退抗性=0.0 却应免疫的
+	 *   <li><b>实体类型 tag {@code ssc_addon:vortex_immune}</b>：补住原版击退抗性=0.0 却应免疫的
 	 *       凋灵·末影龙·潜影贝·远古守卫者（默认已写进 tag），并允许模组把自家 boss 追加进 tag 扩展兼容。</li>
 	 * </ol>
 	 */

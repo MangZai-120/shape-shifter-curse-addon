@@ -26,8 +26,8 @@ import java.util.Map;
 
 @Environment(EnvType.CLIENT)
 public final class SkillHudCatalog {
-    private static final Identifier AXOLOTL_WATER_DASH_CD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
-    private static final Identifier AXOLOTL_LAND_DASH_CD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
+    private static final Identifier AXOLOTL_WATER_DASH_CD = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_water");
+    private static final Identifier AXOLOTL_LAND_DASH_CD = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_land");
 
     public record Skill(Identifier icon, Identifier cooldown, Identifier internalCooldown,
                         int internalTicks, String talent, boolean primary,
@@ -40,7 +40,7 @@ public final class SkillHudCatalog {
                 if (internalCooldown.getPath().equals("form_axolotl_fluorescent_shot_cd"))
                     return balanceInt("abilities.fluorescent_laser", "shot_ticks", internalTicks);
                 if (internalCooldown.getPath().equals("form_mancianima_link_cd"))
-                    return clientExtra("my_addon:form_familiar_fox_mancianima_soul_teleport", "link", internalTicks);
+                    return clientExtra("ssc_addon:form_familiar_fox_mancianima_soul_teleport", "link", internalTicks);
             }
             return internalTicks;
         }
@@ -106,13 +106,13 @@ public final class SkillHudCatalog {
     }
 
     private static final Identifier ICON_INVISIBILITY =
-            new Identifier("my_addon", "textures/gui/skill_icons/invisibility.png");
+            new Identifier("ssc_addon", "textures/gui/skill_icons/invisibility.png");
     private static final Identifier ICON_WEAKNESS =
-            new Identifier("my_addon", "textures/gui/skill_icons/weakness_spot.png");
+            new Identifier("ssc_addon", "textures/gui/skill_icons/weakness_spot.png");
     private static final Identifier ICON_WEB_BRIDGE =
-            new Identifier("my_addon", "textures/gui/skill_icons/moon_web_mode_bridge.png");
+            new Identifier("ssc_addon", "textures/gui/skill_icons/moon_web_mode_bridge.png");
     private static final Identifier ICON_WEB_ATTACK =
-            new Identifier("my_addon", "textures/gui/skill_icons/moon_web_mode_attack.png");
+            new Identifier("ssc_addon", "textures/gui/skill_icons/moon_web_mode_attack.png");
 
     private static boolean moonWeaverAttackMode(PlayerEntity player) {
         return RegSpiderMoonWeaverStateComponent.SPIDER_MOON_WEAVER_STATE.get(player).getMode()
@@ -138,7 +138,7 @@ public final class SkillHudCatalog {
         }
 
         private Skill withIcon(String name) {
-            return new Skill(new Identifier("my_addon", "textures/gui/skill_icons/" + name + ".png"),
+            return new Skill(new Identifier("ssc_addon", "textures/gui/skill_icons/" + name + ".png"),
                     skill.cooldown(), skill.internalCooldown(), skill.internalTicks(), skill.talent(),
                     skill.primary(), skill.condition(), skill.iconOverride());
         }
@@ -226,8 +226,8 @@ public final class SkillHudCatalog {
         FORMS.put("bat_parasitic_fruit", List.of(
                 skill("parasitic_seed", "form_bat_parasitic_fruit_parasitic_seed", true),
                 skill("spore_bomb", "form_bat_parasitic_fruit_spore_bomb", false),
-                new Skill(new Identifier("my_addon", "textures/gui/skill_icons/fruit_auto.png"), null, null, 0, null, false, null,
-                        p -> new Identifier("my_addon", "textures/gui/skill_icons/fruit_" +
+                new Skill(new Identifier("ssc_addon", "textures/gui/skill_icons/fruit_auto.png"), null, null, 0, null, false, null,
+                        p -> new Identifier("ssc_addon", "textures/gui/skill_icons/fruit_" +
                                 net.jackcooper.shapeShifterCurseAddon.state.RegParasiticFruitStateComponent.STATE.maybeGet(p)
                                         .map(c -> c.selection().key()).orElse("auto") + ".png"))));
         pair("golden_sandstorm_sp", "wither_sand", "form_golden_sandstorm_sp_wither_sand", "brand_detonation", "form_golden_sandstorm_sp_erosion_brand");
@@ -238,7 +238,7 @@ public final class SkillHudCatalog {
         // 野猫SP：主技能双态图标——隐身中再按主键=破隐+弱点识破，切 weakness_spot；
         // 副技能震慑冲刺必须隐身中才可用（与隐身共用 CD）；墨囊致盲非主/副槽不遮
         FORMS.put("wild_cat_sp", List.of(
-                new Skill(new Identifier("my_addon", "textures/gui/skill_icons/invisibility.png"),
+                new Skill(new Identifier("ssc_addon", "textures/gui/skill_icons/invisibility.png"),
                         powerId("true_invisibility"), null, 0, null, true, null,
                         p -> wildCatInvisible(p) ? ICON_WEAKNESS : ICON_INVISIBILITY),
                 skill("intimidating_dash", "true_invisibility", false, SkillHudCatalog::wildCatInvisible),
@@ -247,7 +247,7 @@ public final class SkillHudCatalog {
                 skill("purify", "form_allay_sp_purify_key_activation", true),
                 // 群体治疗：需能量 100（服务端 mana_resource >= 100）
                 skill("group_heal", "form_allay_sp_group_heal_key_activation", false,
-                        p -> hasResource(p, new Identifier("my_addon", "form_allay_sp_mana_resource"), 100)))); // 门槛值与 form_allay_sp_group_heal.json 同步维护
+                        p -> hasResource(p, new Identifier("ssc_addon", "form_allay_sp_mana_resource"), 100)))); // 门槛值与 form_allay_sp_group_heal.json 同步维护
         FORMS.put("fallen_allay_sp", List.of(
                 skill("summon_vex", "form_fallen_allay_sp_active_vex_key_activation", true),
                 skill("shadow_scream", "form_fallen_allay_sp_active_scream_key_activation", false)));
@@ -284,7 +284,7 @@ public final class SkillHudCatalog {
     private SkillHudCatalog() {}
 
     private static Identifier powerId(String path) {
-        return path == null ? null : new Identifier(path.contains(":") ? path : "my_addon:" + path);
+        return path == null ? null : new Identifier(path.contains(":") ? path : "ssc_addon:" + path);
     }
 
     private static Skill skill(String icon, String cooldown, boolean primary) {
@@ -302,7 +302,7 @@ public final class SkillHudCatalog {
 
     private static Skill skill(String icon, String cooldown, String internal, int ticks, String talent, boolean primary,
                                java.util.function.Predicate<PlayerEntity> condition) {
-        return new Skill(new Identifier("my_addon", "textures/gui/skill_icons/" + icon + ".png"),
+        return new Skill(new Identifier("ssc_addon", "textures/gui/skill_icons/" + icon + ".png"),
                 powerId(cooldown), powerId(internal), ticks, talent, primary, condition, null);
     }
 
@@ -316,7 +316,7 @@ public final class SkillHudCatalog {
     }
 
     public static List<Skill> forForm(Identifier form, PlayerEntity player) {
-        if (form == null || !"my_addon".equals(form.getNamespace())) return List.of();
+        if (form == null || !"ssc_addon".equals(form.getNamespace())) return List.of();
         form = FormIdMigration.canonical(form);
         String resourcePath = FormIdMigration.legacy(form).getPath();
                 // 护符佩戴判定走每 tick 缓存（原每帧全饰品扫描 + Curios 反射链，只为选一张静态技能表）

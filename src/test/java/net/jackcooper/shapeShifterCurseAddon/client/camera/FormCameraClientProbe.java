@@ -136,7 +136,7 @@ public final class FormCameraClientProbe {
             if(mc.currentScreen!=null)mc.setScreen(null);
             if(!submitted) {
                 if(++ticks<40)return;submitted=true;
-                forms=RegPlayerForms.playerForms.keySet().stream().filter(id -> id.getNamespace().equals("my_addon"))
+                forms=RegPlayerForms.playerForms.keySet().stream().filter(id -> id.getNamespace().equals("ssc_addon"))
                     .filter(id -> RegPlayerForms.getPlayerForm(id).getFormID().equals(id))
                     .filter(id -> VERIFY || !id.equals(FormIdentifiers.SHEEP_FORM)).sorted().toList();
                 prepare(mc);return;

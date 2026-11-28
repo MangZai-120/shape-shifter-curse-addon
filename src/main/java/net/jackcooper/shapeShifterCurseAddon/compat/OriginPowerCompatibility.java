@@ -31,7 +31,7 @@ public final class OriginPowerCompatibility {
 
     /** Scope by the actual form ID: a subform may share an Origin with a different owner. */
     public static boolean supportsForm(IForm form) {
-        return form != null && "my_addon".equals(form.getFormID().getNamespace());
+        return form != null && "ssc_addon".equals(form.getFormID().getNamespace());
     }
 
     /** 在原Perk加载之前调用，随后仍由原有十四类适配处理增减、替换及高级节点覆盖。 */
@@ -43,7 +43,7 @@ public final class OriginPowerCompatibility {
             var layer = form.getFormLayer();
             if (layer == null || layer.getRight() == null) return 0;
             var source = layer.getRight();
-            if (!(source.getNamespace().equals("my_addon") || source.getNamespace().equals("shape-shifter-curse"))) return 0;
+            if (!(source.getNamespace().equals("ssc_addon") || source.getNamespace().equals("shape-shifter-curse"))) return 0;
             if (!OriginRegistry.contains(source)) return 0;
             var origin = OriginRegistry.get(source);
             var holder = PowerHolderComponent.KEY.get(player);

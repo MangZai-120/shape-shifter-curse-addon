@@ -284,7 +284,7 @@ public final class FormColorCoverageClientProbe {
             }
             result.put("used_pixels_by_channel", channels);
             result.put("fixed_prototype_eye_pixels", fixedEyes);
-            if (REQUIRE_COMPLETE && repairedForm() && texture.getNamespace().equals("my_addon"))
+            if (REQUIRE_COMPLETE && repairedForm() && texture.getNamespace().equals("ssc_addon"))
                 check(noMask == fixedEyes, "Every other visible addon pixel has a material: " + texture);
         }
         return result;
@@ -511,7 +511,7 @@ public final class FormColorCoverageClientProbe {
                         if (ticks < 60) return;
                         ShapeShifterCurseFabric.clientConfig.disableUnlockCheckInFormColorSelectMenu = true;
                         forms = RegPlayerForms.playerForms.values().stream()
-                                .filter(form -> form.getFormID().getNamespace().equals("my_addon")).toList();
+                                .filter(form -> form.getFormID().getNamespace().equals("ssc_addon")).toList();
                         switchForm(client); next(1);
                     }
                     case 1 -> {
@@ -569,7 +569,7 @@ public final class FormColorCoverageClientProbe {
                     case 11 -> {
                         if (ticks < 4) return;
                         shot(client, "06-green-saved-four-views");
-                        if (REQUIRE_COMPLETE && repairedForm() && model(client).TextureResource.getNamespace().equals("my_addon")) {
+                        if (REQUIRE_COMPLETE && repairedForm() && model(client).TextureResource.getNamespace().equals("ssc_addon")) {
                             ((ViewsScreen)client.currentScreen).hideEyes = true;
                             next(16);
                         } else next(17);
@@ -587,7 +587,7 @@ public final class FormColorCoverageClientProbe {
                         index++;
                         if (index < forms.size()) { switchForm(client); next(1); }
                         else {
-                            var report = Map.of("completed", true, "scope", "SSCA my_addon forms only", "registered_forms", forms.size(), "checks", checks,
+                            var report = Map.of("completed", true, "scope", "SSCA ssc_addon forms only", "registered_forms", forms.size(), "checks", checks,
                                     "require_complete", REQUIRE_COMPLETE, "repaired_forms", RESULTS.stream().filter(r -> r.containsKey("distinct_palette_and_eyes_verified")).count(),
                                     "run_token", System.getProperty("ssca.colorCoverage.runToken", "manual"),
                                     "world", worldName, "palettes_argb", List.of("FFEE00DD", "FF00EE22"), "forms", RESULTS);

@@ -50,5 +50,5 @@ public final class SpiderMoonWeaverPerks {
         return PowerTypeRegistry.contains(power) && PowerHolderComponent.KEY.get(player).hasPower(PowerTypeRegistry.get(power));
     }
 
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
 }

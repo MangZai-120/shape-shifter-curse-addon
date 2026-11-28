@@ -58,13 +58,13 @@ public final class MancianimaTeleport {
 	public static final int MANA_REGEN_PAUSE_TICKS = 100;
 	/** sp_mana_regen 的暂停计时子资源（apoli:multiple 子键 → power_id + "_" + sub_key） */
 	private static final net.minecraft.util.Identifier MANA_REGEN_PAUSE_RES =
-			new net.minecraft.util.Identifier("my_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
+			new net.minecraft.util.Identifier("ssc_addon", "form_familiar_fox_sp_mana_regen_regen_pause_timer");
 	// 阶段 5：运行时快照读取（abilities.mancianima_teleport；快照未初始化回退默认常量）。
 	// MANA_COST=5 与 RED_LINK_CD_TICKS=200 被 client/hud/SkillHudCatalog 引用——HUD 是展示阈值，
 	// 那两处保持常量引用不改；服务端消费一律走 BAL。
 	private static final BalanceReader BAL = new BalanceReader("abilities.mancianima_teleport");
 	/** 统一冷却服务的稳定技能 ID（= 魂跃 power 注册路径）。 */
-	public static final String SKILL_ID = "my_addon:form_familiar_fox_mancianima_soul_teleport";
+	public static final String SKILL_ID = "ssc_addon:form_familiar_fox_mancianima_soul_teleport";
 
 	/** 传送最大距离（双端一致）：客户端预览（computePlatformLanding）与服务端执行共用。
 	 *  客户端读客户端镜像快照，服务端读权威快照（同 MeteorSpell.maxRange 模式）。 */

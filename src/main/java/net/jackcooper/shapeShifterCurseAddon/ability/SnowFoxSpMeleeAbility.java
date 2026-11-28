@@ -51,10 +51,10 @@ public class SnowFoxSpMeleeAbility {
 
 	/**
 	 * 执行雪刺冲刺
-	 * 门禁：power JSON（my_addon:fail_aware_active_self）原生 cooldown 字段管理，
+	 * 门禁：power JSON（ssc_addon:fail_aware_active_self）原生 cooldown 字段管理，
 	 * 本方法只负责效果与失败标记：蓝不够/冲刺中 → markFail()（按 fail_cooldown 进 CD）。
 	 */
-	private static final String SKILL_ID = "my_addon:form_snow_fox_sp_melee_primary";
+	private static final String SKILL_ID = "ssc_addon:form_snow_fox_sp_melee_primary";
 
 	public static boolean execute(ServerPlayerEntity player) {
 		if (net.jackcooper.shapeShifterCurseAddon.util.AbilityUseGuard.blocked(player)) return false;

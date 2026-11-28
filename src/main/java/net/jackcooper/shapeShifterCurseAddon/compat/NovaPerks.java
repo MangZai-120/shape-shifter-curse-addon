@@ -74,6 +74,6 @@ public final class NovaPerks {
     public static int fullCooldown(int base, boolean enhanced) { return enhanced ? (int) Math.round(base * 0.8) : base; }
     public static int singleCooldown(int base, boolean enhanced) { return enhanced ? (int) Math.round(base * 5.0 / 6.0) : base; }
 
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
     private static Identifier original(String path) { return new Identifier("shape-shifter-curse", path); }
 }

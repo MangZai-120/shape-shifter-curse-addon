@@ -26,7 +26,7 @@ import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 public final class AddonFormAdvancementHandler {
 
     /** 附属形态命名空间；只有该命名空间的形态才触发附属变身成就。 */
-    private static final String ADDON_NAMESPACE = "my_addon";
+    private static final String ADDON_NAMESPACE = "ssc_addon";
     private static final Identifier EVOLUTION_FORM = new Identifier("ssc_addon", "evolution_form");
     private static final Identifier FOX_ADVANCEMENT = new Identifier(ADDON_NAMESPACE, "on_transform_upgrade_familiar_fox");
     private static final Identifier AXOLOTL_ADVANCEMENT = new Identifier(ADDON_NAMESPACE, "on_transform_upgrade_axolotl");

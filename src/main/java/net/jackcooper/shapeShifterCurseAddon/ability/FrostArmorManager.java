@@ -123,7 +123,7 @@ public final class FrostArmorManager {
 				fAttacker.damage(fAttacker.getDamageSources().create(
 						net.minecraft.registry.RegistryKey.of(
 							net.minecraft.registry.RegistryKeys.DAMAGE_TYPE,
-							new net.minecraft.util.Identifier("my_addon", "thorn_burst")),
+							new net.minecraft.util.Identifier("ssc_addon", "thorn_burst")),
 						victim), burstDamage);
 			});
 			// 棘爆反馈：碎冰音 + 雪花爆裂粒子（攻击者处）

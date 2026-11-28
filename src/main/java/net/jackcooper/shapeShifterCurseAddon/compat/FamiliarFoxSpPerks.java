@@ -128,6 +128,6 @@ public final class FamiliarFoxSpPerks {
         return power != null && power.isActive();
     }
 
-    private static Identifier addon(String path) { return new Identifier("my_addon", path); }
+    private static Identifier addon(String path) { return new Identifier("ssc_addon", path); }
     private static Identifier original(String path) { return new Identifier("shape-shifter-curse", path); }
 }

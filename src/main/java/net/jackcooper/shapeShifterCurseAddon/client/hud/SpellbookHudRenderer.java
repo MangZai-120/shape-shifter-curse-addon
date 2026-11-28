@@ -62,7 +62,7 @@ public class SpellbookHudRenderer implements HudRenderCallback {
     private static final SpellbookHudRenderer BEFORE_CHAT = new SpellbookHudRenderer();
 
     private static Identifier texture(String name) {
-        return new Identifier("ssca_neomagic", "textures/gui/spell_hud/" + name + ".png");
+        return new Identifier("ssc_addon", "textures/gui/spell_hud/" + name + ".png");
     }
 
     /** Called once by InGameHud, immediately before vanilla chat. */

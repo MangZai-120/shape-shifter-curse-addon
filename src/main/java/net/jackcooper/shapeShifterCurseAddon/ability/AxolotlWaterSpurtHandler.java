@@ -35,8 +35,8 @@ public final class AxolotlWaterSpurtHandler {
 
 	// 以下均为默认值；运行时从 balance 快照读取（abilities.axolotl_water_spurt）
 	private static final int CD_TICKS = 100;   // 5 秒
-	private static final Identifier WATER_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_water");
-	private static final Identifier LAND_HUD = new Identifier("my_addon", "form_upgrade_axolotl_dash_hud_land");
+	private static final Identifier WATER_HUD = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_water");
+	private static final Identifier LAND_HUD = new Identifier("ssc_addon", "form_upgrade_axolotl_dash_hud_land");
 	private static final double BURST = 1.6;    // 前冲力度（水陆一致）
 	/** 陆地冲刺消耗的湿润度（air 值；参照 WaterSpearLeapManager 的 18=6%，冲刺更轻，取 12≈4%）。水下冲刺同 SSC 免费。 */
 	private static final int LAND_MOISTURE_COST = 12;
