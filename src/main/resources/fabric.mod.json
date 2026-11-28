@@ -50,6 +50,7 @@
       "net.jackcooper.shapeShifterCurseAddon.compat.emi.SSCA_EMIPlugin"
     ],
     "cardinal-components-entity": [
+      "net.jackcooper.shapeShifterCurseAddon.state.RegAxolotlTailFlint",
       "net.jackcooper.shapeShifterCurseAddon.ability.snowfox.SnowFoxMotion",
       "net.jackcooper.shapeShifterCurseAddon.state.RegInstinctAnchorComponent",
       "net.jackcooper.shapeShifterCurseAddon.evolution.RegEvolutionComponent",
@@ -91,6 +92,7 @@
   ],
   "custom": {
     "cardinal-components": [
+      "ssc_addon:axolotl_tail_flint",
       "ssc_addon:snow_fox_motion",
       "ssc_addon:instinct_anchor",
       "ssc_addon:evolution",

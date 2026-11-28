@@ -20,6 +20,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.ability.MancianimaPassive;
+import net.jackcooper.shapeShifterCurseAddon.ability.AxolotlTailFlint;
 import net.jackcooper.shapeShifterCurseAddon.power.WaterSpearCraftPower;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -113,6 +114,7 @@ public final class SscAddonInteractionEvents {
 
 		// 只有方块或实体未接收右键时，原版才会尝试使用副手的箭。
 		UseItemCallback.EVENT.register(WaterSpearCraftPower::useArrow);
+		AxolotlTailFlint.register();
 		// SP阿努比斯吃凋零玫瑰：进食效果由 custom_edible(form_anubis_wolf_sp_eat_wither_rose) + eatFood mixin 处理。
 		UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
 			// SP阿努比斯手持凋零玫瑰看向方块右键时，原版会放置花；返回 FAIL 取消放置，

@@ -6,6 +6,10 @@ import net.minecraft.client.render.entity.feature.HeldItemFeatureRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.Arm;
+import net.minecraft.client.render.model.json.ModelTransformationMode;
+import net.jackcooper.shapeShifterCurseAddon.ability.AxolotlTailFlint;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.client.UpgradeAxolotlSpearRenderState;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -26,6 +30,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(HeldItemFeatureRenderer.class)
 public class UpgradeAxolotlThirdPersonSpearMixin {
+
+	@Inject(method = "renderItem", at = @At("HEAD"), cancellable = true)
+	private void ssca$hideTailFlintInHand(LivingEntity entity, ItemStack stack, ModelTransformationMode mode,
+			Arm arm, MatrixStack matrices, VertexConsumerProvider consumers, int light, CallbackInfo ci) {
+		if (stack.isOf(Items.FLINT_AND_STEEL) && entity instanceof AbstractClientPlayerEntity player
+				&& arm != player.getMainArm() && AxolotlTailFlint.onTail(player)) ci.cancel();
+	}
 
 	@WrapOperation(
 			method = "render",

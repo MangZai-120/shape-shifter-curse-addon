@@ -4,6 +4,7 @@ import io.github.apace100.apoli.component.PowerHolderComponent;
 import io.github.apace100.apoli.power.PowerTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.jackcooper.shapeShifterCurseAddon.compat.MoistureWaterRecovery;
+import net.jackcooper.shapeShifterCurseAddon.ability.AxolotlTailFlint;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdMigration;
 import net.jackcooper.shapeShifterCurseAddon.util.FormIdentifiers;
 import net.jackcooper.shapeShifterCurseAddon.util.FormUtils;
@@ -23,6 +24,7 @@ public final class AbyssalExtinguish {
     private AbyssalExtinguish() {}
 
     public static Identifier powerForForm(PlayerEntity player) {
+        if (AxolotlTailFlint.STATE.get(player).suppressesExtinguish()) return null;
         var form = FormUtils.getCurrentForm(player);
         var id = form == null ? null : form.getFormID();
         return id == null ? null : FORM_POWERS.get(FormIdMigration.canonical(id));

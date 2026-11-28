@@ -1,6 +1,8 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.entity;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.jackcooper.shapeShifterCurseAddon.ability.AxolotlTailFlint;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
@@ -35,6 +37,10 @@ public abstract class SscAddonEntityIgnitionMixin implements SscIgnitedEntityAcc
 
 	@Inject(method = "setFireTicks", at = @At("HEAD"))
 	private void sscAddon$clearReplacedFire(int ticks, CallbackInfo ci) {
+		if ((Object)this instanceof ServerPlayerEntity player
+				&& (ticks > 0) != (player.getFireTicks() > 0)) {
+			AxolotlTailFlint.STATE.get(player).endSelfIgnition(player);
+		}
 		if (sscAddon$fireOwner != null && (ticks <= 0 || ticks > ((Entity)(Object)this).getFireTicks())) {
 			sscAddon$fireOwner = null;
 		}

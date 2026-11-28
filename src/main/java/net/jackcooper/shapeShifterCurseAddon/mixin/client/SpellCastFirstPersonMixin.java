@@ -4,6 +4,8 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.jackcooper.shapeShifterCurseAddon.SscAddon;
 import net.jackcooper.shapeShifterCurseAddon.client.CastingVisualState;
+import net.jackcooper.shapeShifterCurseAddon.ability.AxolotlTailFlint;
+import net.minecraft.item.Items;
 import net.jackcooper.shapeShifterCurseAddon.client.UpgradeAxolotlSpearRenderState;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -25,6 +27,9 @@ public abstract class SpellCastFirstPersonMixin {
     private void ssca$firstPersonPose(AbstractClientPlayerEntity player, float tickDelta, float pitch,
             Hand hand, float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices,
             VertexConsumerProvider consumers, int light, Operation<Void> original) {
+        if (hand == Hand.OFF_HAND && item.isOf(Items.FLINT_AND_STEEL) && AxolotlTailFlint.onTail(player)) {
+            item = ItemStack.EMPTY;
+        }
         boolean spear = player != null && hand == Hand.MAIN_HAND
                 && UpgradeAxolotlSpearRenderState.isCharging(player.getUuid());
         float progress = ssca$castingProgress(player);

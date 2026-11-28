@@ -1,6 +1,9 @@
 package net.jackcooper.shapeShifterCurseAddon.mixin.player;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import net.jackcooper.shapeShifterCurseAddon.ability.AxolotlTailFlint;
+import net.minecraft.util.collection.DefaultedList;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.jackcooper.shapeShifterCurseAddon.item.PotionTestTubes;
@@ -20,6 +23,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerInventory.class)
 public abstract class PlayerInventoryMixin {
+
+	@ModifyExpressionValue(method = "<init>", at = @At(value = "INVOKE", ordinal = 2,
+			target = "Lnet/minecraft/util/collection/DefaultedList;ofSize(ILjava/lang/Object;)Lnet/minecraft/util/collection/DefaultedList;"))
+	private DefaultedList<ItemStack> ssca$observeOffhand(DefaultedList<ItemStack> slots, PlayerEntity owner) {
+		return AxolotlTailFlint.observeOffhand(slots, owner);
+	}
 
 	@Shadow
 	public PlayerEntity player;
